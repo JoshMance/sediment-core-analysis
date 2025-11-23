@@ -62,4 +62,4 @@ Developed as a continuation of the original Sedivis project created collaborativ
 
 ## License
 
-MIT Open Source
+MIT License
