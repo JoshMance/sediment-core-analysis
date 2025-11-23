@@ -1,0 +1,77 @@
+###############################
+# .NET / C# / Avalonia
+###############################
+
+# Build outputs
+bin/
+obj/
+out/
+**/bin/
+**/obj/
+
+# Avalonia asset cache
+*.axaml.cs~
+*.axaml.ba.cs
+
+# IDE folders
+.vs/
+.vscode/
+.idea/
+*.sln.iml
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet / tooling
+*.nupkg
+packages/
+.nuget/
+artifacts/
+project.lock.json
+project.fragment.lock.json
+
+# Logs & temp files
+*.log
+*~
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+
+# Cache
+*.cache
+*.db
+*.config
+
+###############################
+# Scientific data outputs
+# (optional — clean repo)
+###############################
+*.csv
+*.tsv
+*.json
+*.xlsx
+*.feather
+*.parquet
+
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+
+data/
+datasets/
+exports/
+results/
+scratch/
+
+###############################
+# OS junk
+###############################
+.DS_Store
+Thumbs.db
