@@ -35,16 +35,47 @@ Architecture, APIs, and UI components may change as the project evolves.
 
 ## Installation
 
-Installation instructions will be added once the initial build structure stabilises.
+### Prerequisites
 
-Planned approach:
+- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) or later
+
+### Build from Source
 
 ```bash
 git clone https://github.com/JoshMance/sediment-core-analysis.git
 cd sediment-core-analysis
+dotnet build SedimentCoreApp.sln
 ```
 
-Then build the Avalonia application using the .NET SDK once the solution structure is available.
+### Run the Application
+
+```bash
+dotnet run --project SedimentCoreApp.UI
+```
+
+---
+
+## Project Structure
+
+```plaintext
+SedimentCoreApp.UI/
+  ├── App.axaml              # Application entry and styling
+  ├── App.axaml.cs
+  ├── Program.cs             # Application startup
+  ├── Views/                 # XAML views and code-behind
+  │   ├── MainWindow.axaml
+  │   ├── CoreImageView.axaml
+  │   └── SidebarView.axaml
+  ├── ViewModels/            # MVVM view models
+  │   ├── MainWindowViewModel.cs
+  │   ├── CoreImageViewModel.cs
+  │   └── SidebarViewModel.cs
+  └── Assets/                # Images, styles, and resources
+      ├── Images/
+      └── Styles/
+```
+
+The project follows the MVVM (Model-View-ViewModel) architectural pattern for maintainability and testability.
 
 ---
 

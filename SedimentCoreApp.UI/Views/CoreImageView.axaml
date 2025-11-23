@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SedimentCoreApp.UI.ViewModels"
+             x:Class="SedimentCoreApp.UI.Views.CoreImageView"
+             x:DataType="vm:CoreImageViewModel">
+
+    <Design.DataContext>
+        <vm:CoreImageViewModel />
+    </Design.DataContext>
+
+    <Border BorderBrush="Gray" BorderThickness="1" Padding="10">
+        <StackPanel>
+            <TextBlock Text="Core Image View" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" />
+            <TextBlock Text="Core image display will go here" />
+        </StackPanel>
+    </Border>
+</UserControl>
