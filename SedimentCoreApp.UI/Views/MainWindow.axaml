@@ -2,19 +2,357 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="using:SedimentCoreApp.UI.ViewModels"
+    xmlns:svg="clr-namespace:Avalonia.Svg.Skia;assembly=Avalonia.Svg.Skia"
     x:Class="SedimentCoreApp.UI.Views.MainWindow"
     x:DataType="vm:MainWindowViewModel"
-    Width="800" Height="600"
-    Title="Sediment Core Analysis">
+    x:CompileBindings="True"
+    Width="1200"
+    Height="800"
+    Title="Sediment Core Workbench"
+    SystemDecorations="None"
+    ExtendClientAreaToDecorationsHint="True"
+    ExtendClientAreaChromeHints="PreferSystemChrome"
+    Background="Transparent"
+    TransparencyLevelHint="None">
 
-    <Design.DataContext>
-        <vm:MainWindowViewModel />
-    </Design.DataContext>
+    <Window.Styles>
+        <!-- Title bar buttons -->
+        <Style Selector="Button.titleBarButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
 
-    <Grid>
-        <TextBlock Text="Hello, Avalonia!"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontSize="24" />
-    </Grid>
+        <Style Selector="Button.titleBarButton:pointerover">
+            <Setter Property="Background" Value="#434343"/>
+        </Style>
+
+        <Style Selector="Button.titleBarButton:pressed">
+            <Setter Property="Background" Value="#545454"/>
+        </Style>
+
+        <!-- Close button -->
+        <Style Selector="Button.titleBarButton.closeButton:pointerover">
+            <Setter Property="Background" Value="#C0392B"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.titleBarButton.closeButton:pressed">
+            <Setter Property="Background" Value="#922B21"/>
+        </Style>
+
+        <!-- Windowed: rounded + subtle border (Word-like) -->
+        <Style Selector="Window[WindowState=Normal] > Border#WindowFrameBorder">
+            <Setter Property="CornerRadius" Value="8,8,0,0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#33000000"/>
+        </Style>
+
+        <!-- Maximised: no rounding, no border -->
+        <Style Selector="Window[WindowState=Maximized] > Border#WindowFrameBorder">
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <!-- Header toolbar buttons -->
+        <Style Selector="Button.headerButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        
+        <Style Selector="Button.headerButton:not(.active):pointerover">
+            <Setter Property="Background" Value="#99FFFFFF"/>
+        </Style>
+        
+        <Style Selector="Button.headerButton.active">
+            <Setter Property="Background" Value="#FFFFFFFF"/>
+            <Setter Property="Foreground" Value="Black"/>
+        </Style>
+        
+        <!-- Disable pointer events on active button content to prevent hover -->
+        <Style Selector="Button.headerButton.active /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
+        
+        <Style Selector="Button.headerButton:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#FFFFFFFF"/>
+        </Style>
+        
+        <!-- Menu bar buttons -->
+        <Style Selector="Button.menuButton">
+            <Setter Property="Background" Value="#E0E0E0"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="0,0"/>
+        </Style>
+        
+        <Style Selector="Button.menuButton:pointerover">
+            <Setter Property="Background" Value="#D0D0D0"/>
+            <Setter Property="BorderBrush" Value="#999999"/>
+        </Style>
+        
+        <Style Selector="Button.menuButton:pressed">
+            <Setter Property="Background" Value="#C0C0C0"/>
+        </Style>
+    </Window.Styles>
+
+    <!-- OUTER FRAME (no local border props!) -->
+    <Border x:Name="WindowFrameBorder"
+            Background="#F0F0F0"
+            CornerRadius="8,8,0,0"
+            Padding="0">
+
+        <!-- MAIN LAYOUT -->
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="80"/>
+                <RowDefinition Height="100"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- HEADER -->
+            <Panel Grid.Row="0" Grid.ColumnSpan="3" PointerPressed="TitleBar_PointerPressed">
+                <!-- Solid Background -->
+                <Border Background="#7C444E" />
+                <!-- SVG Pattern with gradient fade -->
+                <Panel>
+                    <svg:Svg Path="/Assets/Images/topography.svg" 
+                             Stretch="UniformToFill" />
+                    <Panel.OpacityMask>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Color="#00000000" Offset="0"/>
+                            <GradientStop Color="#26FFFFFF" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Panel.OpacityMask>
+                </Panel>
+                <!-- Content -->
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="40"/>
+                        <RowDefinition Height="40"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal"
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                Margin="8,8,0,0">
+                        <TextBlock Text="Vis"
+                                   Foreground="White"
+                                   FontSize="14"
+                                   FontWeight="Normal"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal"
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Right">
+                        <Button Classes="titleBarButton"
+                                Content="—"
+                                Click="MinimizeButton_Click"/>
+                        <Button x:Name="MaxRestoreButton"
+                                Classes="titleBarButton"
+                                Content="□"
+                                Click="MaxRestoreButton_Click"/>
+                        <Button Classes="titleBarButton closeButton"
+                                Content="✕"
+                                Click="CloseButton_Click"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal"
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Margin="4,8,0,0"
+                                VerticalAlignment="Center"
+                                Spacing="4">
+                        <Button x:Name="FileButton" Classes="headerButton" Content="File" Width="90" Height="36" Click="ToolButton_Click"/>
+                        <Button x:Name="HomeButton" Classes="headerButton" Content="Home" Width="90" Height="36" Click="ToolButton_Click"/>
+                        <Button x:Name="AnalysisButton" Classes="headerButton" Content="Analysis" Width="90" Height="36" Click="ToolButton_Click"/>
+                        <Button x:Name="MappingButton" Classes="headerButton" Content="Mapping" Width="90" Height="36" Click="ToolButton_Click"/>
+                        <Button x:Name="ExportButton" Classes="headerButton" Content="Export" Width="90" Height="36" Click="ToolButton_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Panel>
+
+            <!-- MENU BAR -->
+            <Border Grid.Row="1" Grid.ColumnSpan="3" Background="#FFFFFF" 
+                    BorderBrush="#DDDDDD" BorderThickness="0,0,0,1">
+                <Grid x:Name="MenuBar">
+                    <!-- Default / None -->
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" 
+                                IsVisible="{Binding CurrentTool, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ActiveTool.None}}">
+                        <StackPanel.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.35"/>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.35"/>
+                            </Transitions>
+                        </StackPanel.Transitions>
+                        <StackPanel.RenderTransform>
+                            <TranslateTransform X="0"/>
+                        </StackPanel.RenderTransform>
+                        <TextBlock Text="Select a tool from the header" FontSize="14" Foreground="#999"/>
+                    </StackPanel>
+                    
+                    <!-- File Menu -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0" Spacing="12"
+                                IsVisible="{Binding CurrentTool, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ActiveTool.File}}">
+                        <StackPanel.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.35"/>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.35"/>
+                            </Transitions>
+                        </StackPanel.Transitions>
+                        <StackPanel.RenderTransform>
+                            <TranslateTransform X="0"/>
+                        </StackPanel.RenderTransform>
+                        <Button Classes="menuButton" Content="New Project" Width="110" Height="40"/>
+                        <Button Classes="menuButton" Content="Open" Width="90" Height="40"/>
+                        <Button Classes="menuButton" Content="Save" Width="90" Height="40"/>
+                        <Button Classes="menuButton" Content="Close" Width="90" Height="40"/>
+                    </StackPanel>
+                    
+                    <!-- Home Menu -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0" Spacing="12"
+                                IsVisible="{Binding CurrentTool, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ActiveTool.Home}}">
+                        <StackPanel.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.35"/>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.35"/>
+                            </Transitions>
+                        </StackPanel.Transitions>
+                        <StackPanel.RenderTransform>
+                            <TranslateTransform X="0"/>
+                        </StackPanel.RenderTransform>
+                        <Button Classes="menuButton" Content="Zoom In" Width="90" Height="40"/>
+                        <Button Classes="menuButton" Content="Zoom Out" Width="90" Height="40"/>
+                        <Button Classes="menuButton" Content="Fit to View" Width="100" Height="40"/>
+                        <Button Classes="menuButton" Content="Reset" Width="90" Height="40"/>
+                    </StackPanel>
+                    
+                    <!-- Analysis Menu -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0" Spacing="12"
+                                IsVisible="{Binding CurrentTool, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ActiveTool.Analysis}}">
+                        <StackPanel.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.35"/>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.35"/>
+                            </Transitions>
+                        </StackPanel.Transitions>
+                        <StackPanel.RenderTransform>
+                            <TranslateTransform X="0"/>
+                        </StackPanel.RenderTransform>
+                        <Button Classes="menuButton" Content="Color Analysis" Width="120" Height="40"/>
+                        <Button Classes="menuButton" Content="Depth Markers" Width="120" Height="40"/>
+                        <Button Classes="menuButton" Content="Statistics" Width="100" Height="40"/>
+                    </StackPanel>
+                    
+                    <!-- Mapping Menu -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0" Spacing="12"
+                                IsVisible="{Binding CurrentTool, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ActiveTool.Mapping}}">
+                        <StackPanel.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.35"/>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.35"/>
+                            </Transitions>
+                        </StackPanel.Transitions>
+                        <StackPanel.RenderTransform>
+                            <TranslateTransform X="0"/>
+                        </StackPanel.RenderTransform>
+                        <Button Classes="menuButton" Content="Add Marker" Width="110" Height="40"/>
+                        <Button Classes="menuButton" Content="Add Region" Width="110" Height="40"/>
+                        <Button Classes="menuButton" Content="Add Note" Width="100" Height="40"/>
+                        <Button Classes="menuButton" Content="Edit" Width="90" Height="40"/>
+                    </StackPanel>
+                    
+                    <!-- Export Menu -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0" Spacing="12"
+                                IsVisible="{Binding CurrentTool, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ActiveTool.Export}}">
+                        <StackPanel.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.35"/>
+                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.35"/>
+                            </Transitions>
+                        </StackPanel.Transitions>
+                        <StackPanel.RenderTransform>
+                            <TranslateTransform X="0"/>
+                        </StackPanel.RenderTransform>
+                        <Button Classes="menuButton" Content="Export CSV" Width="100" Height="40"/>
+                        <Button Classes="menuButton" Content="Export Image" Width="110" Height="40"/>
+                        <Button Classes="menuButton" Content="Export Report" Width="120" Height="40"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- LEFT PANEL -->
+            <Border Grid.Row="2" Grid.Column="0" Background="#F0F0F0">
+                <Border Background="#FFFFFF"
+                        BorderBrush="#DDDDDD"
+                        BorderThickness="1"
+                        Margin="8,8,4,8"
+                        CornerRadius="1">
+                    <TextBlock Text="Left panel"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"/>
+                </Border>
+            </Border>
+
+            <!-- CENTRE PANEL -->
+            <Border Grid.Row="2" Grid.Column="1" Background="#F0F0F0">
+                <Border Background="#FFFFFF"
+                        BorderBrush="#DDDDDD"
+                        BorderThickness="1"
+                        Margin="4,8,4,8"
+                        CornerRadius="1">
+                    <TextBlock Text="Main workspace"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"/>
+                </Border>
+            </Border>
+
+            <!-- RIGHT PANEL -->
+            <Border Grid.Row="2" Grid.Column="2" Background="#F0F0F0">
+                <Border Background="#FFFFFF"
+                        BorderBrush="#DDDDDD"
+                        BorderThickness="1"
+                        Margin="4,8,8,8"
+                        CornerRadius="1">
+                    <TextBlock Text="Right panel"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"/>
+                </Border>
+            </Border>
+
+            <!-- STATUS BAR -->
+            <Border Grid.Row="3" Grid.ColumnSpan="3" Background="#FFFFFFFF" 
+                    BoxShadow="0 -1 3 0 #05000000, 0 0 0 1 #261B1F23">
+                <TextBlock Text="Status bar"
+                           Foreground="White"
+                           Margin="2"/>
+            </Border>
+        </Grid>
+    </Border>
 </Window>

@@ -4,8 +4,26 @@ using System.Runtime.CompilerServices;
 
 namespace SedimentCoreApp.UI.ViewModels;
 
+public enum ActiveTool
+{
+    None,
+    File,
+    Home,
+    Analysis,
+    Mapping,
+    Export
+}
+
 public class MainWindowViewModel : INotifyPropertyChanged
 {
+    private ActiveTool _currentTool = ActiveTool.Home;
+
+    public ActiveTool CurrentTool
+    {
+        get => _currentTool;
+        set => SetField(ref _currentTool, value);
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
