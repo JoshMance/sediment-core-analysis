@@ -23,4 +23,9 @@
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SedimentCore.Domain\SedimentCore.Domain.csproj" />
+    <ProjectReference Include="..\SedimentCore.Analysis\SedimentCore.Analysis.csproj" />
+  </ItemGroup>
 </Project>

@@ -1,93 +1,87 @@
 # Sediment Core Analysis Toolkit
 
-Open-source software for analysing sediment core images with a focus on colour metrics and geochemical interpretation.  
-Tools include core extraction, colour-space analysis (RGB, CIELAB, Munsell), measurement utilities, and geological annotation.  
-Developed as a continuation of the original Sedivis project.
+Open-source software for analysing sediment core images with an emphasis on colour metrics, depth-based profiles, and geochemical interpretation.  
+Tools include core extraction, colour-space analysis (RGB, CIELAB, Munsell), depth and measurement utilities, and geological annotation.  
+
+Originally developed as part of the Sedivis project and now redesigned with a more modular architecture.
 
 ---
 
 ## Features
 
-- Core extraction from scanned or photographed images  
-- Colour-space analysis (RGB, CIELAB, Munsell)  
-- Munsell calibration workflows  
+- Core extraction from scanned or photographed imagery  
+- Colour-space transformations and colour metric reporting  
+- Munsell calibration workflow  
 - Depth and distance measurement tools  
-- Geological and lithology annotation  
-- Export of colour and annotation data (CSV and related formats)
+- Geological and lithology annotation overlays  
+- Export of data for further geochemical and statistical analysis  
 
 ---
 
 ## Status
 
 **Early development.**  
-Architecture, APIs, and UI components may change as the project evolves.
-
----
-
-## Project Goals
-
-- Provide a reproducible, science-focused workflow for sediment core analysis  
-- Integrate colour metrics with geochemical interpretation  
-- Keep UI and analysis logic clearly separated  
-- Support scripting and extensible analysis pipelines  
-
----
-
-## Installation
-
-### Prerequisites
-
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) or later
-
-### Build from Source
-
-```bash
-git clone https://github.com/JoshMance/sediment-core-analysis.git
-cd sediment-core-analysis
-dotnet build SedimentCoreApp.sln
-```
-
-### Run the Application
-
-```bash
-dotnet run --project SedimentCoreApp.UI
-```
+User interface, APIs, and workflows are expected to evolve as features are stabilised.
 
 ---
 
 ## Project Structure
 
-```plaintext
-SedimentCoreApp.UI/
-  ├── App.axaml              # Application entry and styling
-  ├── App.axaml.cs
-  ├── Program.cs             # Application startup
-  ├── Views/                 # XAML views and code-behind
-  │   ├── MainWindow.axaml
-  │   ├── CoreImageView.axaml
-  │   └── SidebarView.axaml
-  ├── ViewModels/            # MVVM view models
-  │   ├── MainWindowViewModel.cs
-  │   ├── CoreImageViewModel.cs
-  │   └── SidebarViewModel.cs
-  └── Assets/                # Images, styles, and resources
-      ├── Images/
-      └── Styles/
-```
+This repository uses a layered design to cleanly separate scientific logic, domain modelling, and desktop UI:
 
-The project follows the MVVM (Model-View-ViewModel) architectural pattern for maintainability and testability.
+sediment-core-analysis/
+├─ src/
+│  ├─ SedimentCore.Domain/        → core scientific data models
+│  ├─ SedimentCore.Analysis/      → numerical + colour analysis logic
+│  └─ SedimentCoreApp.UI/         → Avalonia desktop application
+├─ docs/
+│  ├─ architecture/               → developer documentation
+│  └─ guides/                     → end-user guidance
+└─ science/                       → scientific write-ups and references
+
+Layering principle:
+
+- Domain describes the world (POCOs for cores, profiles, units)
+- Analysis explains it (FFT, PCA, colour conversions, stats)
+- UI presents it (Avalonia views + MVVM)
+- Docs and science justify it (software rationale + scientific context)
+
+---
+
+## Installation
+
+### Requirements
+
+- .NET 9.0 SDK or later
+
+### Build
+
+git clone <https://github.com/JoshMance/sediment-core-analysis.git>  
+cd sediment-core-analysis  
+dotnet build SedimentCoreApp.sln  
+
+### Run
+
+dotnet run --project src/SedimentCoreApp.UI
 
 ---
 
 ## Usage
 
-Documentation and examples will be added as components become available.
+Documentation, examples, and analysis workflows will be added as the tool matures.  
+Developer architecture notes will appear in docs/architecture and scientific methods will be documented under science.
+
+---
+
+## Contributing
+
+Contributions are welcome once the architectural foundations are complete. Until then, the focus is on establishing a stable API and reproducible analysis pipeline.
 
 ---
 
 ## Acknowledgements
 
-Developed as a continuation of the original Sedivis project created collaboratively by the commissioning researcher and the student development team.
+This project builds on the original Sedivis work created collaboratively by the commissioning researcher and the student development team.
 
 ---
 
