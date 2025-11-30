@@ -106,11 +106,11 @@ public partial class MainWindow : Window
             if (child is StackPanel stackPanel && stackPanel.IsVisible)
             {
                 // Set starting opacity and position
-                stackPanel.Opacity = 0.3;
+                stackPanel.Opacity = 0.2;
 
                 if (stackPanel.RenderTransform is Avalonia.Media.TranslateTransform transform)
                 {
-                    transform.X = -10;
+                    transform.X = -8;
 
                     // Small delay to ensure the transform is applied
                     await System.Threading.Tasks.Task.Delay(10);
