@@ -16,8 +16,8 @@ RIBBON_STYLE = """
     }
     QTabBar::tab {
         color: white;
-        border-top-left-radius: 0px;
-        border-top-right-radius: 0px;
+        border-top-left-radius: 2px;
+        border-top-right-radius: px;
         padding: 5px 24px;
         margin-top: 5px;
         margin-left: 5px;
@@ -27,14 +27,14 @@ RIBBON_STYLE = """
     QTabBar::tab:selected {
         background: white;
         color: black;
-        border-top-left-radius: 0px;
-        border-top-right-radius: 0px;
+        border-top-left-radius: 2px;
+        border-top-right-radius: 2px;
         border-bottom: 1px solid white;
     }
     QTabBar::tab:hover:!selected {
         background: #8E5560;
-        border-top-left-radius: 0px;
-        border-top-right-radius: 0px;
+        border-top-left-radius: 2px;
+        border-top-right-radius: 2px;
     }
     QPushButton {
         background: #f8f8f8;
