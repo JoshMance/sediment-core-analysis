@@ -1,0 +1,28 @@
+[project]
+name = "sediment-core-analysis"
+version = "0.1.0"
+description = "Desktop application for analyzing sediment core images"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyqt6>=6.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "black>=24.0.0",
+    "ruff>=0.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']

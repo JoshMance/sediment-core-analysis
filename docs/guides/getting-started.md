@@ -2,15 +2,9 @@
 
 ## Introduction
 
-This guide is for developers, contributors, and final-year students who want to set up a local development environment for the **Sediment Core Analysis** project.
+This guide is for developers, contributors, and students who want to set up a local development environment for the **Sediment Core Analysis** project.
 
-The main desktop application is an Avalonia-based UI project located at `src/SedimentCoreApp.UI`. The repository follows a clean, layered architecture:
-
-- **Domain** layer – core scientific data models (POCOs)
-- **Analysis** layer – numerical algorithms and scientific computation
-- **UI** layer – Avalonia desktop application for visualization and interaction
-
-You don't need prior Avalonia experience to get started, this guide will walk you through everything step by step.
+The main desktop application is a PyQt6-based GUI located at `src/main.py`. The project uses Python for scientific computation, image processing, and UI.
 
 ---
 
@@ -20,32 +14,31 @@ Before you begin, ensure you have the following tools installed:
 
 ### Required Tools
 
-- **[.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)** or later
-  - Verify installation: `dotnet --version`
-  - Should show version 9.0.x or higher
+- **Python 3.10+**
+  - Download from [python.org](https://www.python.org/downloads/)
+  - Verify installation: `python --version`
+  
+- **[uv](https://docs.astral.sh/uv/)** - Fast Python package manager
+  - Windows: `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
+  - Linux/Mac: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+  - Verify: `uv --version`
 
 - **Git** for cloning the repository
   - Download from [git-scm.com](https://git-scm.com/)
 
 ### Recommended IDE
 
-Choose one of the following:
+- **[Visual Studio Code](https://code.visualstudio.com/)**
+  - Install the **Python** extension
+  - Install the **Pylance** extension for better type checking
 
-- **[Visual Studio Code](https://code.visualstudio.com/)** (lightweight, cross-platform)
-  - Install the **C# Dev Kit** extension
-  - Install the **Avalonia for VSCode** extension (optional but helpful for XAML editing)
-
-- **[JetBrains Rider](https://www.jetbrains.com/rider/)** (full-featured, excellent Avalonia support)
-  - Built-in Avalonia XAML previewer
-  - Free for students via [JetBrains Education](https://www.jetbrains.com/community/education/)
-
-- **[Visual Studio 2022](https://visualstudio.microsoft.com/)** (Windows only)
-  - Install the **.NET desktop development** workload
-  - Install the **Avalonia for Visual Studio** extension from Extensions → Manage Extensions
+- **[PyCharm](https://www.jetbrains.com/pycharm/)** (Community or Professional)
+  - Built-in Python support
+  - Free Community edition or Professional free for students
 
 ### Supported Platforms
 
-The Avalonia UI framework supports:
+PyQt6 supports:
 
 - ✅ **Windows** 10/11
 - ✅ **macOS** 10.15+

@@ -27,20 +27,15 @@ Originally developed as part of the Sedivis project and now being rebuilt with P
 ## Quick Start
 
 ```bash
-# Create virtual environment
-python -m venv venv
+# Install uv (if not already installed)
+# Windows: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+# Linux/Mac: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Activate (Windows)
-venv\Scripts\activate
-
-# Activate (Linux/Mac)
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
+# Sync dependencies
+uv sync
 
 # Run application
-python src/main.py
+uv run python src/main.py
 ```
 
 ---
@@ -55,7 +50,7 @@ sediment-core-analysis/
 │  ├─ architecture/               → developer documentation
 │  └─ guides/                     → end-user guidance
 ├─ science/                       → scientific write-ups and references
-└─ requirements.txt               → Python dependencies
+└─ pyproject.toml                 → Python project config & dependencies
 ```
 
 ---
