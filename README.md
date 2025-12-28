@@ -75,7 +75,7 @@ Developer architecture notes will appear in docs/architecture and scientific met
 
 ## Contributing
 
-Contributions are welcome once the architectural foundations are complete. Until then, the focus is on establishing a stable API and reproducible analysis pipeline.
+Contributions are welcome once the architectural foundations are complete. Until then, the focus is on establishing a stable MVP with a reproducible analysis pipeline.
 
 ---
 

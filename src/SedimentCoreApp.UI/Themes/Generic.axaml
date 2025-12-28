@@ -1,0 +1,43 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SedimentCoreApp.UI.Controls">
+
+    <Style Selector="controls|SidePanel">
+        <Setter Property="Padding" Value="8" />
+
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{DynamicResource BackgroundBrush}" Padding="8">
+                    <DockPanel>
+
+                        <!-- Title bar -->
+                        <Border
+                            DockPanel.Dock="Top"
+                            Padding="8,4"
+                            Background="{DynamicResource SecondaryBrush}">
+
+                            <TextBlock
+                                Text="{TemplateBinding Title}"
+                                FontWeight="SemiBold"
+                                FontSize="12"
+                                Foreground="#333333" />
+                        </Border>
+
+                        <!-- Content -->
+                        <Border
+                            Background="{DynamicResource ForegroundBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="1">
+                            <ContentPresenter
+                                Margin="{TemplateBinding Padding}"
+                                Content="{TemplateBinding Content}" />
+                        </Border>
+
+                    </DockPanel>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+</Styles>

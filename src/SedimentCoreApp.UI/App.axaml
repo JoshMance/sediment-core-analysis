@@ -5,7 +5,17 @@
     RequestedThemeVariant="Default">
     <!--  "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options.  -->
 
+    <Application.Resources>
+        <!--  Color Palette  -->
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#7C444E" />
+        <SolidColorBrush x:Key="BackgroundBrush" Color="#F0F0F0" />
+        <SolidColorBrush x:Key="ForegroundBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="BorderBrush" Color="#DDDDDD" />
+        <SolidColorBrush x:Key="SecondaryBrush" Color="#E0E0E0" />
+    </Application.Resources>
+
     <Application.Styles>
         <SimpleTheme />
+        <StyleInclude Source="/Themes/Generic.axaml" />
     </Application.Styles>
 </Application>
