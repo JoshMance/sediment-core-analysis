@@ -3,11 +3,17 @@
 Open-source software for analysing sediment core images with an emphasis on colour metrics, depth-based profiles, and geochemical interpretation.  
 Tools include core extraction, colour-space analysis (RGB, CIELAB, Munsell), depth and measurement utilities, and geological annotation.  
 
-Originally developed as part of the Sedivis project and now redesigned with a more modular architecture.
+Originally developed as part of the Sedivis project and now being rebuilt with Python + PyQt6.
 
 ---
 
-## Features
+## Technology Stack
+
+**Python + PyQt6** - Modern cross-platform GUI framework
+
+---
+
+## Features (Planned)
 
 - Core extraction from scanned or photographed imagery  
 - Colour-space transformations and colour metric reporting  
@@ -18,33 +24,46 @@ Originally developed as part of the Sedivis project and now redesigned with a mo
 
 ---
 
-## Status
+## Quick Start
 
-**Early development.**  
-User interface, APIs, and workflows are expected to evolve as features are stabilised.
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate (Windows)
+venv\Scripts\activate
+
+# Activate (Linux/Mac)
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run application
+python src/main.py
+```
 
 ---
 
 ## Project Structure
 
-This repository uses a layered design to cleanly separate scientific logic, domain modelling, and desktop UI:
-
+```
 sediment-core-analysis/
 ├─ src/
-│  ├─ SedimentCore.Domain/        → core scientific data models
-│  ├─ SedimentCore.Analysis/      → numerical + colour analysis logic
-│  └─ SedimentCoreApp.UI/         → Avalonia desktop application
+│  └─ main.py                     → application entry point
 ├─ docs/
 │  ├─ architecture/               → developer documentation
 │  └─ guides/                     → end-user guidance
-└─ science/                       → scientific write-ups and references
+├─ science/                       → scientific write-ups and references
+└─ requirements.txt               → Python dependencies
+```
 
-Layering principle:
+---
 
-- Domain describes the world (POCOs for cores, profiles, units)
-- Analysis explains it (FFT, PCA, colour conversions, stats)
-- UI presents it (Avalonia views + MVVM)
-- Docs and science justify it (software rationale + scientific context)
+## Branch Structure
+
+- **dev** - Active Python/PyQt6 development (current)
+- **dev-dotnet** - Archived .NET/Avalonia implementation
 
 ---
 

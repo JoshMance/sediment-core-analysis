@@ -1,37 +1,47 @@
 ###############################
-# .NET / C# / Avalonia
+# Python
 ###############################
 
-# Build outputs
-bin/
-obj/
-out/
-**/bin/
-**/obj/
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 
-# Avalonia asset cache
-*.axaml.cs~
-*.axaml.ba.cs
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# PyQt
+*.ui~
 
 # IDE folders
 .vs/
 .vscode/
 .idea/
-*.sln.iml
-
-# User-specific files
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-
-# NuGet / tooling
-*.nupkg
-packages/
-.nuget/
-artifacts/
-project.lock.json
-project.fragment.lock.json
+*.swp
+*.swo
 
 # Logs & temp files
 *.log
@@ -45,7 +55,7 @@ project.fragment.lock.json
 # Cache
 *.cache
 *.db
-*.config
+.pytest_cache/
 
 ###############################
 # Scientific data outputs

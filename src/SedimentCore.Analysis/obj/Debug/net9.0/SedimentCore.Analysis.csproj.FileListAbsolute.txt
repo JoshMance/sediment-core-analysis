@@ -1,0 +1,16 @@
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\bin\Debug\net9.0\SedimentCore.Analysis.deps.json
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\bin\Debug\net9.0\SedimentCore.Analysis.dll
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\bin\Debug\net9.0\SedimentCore.Analysis.pdb
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\bin\Debug\net9.0\SedimentCore.Domain.dll
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\bin\Debug\net9.0\SedimentCore.Domain.pdb
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\SedimentCore.Analysis.csproj.AssemblyReference.cache
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\SedimentCore.Analysis.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\SedimentCore.Analysis.AssemblyInfoInputs.cache
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\SedimentCore.Analysis.AssemblyInfo.cs
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\SedimentCore.Analysis.csproj.CoreCompileInputs.cache
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\SedimentCore.Analysis.sourcelink.json
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\Sediment.9B697DA6.Up2Date
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\SedimentCore.Analysis.dll
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\refint\SedimentCore.Analysis.dll
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\SedimentCore.Analysis.pdb
+C:\Users\joshj\Documents\GitHub\sediment-core-analysis\src\SedimentCore.Analysis\obj\Debug\net9.0\ref\SedimentCore.Analysis.dll
