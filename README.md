@@ -62,24 +62,6 @@ sediment-core-analysis/
 
 ---
 
-## Installation
-
-### Requirements
-
-- .NET 9.0 SDK or later
-
-### Build
-
-git clone <https://github.com/JoshMance/sediment-core-analysis.git>  
-cd sediment-core-analysis  
-dotnet build SedimentCoreApp.sln  
-
-### Run
-
-dotnet run --project src/SedimentCoreApp.UI
-
----
-
 ## Usage
 
 Documentation, examples, and analysis workflows will be added as the tool matures.  
