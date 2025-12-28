@@ -543,57 +543,51 @@
                 Grid.Column="1"
                 Background="{StaticResource BackgroundBrush}">
                 <TabControl
+                    x:Name="MainTabControl"
                     Margin="0,8,0,8"
                     Background="{StaticResource BackgroundBrush}"
+                    ItemsSource="{Binding Tabs}"
                     TabStripPlacement="Top">
-                    <TabItem Header="Tab 1 aaaaaaaaaaa">
-                        <Border
-                            Background="{StaticResource ForegroundBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="1">
-                            <Panel Background="{StaticResource ForegroundBrush}">
-                                <TextBlock
-                                    HorizontalAlignment="Center"
+                    <TabControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding Header}" VerticalAlignment="Center" />
+                                <Button
+                                    x:Name="TabCloseBtn"
+                                    Width="16"
+                                    Height="16"
+                                    Padding="0"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Content="✕"
+                                    FontSize="10"
+                                    Foreground="#666666"
                                     VerticalAlignment="Center"
-                                    FontSize="16"
-                                    Foreground="#999999"
-                                    Text="Placeholder content for Tab 1" />
-                            </Panel>
-                        </Border>
-                    </TabItem>
-                    <TabItem Header="Tab 2">
-                        <Border
-                            Background="{StaticResource ForegroundBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="1">
-                            <Panel Background="{StaticResource ForegroundBrush}">
-                                <TextBlock
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontSize="16"
-                                    Foreground="#999999"
-                                    Text="Placeholder content for Tab 2" />
-                            </Panel>
-                        </Border>
-                    </TabItem>
-                    <TabItem Header="Tab 3">
-                        <Border
-                            Background="{StaticResource ForegroundBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="1">
-                            <Panel Background="{StaticResource ForegroundBrush}">
-                                <TextBlock
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontSize="16"
-                                    Foreground="#999999"
-                                    Text="Placeholder content for Tab 3" />
-                            </Panel>
-                        </Border>
-                    </TabItem>
+                                    VerticalContentAlignment="Center"
+                                    HorizontalContentAlignment="Center"
+                                    Click="TabCloseButton_Click"
+                                    Tag="{Binding}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </TabControl.ItemTemplate>
+                    <TabControl.ContentTemplate>
+                        <DataTemplate>
+                            <Border
+                                Background="{StaticResource ForegroundBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="1">
+                                <Panel Background="{StaticResource ForegroundBrush}">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="16"
+                                        Foreground="#999999"
+                                        Text="{Binding Content}" />
+                                </Panel>
+                            </Border>
+                        </DataTemplate>
+                    </TabControl.ContentTemplate>
                 </TabControl>
             </Border>
 

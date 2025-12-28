@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using SedimentCoreApp.UI.ViewModels;
 
 namespace SedimentCoreApp.UI.Views;
@@ -120,6 +121,18 @@ public partial class MainWindow : Window
                     transform.X = 0;
                 }
             }
+        }
+    }
+
+    private void TabCloseButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button) return;
+        if (button.Tag is not TabItemViewModel tabViewModel) return;
+
+        // Get the ViewModel and remove the tab
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.Tabs.Remove(tabViewModel);
         }
     }
 }

@@ -21,6 +21,12 @@ public class MenuButton
     public string IconPath { get; set; } = "/Assets/Icons/placeholder.svg";
 }
 
+public class TabItemViewModel
+{
+    public string Header { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+}
+
 public class ToolMenu
 {
     public ActiveTool Tool { get; set; }
@@ -38,6 +44,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     }
 
     public ObservableCollection<ToolMenu> ToolMenus { get; }
+    public ObservableCollection<TabItemViewModel> Tabs { get; }
 
     public MainWindowViewModel()
     {
@@ -96,6 +103,13 @@ public class MainWindowViewModel : INotifyPropertyChanged
                     new MenuButton { Label = "Export Report" }
                 }
             }
+        };
+
+        Tabs = new ObservableCollection<TabItemViewModel>
+        {
+            new TabItemViewModel { Header = "Tab 1", Content = "Placeholder content for Tab 1" },
+            new TabItemViewModel { Header = "Tab 2", Content = "Placeholder content for Tab 2" },
+            new TabItemViewModel { Header = "Tab 3", Content = "Placeholder content for Tab 3" }
         };
     }
 
