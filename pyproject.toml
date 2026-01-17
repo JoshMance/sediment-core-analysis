@@ -5,7 +5,11 @@ description = "Desktop application for analyzing sediment core images"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "pyqt6>=6.8.0",
+    "pyside6>=6.8.0",
+    "matplotlib>=3.8.0",
+    "scipy>=1.11.0",
+    "imageio>=2.31.0",
+    "pooch>=1.7.0",
 ]
 
 [project.optional-dependencies]

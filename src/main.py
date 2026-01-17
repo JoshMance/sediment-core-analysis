@@ -3,11 +3,11 @@ Sediment Core Analysis Application
 Desktop tool for analyzing sediment core imagery
 """
 import sys
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication, QMainWindow, QLabel, QVBoxLayout, QHBoxLayout,
     QWidget, QTabWidget, QPushButton
 )
-from PyQt6.QtCore import Qt
+from PySide6.QtCore import Qt
 
 from styles import RIBBON_STYLE, RIBBON_TAB_STYLE, WORKSPACE_STYLE, PLACEHOLDER_STYLE
 
@@ -94,7 +94,7 @@ class MainWindow(QMainWindow):
         
         # Set maroon background for the tab bar area
         palette = ribbon.palette()
-        from PyQt6.QtGui import QColor
+        from PySide6.QtGui import QColor
         palette.setColor(ribbon.backgroundRole(), QColor("#7C444E"))
         ribbon.setAutoFillBackground(True)
         ribbon.setPalette(palette)
