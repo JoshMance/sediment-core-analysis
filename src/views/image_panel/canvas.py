@@ -26,6 +26,8 @@ class ImageCanvas(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._pixmap = None
+        self._rotated_pixmap_cache = None  # Cache for rotated pixmap
+        self._cached_rotation = None  # Track rotation for cache invalidation
         
         # Zoom and pan state
         self._zoom = 1.0
@@ -59,6 +61,8 @@ class ImageCanvas(QWidget):
     def set_pixmap(self, pixmap: QPixmap | None) -> None:
         """Set the pixmap to display and reset view transforms."""
         self._pixmap = pixmap
+        self._rotated_pixmap_cache = None  # Invalidate cache
+        self._cached_rotation = None
         self._zoom = 1.0
         self._pan_x = 0.0
         self._pan_y = 0.0
@@ -68,6 +72,8 @@ class ImageCanvas(QWidget):
     def set_rotation(self, angle: float) -> None:
         """Set rotation angle in degrees (0-360)."""
         self._rotation = angle % 360
+        self._rotated_pixmap_cache = None  # Invalidate cache when rotation changes
+        self._cached_rotation = None
         self.update()
 
     def get_rotation(self) -> float:
@@ -116,26 +122,29 @@ class ImageCanvas(QWidget):
             rect = self._selection_rect.toRect()
             return self._pixmap.copy(rect)
         
-        # Create a rotated version of the pixmap
-        from PySide6.QtGui import QTransform
-        transform = QTransform()
-        transform.translate(self._pixmap.width() / 2, self._pixmap.height() / 2)
-        transform.rotate(self._rotation)
-        transform.translate(-self._pixmap.width() / 2, -self._pixmap.height() / 2)
-        
-        rotated_pixmap = self._pixmap.transformed(transform, Qt.SmoothTransformation)
+        # Use cached rotated pixmap if available
+        if self._rotated_pixmap_cache is None or self._cached_rotation != self._rotation:
+            # Create a rotated version of the pixmap
+            from PySide6.QtGui import QTransform
+            transform = QTransform()
+            transform.translate(self._pixmap.width() / 2, self._pixmap.height() / 2)
+            transform.rotate(self._rotation)
+            transform.translate(-self._pixmap.width() / 2, -self._pixmap.height() / 2)
+            
+            self._rotated_pixmap_cache = self._pixmap.transformed(transform, Qt.SmoothTransformation)
+            self._cached_rotation = self._rotation
         
         # Calculate offset between original and rotated pixmap centers
-        offset_x = (rotated_pixmap.width() - self._pixmap.width()) / 2
-        offset_y = (rotated_pixmap.height() - self._pixmap.height()) / 2
+        offset_x = (self._rotated_pixmap_cache.width() - self._pixmap.width()) / 2
+        offset_y = (self._rotated_pixmap_cache.height() - self._pixmap.height()) / 2
         
         # Adjust selection rect for the rotated pixmap
         adjusted_rect = self._selection_rect.translated(offset_x, offset_y).toRect()
         
         # Ensure rect is within bounds
-        adjusted_rect = adjusted_rect.intersected(rotated_pixmap.rect())
+        adjusted_rect = adjusted_rect.intersected(self._rotated_pixmap_cache.rect())
         
-        return rotated_pixmap.copy(adjusted_rect)
+        return self._rotated_pixmap_cache.copy(adjusted_rect)
 
     def get_calibration_points(self) -> tuple[QPointF, QPointF] | None:
         """Get calibration points in image coordinates."""

@@ -5,7 +5,7 @@ from PySide6.QtCore import QSize, Qt
 from .canvas import ImageCanvas, MODE_PAN, MODE_SELECT, MODE_CALIBRATE
 from .signals import ImageInteractionSignals
 
-class ImageInteractionWidget(QWidget):
+class ImagePanel(QWidget):
     """Main widget providing image display with pan/zoom interaction."""
     
     def __init__(self, parent: QWidget | None = None) -> None:

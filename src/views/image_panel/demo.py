@@ -4,7 +4,7 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication, QMainWindow
 from PySide6.QtGui import QPixmap
 
-from .widget import ImageInteractionWidget
+from .widget import ImagePanel
 
 def main():
     app = QApplication(sys.argv)
@@ -13,7 +13,7 @@ def main():
     window = QMainWindow()
 
     # Create the image interaction widget
-    widget = ImageInteractionWidget()
+    widget = ImagePanel()
     window.setCentralWidget(widget)
 
     # Load the demo image from src/resources/
