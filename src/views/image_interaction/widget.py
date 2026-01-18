@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QToolBar, QPushButton, 
-                                QLabel, QLineEdit, QSizePolicy)
+                                QLabel, QLineEdit, QSizePolicy, QSlider)
 from PySide6.QtGui import QPixmap, QIcon, QDoubleValidator
 from PySide6.QtCore import QSize, Qt
 from .canvas import ImageCanvas, MODE_PAN, MODE_SELECT, MODE_CALIBRATE
@@ -55,6 +55,23 @@ class ImageInteractionWidget(QWidget):
         self.zoom_out_btn = self._create_tool_button("Zoom Out", "−")
         self.zoom_out_btn.clicked.connect(self.canvas.zoom_out)
         toolbar.addWidget(self.zoom_out_btn)
+
+        toolbar.addSeparator()
+
+        # Rotation slider
+        toolbar.addWidget(QLabel("Rotate:"))
+        self.rotation_slider = QSlider(Qt.Horizontal)
+        self.rotation_slider.setRange(0, 360)
+        self.rotation_slider.setValue(0)
+        self.rotation_slider.setFixedWidth(150)
+        self.rotation_slider.setTickPosition(QSlider.TicksBelow)
+        self.rotation_slider.setTickInterval(45)
+        self.rotation_slider.valueChanged.connect(self._on_rotation_changed)
+        toolbar.addWidget(self.rotation_slider)
+        
+        self.rotation_label = QLabel("0°")
+        self.rotation_label.setFixedWidth(35)
+        toolbar.addWidget(self.rotation_label)
 
         toolbar.addSeparator()
 
@@ -158,6 +175,14 @@ class ImageInteractionWidget(QWidget):
                 int(widget_y - self.calib_input_widget.height() - 15)
             )
 
+    def _on_rotation_changed(self, angle: int) -> None:
+        """Handle rotation slider change."""
+        self.canvas.set_rotation(angle)
+        self.rotation_label.setText(f"{angle}°")
+        # Update calibration input position if visible
+        if self.calib_input_widget.isVisible():
+            self._update_calibration_input_position()
+
     def _on_select_clicked(self) -> None:
         """Handle Select button toggle."""
         if self.select_btn.isChecked():
@@ -209,6 +234,9 @@ class ImageInteractionWidget(QWidget):
             # Extract and show preview
             pixmap = self.canvas.get_selection_pixmap()
             if pixmap:
+                # Print selection size
+                print(f"Selected region: {pixmap.width()} x {pixmap.height()} pixels")
+                
                 # Scale pixmap to fit preview while maintaining aspect ratio
                 scaled_pixmap = pixmap.scaled(
                     self.preview_label.size(),

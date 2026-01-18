@@ -31,6 +31,7 @@ class ImageCanvas(QWidget):
         self._zoom = 1.0
         self._pan_x = 0.0
         self._pan_y = 0.0
+        self._rotation = 0.0  # degrees
         
         # Interaction mode
         self._mode = MODE_PAN
@@ -61,7 +62,17 @@ class ImageCanvas(QWidget):
         self._zoom = 1.0
         self._pan_x = 0.0
         self._pan_y = 0.0
+        self._rotation = 0.0
         self.update()
+
+    def set_rotation(self, angle: float) -> None:
+        """Set rotation angle in degrees (0-360)."""
+        self._rotation = angle % 360
+        self.update()
+
+    def get_rotation(self) -> float:
+        """Get current rotation angle in degrees."""
+        return self._rotation
 
     def set_mode(self, mode: str) -> None:
         """Set interaction mode (pan, select, calibrate)."""
@@ -96,11 +107,35 @@ class ImageCanvas(QWidget):
         return self._selection_rect
 
     def get_selection_pixmap(self) -> QPixmap | None:
-        """Extract the selected region as a pixmap."""
+        """Extract the selected region as a pixmap from the rotated view."""
         if not self._pixmap or not self._selection_rect:
             return None
-        rect = self._selection_rect.toRect()
-        return self._pixmap.copy(rect)
+        
+        # If no rotation, simple extraction
+        if self._rotation == 0:
+            rect = self._selection_rect.toRect()
+            return self._pixmap.copy(rect)
+        
+        # Create a rotated version of the pixmap
+        from PySide6.QtGui import QTransform
+        transform = QTransform()
+        transform.translate(self._pixmap.width() / 2, self._pixmap.height() / 2)
+        transform.rotate(self._rotation)
+        transform.translate(-self._pixmap.width() / 2, -self._pixmap.height() / 2)
+        
+        rotated_pixmap = self._pixmap.transformed(transform, Qt.SmoothTransformation)
+        
+        # Calculate offset between original and rotated pixmap centers
+        offset_x = (rotated_pixmap.width() - self._pixmap.width()) / 2
+        offset_y = (rotated_pixmap.height() - self._pixmap.height()) / 2
+        
+        # Adjust selection rect for the rotated pixmap
+        adjusted_rect = self._selection_rect.translated(offset_x, offset_y).toRect()
+        
+        # Ensure rect is within bounds
+        adjusted_rect = adjusted_rect.intersected(rotated_pixmap.rect())
+        
+        return rotated_pixmap.copy(adjusted_rect)
 
     def get_calibration_points(self) -> tuple[QPointF, QPointF] | None:
         """Get calibration points in image coordinates."""
@@ -167,19 +202,38 @@ class ImageCanvas(QWidget):
             painter.translate(self._pan_x, self._pan_y)
             painter.scale(self._zoom, self._zoom)
             
-            # Draw pixmap centered in viewport
+            # Calculate image position (centered in viewport)
             img_x = (self.width() / self._zoom - self._pixmap.width()) / 2
             img_y = (self.height() / self._zoom - self._pixmap.height()) / 2
+            
+            # Save state before rotation for overlays
+            painter.save()
+            
+            # Apply rotation around image center (for image only)
+            if self._rotation != 0:
+                center_x = img_x + self._pixmap.width() / 2
+                center_y = img_y + self._pixmap.height() / 2
+                painter.translate(center_x, center_y)
+                painter.rotate(self._rotation)
+                painter.translate(-center_x, -center_y)
+            
+            # Draw pixmap
             painter.drawPixmap(int(img_x), int(img_y), self._pixmap)
             
-            # Draw overlays (also in image coordinate space)
-            painter.translate(img_x, img_y)
-            
-            if self._selection_visible and self._selection_rect:
-                self._draw_selection(painter)
-            
+            # Draw calibration in rotated space (follows image)
             if self._calib_visible and self._calib_point1 and self._calib_point2:
+                painter.translate(img_x, img_y)
                 self._draw_calibration(painter)
+                painter.translate(-img_x, -img_y)
+            
+            # Restore to pre-rotation state for selection
+            painter.restore()
+            
+            # Draw selection in screen-space (doesn't rotate)
+            if self._selection_visible and self._selection_rect:
+                painter.translate(img_x, img_y)
+                self._draw_selection(painter)
+                painter.translate(-img_x, -img_y)
 
     def _draw_selection(self, painter: QPainter) -> None:
         """Draw selection rectangle with resize handles."""
@@ -244,13 +298,63 @@ class ImageCanvas(QWidget):
         painter.drawEllipse(self._calib_point2, handle_size / 2, handle_size / 2)
 
     def _widget_to_image(self, widget_pos: QPoint) -> QPointF:
-        """Convert widget coordinates to image coordinates."""
+        """Convert widget coordinates to image coordinates (without rotation)."""
         if not self._pixmap:
             return QPointF()
-        img_x = (self.width() / self._zoom - self._pixmap.width()) / 2
-        img_y = (self.height() / self._zoom - self._pixmap.height()) / 2
-        image_x = (widget_pos.x() - self._pan_x) / self._zoom - img_x
-        image_y = (widget_pos.y() - self._pan_y) / self._zoom - img_y
+        
+        # Calculate image offset (centered in viewport)
+        img_offset_x = (self.width() / self._zoom - self._pixmap.width()) / 2
+        img_offset_y = (self.height() / self._zoom - self._pixmap.height()) / 2
+        
+        # Remove pan and zoom to get to scene coordinates
+        scene_x = (widget_pos.x() - self._pan_x) / self._zoom
+        scene_y = (widget_pos.y() - self._pan_y) / self._zoom
+        
+        # Remove image offset to get coordinates relative to image top-left
+        image_x = scene_x - img_offset_x
+        image_y = scene_y - img_offset_y
+        
+        return QPointF(image_x, image_y)
+
+    def _widget_to_rotated_image(self, widget_pos: QPoint) -> QPointF:
+        """Convert widget coordinates to rotated image coordinates (for calibration)."""
+        if not self._pixmap:
+            return QPointF()
+        
+        # Calculate image offset (centered in viewport)
+        img_offset_x = (self.width() / self._zoom - self._pixmap.width()) / 2
+        img_offset_y = (self.height() / self._zoom - self._pixmap.height()) / 2
+        
+        # Remove pan and zoom
+        scene_x = (widget_pos.x() - self._pan_x) / self._zoom
+        scene_y = (widget_pos.y() - self._pan_y) / self._zoom
+        
+        # Remove image offset
+        rel_x = scene_x - img_offset_x
+        rel_y = scene_y - img_offset_y
+        
+        # Apply inverse rotation around image center
+        if self._rotation != 0:
+            import math
+            center_x = self._pixmap.width() / 2
+            center_y = self._pixmap.height() / 2
+            
+            dx = rel_x - center_x
+            dy = rel_y - center_y
+            
+            angle_rad = -math.radians(self._rotation)
+            cos_a = math.cos(angle_rad)
+            sin_a = math.sin(angle_rad)
+            
+            rotated_x = dx * cos_a - dy * sin_a
+            rotated_y = dx * sin_a + dy * cos_a
+            
+            image_x = rotated_x + center_x
+            image_y = rotated_y + center_y
+        else:
+            image_x = rel_x
+            image_y = rel_y
+        
         return QPointF(image_x, image_y)
 
     def _get_selection_handles(self) -> dict[str, QRectF]:
@@ -290,10 +394,10 @@ class ImageCanvas(QWidget):
         if event.button() != Qt.LeftButton:
             return
         
-        img_pos = self._widget_to_image(event.position().toPoint())
-        
-        # Handle selection mode
+        # Handle selection mode (screen-space)
         if self._mode == MODE_SELECT and self._selection_visible and self._selection_rect:
+            img_pos = self._widget_to_image(event.position().toPoint())
+            
             # Check if clicking on a resize handle
             handles = self._get_selection_handles()
             for handle_name, handle_rect in handles.items():
@@ -310,8 +414,9 @@ class ImageCanvas(QWidget):
                 self._drag_start_rect = QRectF(self._selection_rect)
                 return
         
-        # Handle calibration mode
+        # Handle calibration mode (rotated image-space)
         if self._mode == MODE_CALIBRATE and self._calib_visible:
+            img_pos = self._widget_to_rotated_image(event.position().toPoint())
             tolerance = HIT_TOLERANCE / self._zoom
             if self._calib_point1:
                 dx1 = img_pos.x() - self._calib_point1.x()
@@ -347,8 +452,8 @@ class ImageCanvas(QWidget):
                     self._drag_start_rect.y() + delta_img.y()
                 )
             else:
-                # Resize from handle
-                self._resize_selection(self._dragging_selection, img_pos)
+                # Resize from handle using original opposite edges
+                self._resize_selection(self._dragging_selection, img_pos, self._drag_start_rect)
             
             self.selection_changed.emit(self._selection_rect)
             self.update()
@@ -356,7 +461,7 @@ class ImageCanvas(QWidget):
         
         # Handle calibration dragging
         if self._dragging_calib:
-            img_pos = self._widget_to_image(event.position().toPoint())
+            img_pos = self._widget_to_rotated_image(event.position().toPoint())
             if self._dragging_calib == 'point1':
                 self._calib_point1 = img_pos
             elif self._dragging_calib == 'point2':
@@ -377,32 +482,43 @@ class ImageCanvas(QWidget):
         # Update cursor based on hover
         self._update_cursor(event.position().toPoint())
 
-    def _resize_selection(self, handle: str, img_pos: QPointF) -> None:
+    def _resize_selection(self, handle: str, img_pos: QPointF, start_rect: QRectF) -> None:
         """Resize selection rectangle from a specific handle."""
-        rect = self._selection_rect
+        min_size = 10
         
-        if 't' in handle:
-            rect.setTop(img_pos.y())
-        if 'b' in handle:
-            rect.setBottom(img_pos.y())
-        if 'l' in handle:
-            rect.setLeft(img_pos.x())
-        if 'r' in handle:
-            rect.setRight(img_pos.x())
+        # Start with ALL original bounds
+        left = start_rect.left()
+        right = start_rect.right()
+        top = start_rect.top()
+        bottom = start_rect.bottom()
         
-        # Ensure minimum size
-        if rect.width() < 10:
-            if 'l' in handle:
-                rect.setLeft(rect.right() - 10)
-            else:
-                rect.setRight(rect.left() + 10)
-        if rect.height() < 10:
-            if 't' in handle:
-                rect.setTop(rect.bottom() - 10)
-            else:
-                rect.setBottom(rect.top() + 10)
+        # Extract just the handle name (remove 'resize_' prefix)
+        handle_name = handle.replace('resize_', '')
         
-        self._selection_rect = rect.normalized()
+        # Update ONLY the specific edges being dragged
+        if handle_name == 't':
+            top = min(img_pos.y(), bottom - min_size)
+        elif handle_name == 'b':
+            bottom = max(img_pos.y(), top + min_size)
+        elif handle_name == 'l':
+            left = min(img_pos.x(), right - min_size)
+        elif handle_name == 'r':
+            right = max(img_pos.x(), left + min_size)
+        elif handle_name == 'tl':
+            top = min(img_pos.y(), bottom - min_size)
+            left = min(img_pos.x(), right - min_size)
+        elif handle_name == 'tr':
+            top = min(img_pos.y(), bottom - min_size)
+            right = max(img_pos.x(), left + min_size)
+        elif handle_name == 'bl':
+            bottom = max(img_pos.y(), top + min_size)
+            left = min(img_pos.x(), right - min_size)
+        elif handle_name == 'br':
+            bottom = max(img_pos.y(), top + min_size)
+            right = max(img_pos.x(), left + min_size)
+        
+        # Update rectangle
+        self._selection_rect.setCoords(left, top, right, bottom)
 
     def _update_cursor(self, widget_pos: QPoint) -> None:
         """Update cursor based on what's under the mouse."""
