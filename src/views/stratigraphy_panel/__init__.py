@@ -2,5 +2,13 @@
 
 from .widget import StratigraphyPanel
 from .signals import StratigraphySignals
+from .columns import BaseColumn, ImageColumn, DataColumn, ColumnProtocol
 
-__all__ = ['StratigraphyPanel', 'StratigraphySignals']
+__all__ = [
+    'StratigraphyPanel', 
+    'StratigraphySignals',
+    'BaseColumn',
+    'ImageColumn',
+    'DataColumn',
+    'ColumnProtocol'
+]

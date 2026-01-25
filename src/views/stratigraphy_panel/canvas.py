@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QPaintEvent, QPen, QFont
 from PySide6.QtCore import Qt, QRectF
-from .column import HEADER_HEIGHT, TITLE_HEIGHT
+from .columns import HEADER_HEIGHT, TITLE_HEIGHT
 
 class StratigraphyCanvas(QWidget):
     """Canvas widget for displaying stratigraphy data."""

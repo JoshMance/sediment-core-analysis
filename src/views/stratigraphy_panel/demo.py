@@ -6,9 +6,7 @@ from PySide6.QtGui import QPixmap, QImage, QColor
 from PySide6.QtCore import Qt
 
 from .widget import StratigraphyPanel
-from .column import Column
-from .image_column import ImageColumn
-from .data_column import DataColumn
+from .columns import BaseColumn, ImageColumn, DataColumn
 
 
 def extract_rgb_from_image(pixmap: QPixmap) -> tuple[list[float], list[float], list[float]]:
@@ -69,17 +67,17 @@ def main():
     
     # Create 7 columns: 1 left, Image, 3 RGB data columns, 2 right
     columns = [
-        Column("Depth", width=80),
+        BaseColumn("Depth", width=80),
         ImageColumn("Image", pixmap=core_pixmap, width=200),
         DataColumn("Red", data=r_data, min_value=0.0, max_value=1.0, width=100, color=QColor(Qt.red)),
         DataColumn("Green", data=g_data, min_value=0.0, max_value=1.0, width=100, color=QColor(Qt.green)),
         DataColumn("Blue", data=b_data, min_value=0.0, max_value=1.0, width=100, color=QColor(Qt.blue)),
-        Column("Structures", width=120),
-        Column("Description", width=150),
+        BaseColumn("Structures", width=120),
+        BaseColumn("Description", width=150),
     ]
     
-    # Set columns in canvas
-    panel.canvas.set_columns(columns)
+    # Set columns in panel
+    panel.set_columns(columns)
     
     # Window settings
     window.resize(800, 600)

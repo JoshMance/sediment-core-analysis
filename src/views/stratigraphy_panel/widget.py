@@ -12,8 +12,8 @@ class StratigraphyPanel(QWidget):
         # Signals
         self.signals = StratigraphySignals()
         
-        # Canvas
-        self.canvas = StratigraphyCanvas(self)
+        # Canvas (private)
+        self._canvas = StratigraphyCanvas(self)
         
         # Toolbar
         self.toolbar = self._create_toolbar()
@@ -22,7 +22,7 @@ class StratigraphyPanel(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.toolbar)
-        layout.addWidget(self.canvas)
+        layout.addWidget(self._canvas)
         
     def _create_toolbar(self) -> QToolBar:
         """Create toolbar with controls."""
@@ -36,3 +36,22 @@ class StratigraphyPanel(QWidget):
         toolbar.addWidget(example_btn)
         
         return toolbar
+    
+    # Public API - forward to canvas
+    
+    def add_column(self, column) -> None:
+        """Add a column to the stratigraphy display."""
+        self._canvas.add_column(column)
+    
+    def set_columns(self, columns: list) -> None:
+        """Set all columns at once."""
+        self._canvas.set_columns(columns)
+    
+    def set_title(self, title: str) -> None:
+        """Set the stratigraphy title."""
+        self._canvas.set_title(title)
+    
+    def set_depth_range(self, min_depth: float, max_depth: float) -> None:
+        """Set the depth range for the display."""
+        self._canvas.depth_range = (min_depth, max_depth)
+        self._canvas.update()
