@@ -6,7 +6,7 @@ from PySide6.QtGui import QPixmap, QImage, QColor
 from PySide6.QtCore import Qt
 
 from .widget import StratigraphyPanel
-from .columns import BaseColumn, ImageColumn, DataColumn
+from .columns import BaseColumn, ImageColumn, DataColumn, RulerColumn
 
 
 def extract_rgb_from_image(pixmap: QPixmap) -> tuple[list[float], list[float], list[float]]:
@@ -65,22 +65,24 @@ def main():
     
     # Create image column that defines the scale
     # Let's say this core represents 0-100 cm of depth
-    image_col = ImageColumn("Image", pixmap=core_pixmap, width=200)
+    image_col = ImageColumn("Image", pixmap=core_pixmap, width=80)
     image_col.set_depth_range(0.0, 100.0)  # Image represents 0-100cm depth
     
     # Extract RGB data from the ROTATED pixmap that's actually displayed
     if image_col.get_pixmap():
         r_data, g_data, b_data = extract_rgb_from_image(image_col.get_pixmap())
     
-    # Create 7 columns: 1 left, Image, 3 RGB data columns, 2 right
+    # Create 8 columns: Ruler (Depth), Thickness, Image, 3 RGB data columns, 2 right
     columns = [
-        BaseColumn("Depth", width=80),
+        RulerColumn("Depth", width=50, unit="mm"),
+        BaseColumn("Thickness", width=50),
         image_col,
-        DataColumn("Red", data=r_data, min_value=0.0, max_value=1.0, width=100, color=QColor(Qt.red)),
-        DataColumn("Green", data=g_data, min_value=0.0, max_value=1.0, width=100, color=QColor(Qt.green)),
-        DataColumn("Blue", data=b_data, min_value=0.0, max_value=1.0, width=100, color=QColor(Qt.blue)),
-        BaseColumn("Structures", width=120),
-        BaseColumn("Description", width=150),
+        BaseColumn("Munsell", width=100),
+        DataColumn("Red", data=r_data, min_value=0.0, max_value=1.0, width=70, color=QColor(Qt.red)),
+        DataColumn("Green", data=g_data, min_value=0.0, max_value=1.0, width=70, color=QColor(Qt.green)),
+        DataColumn("Blue", data=b_data, min_value=0.0, max_value=1.0, width=70, color=QColor(Qt.blue)),
+        BaseColumn("Lithology", width=100),
+        BaseColumn("Description", width=100),
     ]
     
     # Set columns in panel

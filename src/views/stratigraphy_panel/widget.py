@@ -1,7 +1,6 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QToolBar, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QToolBar, QPushButton, QScrollBar
 from PySide6.QtCore import QSize
 from .canvas import StratigraphyCanvas
-from .signals import StratigraphySignals
 
 class StratigraphyPanel(QWidget):
     """Main widget for stratigraphy visualization and interaction."""
@@ -9,20 +8,33 @@ class StratigraphyPanel(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         
-        # Signals
-        self.signals = StratigraphySignals()
-        
         # Canvas (private)
         self._canvas = StratigraphyCanvas(self)
+        
+        # Scrollbar
+        self._scrollbar = QScrollBar()
+        self._scrollbar.setMinimum(0)
+        self._scrollbar.setMaximum(0)
+        self._scrollbar.valueChanged.connect(self._on_scrollbar_changed)
+        
+        # Connect canvas to update scrollbar
+        self._canvas.scroll_changed = self._update_scrollbar
         
         # Toolbar
         self.toolbar = self._create_toolbar()
         
-        # Layout
+        # Layout: toolbar at top, then canvas + scrollbar in horizontal layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.toolbar)
-        layout.addWidget(self._canvas)
+        
+        # Horizontal layout for canvas and scrollbar
+        content_layout = QHBoxLayout()
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+        content_layout.addWidget(self._canvas)
+        content_layout.addWidget(self._scrollbar)
+        layout.addLayout(content_layout)
         
     def _create_toolbar(self) -> QToolBar:
         """Create toolbar with controls."""
@@ -61,6 +73,27 @@ class StratigraphyPanel(QWidget):
             self._canvas.set_interaction_mode('delete')
         else:
             self._canvas.set_interaction_mode(None)
+    
+    def _on_scrollbar_changed(self, value: int) -> None:
+        """Handle scrollbar value changes."""
+        self._canvas.set_scroll_offset(float(value))
+    
+    def _update_scrollbar(self, offset: float, max_offset: float, page_size: float) -> None:
+        """Update scrollbar range and position based on canvas state."""
+        # Block signals to prevent circular updates
+        self._scrollbar.blockSignals(True)
+        
+        # Always update range - Qt will hide/show thumb automatically based on range vs page_step
+        self._scrollbar.setMinimum(0)
+        self._scrollbar.setMaximum(max(0, int(max_offset)))
+        self._scrollbar.setPageStep(max(1, int(page_size)))
+        self._scrollbar.setSingleStep(max(1, int(page_size / 10)))
+        self._scrollbar.setValue(int(offset))
+        
+        # Disable scrollbar when no scrolling is possible
+        self._scrollbar.setEnabled(max_offset > 0)
+        
+        self._scrollbar.blockSignals(False)
     
     # Public API - forward to canvas
     

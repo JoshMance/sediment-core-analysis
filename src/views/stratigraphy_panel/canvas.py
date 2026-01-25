@@ -26,6 +26,7 @@ class StratigraphyCanvas(QWidget):
         # Scroll state
         self.scroll_offset = 0.0
         self.max_content_height = 0.0
+        self.scroll_changed = None  # Callback for scroll updates: (offset, max_offset, page_size)
         
         # Panning state
         self.is_panning = False
@@ -34,6 +35,7 @@ class StratigraphyCanvas(QWidget):
         # Divider dragging state
         self.dragging_divider: int | None = None  # Index of row whose max is being dragged
         self.divider_hover: int | None = None  # Index of hovered divider
+        self.row_hover: int | None = None  # Index of hovered row area
         self.setMouseTracking(True)  # Enable hover detection
         
         # Interaction mode: None, 'add', or 'delete'
@@ -63,6 +65,13 @@ class StratigraphyCanvas(QWidget):
         """Set the interaction mode ('add', 'delete', or None)."""
         self.interaction_mode = mode
         self.setCursor(Qt.ArrowCursor)
+        self.update()
+    
+    def set_scroll_offset(self, offset: float) -> None:
+        """Set scroll offset programmatically (e.g., from scrollbar)."""
+        available_height = self.height() - TITLE_HEIGHT - HEADER_HEIGHT
+        max_scroll = max(0.0, self.max_content_height - available_height)
+        self.scroll_offset = max(0.0, min(offset, max_scroll))
         self.update()
     
     def add_row_divider(self, depth: float) -> None:
@@ -211,6 +220,12 @@ class StratigraphyCanvas(QWidget):
             max_height = max(max_height, content_height)
         
         self.max_content_height = max_height
+        
+        # Notify scrollbar of potential change
+        if self.scroll_changed:
+            available_height = self.height() - TITLE_HEIGHT - HEADER_HEIGHT
+            max_scroll = max(0.0, self.max_content_height - available_height)
+            self.scroll_changed(self.scroll_offset, max_scroll, available_height)
     
     def wheelEvent(self, event) -> None:
         """Handle mouse wheel for scrolling."""
@@ -223,6 +238,11 @@ class StratigraphyCanvas(QWidget):
         max_scroll = max(0.0, self.max_content_height - available_height)
         
         self.scroll_offset = max(0.0, min(self.scroll_offset + scroll_amount, max_scroll))
+        
+        # Notify scrollbar of change
+        if self.scroll_changed:
+            self.scroll_changed(self.scroll_offset, max_scroll, available_height)
+        
         self.update()
     
     def mousePressEvent(self, event) -> None:
@@ -287,6 +307,11 @@ class StratigraphyCanvas(QWidget):
             max_scroll = max(0.0, self.max_content_height - available_height)
             
             self.scroll_offset = max(0.0, min(self.scroll_offset - delta_y, max_scroll))
+            
+            # Notify scrollbar of change
+            if self.scroll_changed:
+                self.scroll_changed(self.scroll_offset, max_scroll, available_height)
+            
             self.update()
         else:
             # Update hover state for cursor (skip if in add mode)
@@ -308,14 +333,37 @@ class StratigraphyCanvas(QWidget):
                     self.preview_y = None
                 
                 divider_idx = self._find_divider_at_position(event.pos().y())
+                
+                # Check if hovering over a row area (not on a divider)
+                row_idx = None
+                if divider_idx is None and self.rows:
+                    y = event.pos().y()
+                    if y > TITLE_HEIGHT + HEADER_HEIGHT:
+                        depth = self._pixel_y_to_depth(y)
+                        # Find which row contains this depth
+                        for i, row in enumerate(self.rows):
+                            if row.min_depth <= depth <= row.max_depth:
+                                row_idx = i
+                                break
+                
+                # Update hover states
+                needs_update = False
                 if divider_idx != self.divider_hover:
                     self.divider_hover = divider_idx
-                    # Set cursor based on mode
+                    needs_update = True
+                if row_idx != self.row_hover:
+                    self.row_hover = row_idx
+                    needs_update = True
+                
+                if needs_update:
+                    # Set cursor based on mode and hover state
                     if self.divider_hover is not None:
                         if self.interaction_mode == 'delete':
                             self.setCursor(Qt.PointingHandCursor)
                         elif self.interaction_mode is None:
                             self.setCursor(Qt.PointingHandCursor)
+                    elif self.row_hover is not None:
+                        self.setCursor(Qt.PointingHandCursor)
                     else:
                         self.setCursor(Qt.ArrowCursor)
                     self.update()  # Redraw to show hover color
@@ -344,7 +392,13 @@ class StratigraphyCanvas(QWidget):
     def paintEvent(self, event: QPaintEvent) -> None:
         """Paint the canvas with all columns."""
         painter = QPainter(self)
+        # Antialiasing disabled
+        # painter.setRenderHint(QPainter.Antialiasing)
+        # painter.setRenderHint(QPainter.TextAntialiasing)
         painter.fillRect(self.rect(), Qt.white)
+        
+        # Get device pixel ratio for HiDPI displays
+        dpr = self.devicePixelRatio()
         
         if not self.columns:
             painter.end()
@@ -358,7 +412,7 @@ class StratigraphyCanvas(QWidget):
         painter.fillRect(title_rect, Qt.white)
         
         # Draw title borders (left, top, right only - no bottom to avoid double line)
-        painter.setPen(QPen(Qt.black, 1))
+        painter.setPen(QPen(QColor(45, 45, 45), max(1, int(1 * dpr))))
         painter.drawLine(0, 0, int(canvas_width), 0)  # Top
         painter.drawLine(0, 0, 0, int(TITLE_HEIGHT))  # Left
         painter.drawLine(int(canvas_width), 0, int(canvas_width), int(TITLE_HEIGHT))  # Right
@@ -370,7 +424,7 @@ class StratigraphyCanvas(QWidget):
         total_weight = sum(col.width for col in self.columns)
         
         # Draw left border (starting below title)
-        painter.setPen(QPen(Qt.black, 1))
+        painter.setPen(QPen(QColor(45, 45, 45), max(1, int(1 * dpr))))
         painter.drawLine(0, int(TITLE_HEIGHT), 0, canvas_height)
         
         # Calculate actual pixel widths proportionally
@@ -394,8 +448,24 @@ class StratigraphyCanvas(QWidget):
             x_offset += actual_width
             
             # Draw vertical separator line after each column (starting below title)
-            painter.setPen(QPen(Qt.black, 1))
+            painter.setPen(QPen(QColor(45, 45, 45), 1))
             painter.drawLine(int(x_offset), int(TITLE_HEIGHT), int(x_offset), canvas_height)
+        
+        # Draw row hover overlay (before dividers so dividers draw on top)
+        if self.row_hover is not None and self.row_hover < len(self.rows):
+            row = self.rows[self.row_hover]
+            y_top = self._depth_to_pixel_y(row.min_depth)
+            y_bottom = self._depth_to_pixel_y(row.max_depth)
+            
+            # Only draw if visible
+            if y_bottom >= TITLE_HEIGHT + HEADER_HEIGHT and y_top <= canvas_height:
+                # Clamp to visible area
+                visible_top = max(y_top, TITLE_HEIGHT + HEADER_HEIGHT)
+                visible_bottom = min(y_bottom, canvas_height)
+                
+                # Draw semi-transparent blue overlay
+                painter.fillRect(QRectF(0, visible_top, canvas_width, visible_bottom - visible_top), 
+                               QColor(0, 120, 215, 51))  # 20% opacity (51/255)
         
         # Draw horizontal dividers across all columns
         if self.rows:
@@ -403,19 +473,22 @@ class StratigraphyCanvas(QWidget):
                 y = self._depth_to_pixel_y(self.rows[i].max_depth)
                 # Only draw if visible in viewport
                 if TITLE_HEIGHT + HEADER_HEIGHT <= y <= canvas_height:
-                    # Red if delete mode + hovered, blue if normal hovered, black otherwise
-                    if i == self.divider_hover:
-                        if self.interaction_mode == 'delete':
-                            painter.setPen(QPen(QColor(220, 50, 50), 2))  # Red
-                        else:
-                            painter.setPen(QPen(QColor(0, 120, 215), 2))  # Blue
+                    # Check if this divider should be highlighted (hovered directly, or part of hovered row)
+                    is_highlighted = (i == self.divider_hover or 
+                                    (self.row_hover is not None and (i == self.row_hover or i == self.row_hover - 1)))
+                    
+                    # Red if delete mode + hovered, blue if highlighted, dark grey otherwise
+                    if i == self.divider_hover and self.interaction_mode == 'delete':
+                        painter.setPen(QPen(QColor(220, 50, 50), 2))  # Red, 2px
+                    elif is_highlighted:
+                        painter.setPen(QPen(QColor(0, 120, 215), 2))  # Blue, 2px
                     else:
-                        painter.setPen(QPen(QColor(0, 0, 0, 180), 2))  # Semi-transparent black
+                        painter.setPen(QPen(QColor(80, 80, 80), 1))  # Dark grey, 1px
                     painter.drawLine(0, int(y), canvas_width, int(y))
         
         # Draw preview line in add mode
         if self.interaction_mode == 'add' and self.preview_y is not None:
-            painter.setPen(QPen(QColor(180, 180, 180), 1))  # Light grey
+            painter.setPen(QPen(QColor(180, 180, 180), 1))  # Light grey, 1px
             painter.drawLine(0, int(self.preview_y), canvas_width, int(self.preview_y))
         
         painter.end()
