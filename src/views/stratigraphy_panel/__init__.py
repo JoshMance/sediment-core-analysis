@@ -3,6 +3,7 @@
 from .widget import StratigraphyPanel
 from .signals import StratigraphySignals
 from .columns import BaseColumn, ImageColumn, DataColumn, ColumnProtocol
+from .rows import StratRow
 
 __all__ = [
     'StratigraphyPanel', 
@@ -10,5 +11,6 @@ __all__ = [
     'BaseColumn',
     'ImageColumn',
     'DataColumn',
-    'ColumnProtocol'
+    'ColumnProtocol',
+    'StratRow'
 ]

@@ -62,13 +62,20 @@ def main():
     
     if core_image_path.exists():
         core_pixmap = QPixmap(str(core_image_path))
-        # Extract RGB data from the loaded pixmap
-        r_data, g_data, b_data = extract_rgb_from_image(core_pixmap)
+    
+    # Create image column that defines the scale
+    # Let's say this core represents 0-100 cm of depth
+    image_col = ImageColumn("Image", pixmap=core_pixmap, width=200)
+    image_col.set_depth_range(0.0, 100.0)  # Image represents 0-100cm depth
+    
+    # Extract RGB data from the ROTATED pixmap that's actually displayed
+    if image_col.get_pixmap():
+        r_data, g_data, b_data = extract_rgb_from_image(image_col.get_pixmap())
     
     # Create 7 columns: 1 left, Image, 3 RGB data columns, 2 right
     columns = [
         BaseColumn("Depth", width=80),
-        ImageColumn("Image", pixmap=core_pixmap, width=200),
+        image_col,
         DataColumn("Red", data=r_data, min_value=0.0, max_value=1.0, width=100, color=QColor(Qt.red)),
         DataColumn("Green", data=g_data, min_value=0.0, max_value=1.0, width=100, color=QColor(Qt.green)),
         DataColumn("Blue", data=b_data, min_value=0.0, max_value=1.0, width=100, color=QColor(Qt.blue)),
@@ -79,9 +86,13 @@ def main():
     # Set columns in panel
     panel.set_columns(columns)
     
+    # Add some test dividers (can be dragged in the UI)
+    panel.add_row_divider(25.0)  # Divider at 25cm
+    panel.add_row_divider(60.0)  # Divider at 60cm
+    
     # Window settings
     window.resize(800, 600)
-    window.setWindowTitle("Stratigraphy Panel Demo")
+    window.setWindowTitle("Stratigraphy Panel Demo - Drag dividers to move them")
     window.show()
     
     sys.exit(app.exec())

@@ -30,12 +30,37 @@ class StratigraphyPanel(QWidget):
         toolbar.setMovable(False)
         toolbar.setIconSize(QSize(20, 20))
         
-        # Placeholder button
-        example_btn = QPushButton("Example")
-        example_btn.setFixedSize(70, 32)
-        toolbar.addWidget(example_btn)
+        # Add button
+        self.add_btn = QPushButton("Add")
+        self.add_btn.setFixedSize(70, 32)
+        self.add_btn.setCheckable(True)
+        self.add_btn.clicked.connect(self._on_add_clicked)
+        toolbar.addWidget(self.add_btn)
+        
+        # Delete button
+        self.delete_btn = QPushButton("Delete")
+        self.delete_btn.setFixedSize(70, 32)
+        self.delete_btn.setCheckable(True)
+        self.delete_btn.clicked.connect(self._on_delete_clicked)
+        toolbar.addWidget(self.delete_btn)
         
         return toolbar
+    
+    def _on_add_clicked(self) -> None:
+        """Handle add button click."""
+        if self.add_btn.isChecked():
+            self.delete_btn.setChecked(False)
+            self._canvas.set_interaction_mode('add')
+        else:
+            self._canvas.set_interaction_mode(None)
+    
+    def _on_delete_clicked(self) -> None:
+        """Handle delete button click."""
+        if self.delete_btn.isChecked():
+            self.add_btn.setChecked(False)
+            self._canvas.set_interaction_mode('delete')
+        else:
+            self._canvas.set_interaction_mode(None)
     
     # Public API - forward to canvas
     
@@ -55,3 +80,7 @@ class StratigraphyPanel(QWidget):
         """Set the depth range for the display."""
         self._canvas.depth_range = (min_depth, max_depth)
         self._canvas.update()
+    
+    def add_row_divider(self, depth: float) -> None:
+        """Add a horizontal divider at the specified depth."""
+        self._canvas.add_row_divider(depth)

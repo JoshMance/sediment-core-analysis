@@ -8,6 +8,7 @@ Each concrete column class owns and validates its own data format.
 from typing import Protocol, runtime_checkable
 from PySide6.QtGui import QPainter, QPen, QPixmap, QColor, QTransform
 from PySide6.QtCore import QRectF, Qt, QPointF
+from .rows import StratRow
 
 
 # Constants
@@ -26,11 +27,24 @@ class ColumnProtocol(Protocol):
     title: str
     width: int
     
+    def provides_scale(self) -> bool:
+        """Whether this column defines the canonical depth scale."""
+        ...
+    
+    def get_scale(self, width: float) -> tuple[float, tuple[float, float]] | None:
+        """
+        Get the scale this column defines.
+        
+        Returns:
+            (pixel_height, (min_depth, max_depth)) if provides_scale, else None
+        """
+        ...
+    
     def get_content_height(self, width: float, depth_range: tuple[float, float]) -> float:
         """Calculate the total content height needed (for scrolling)."""
         ...
     
-    def paint(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], scroll_offset: float) -> None:
+    def paint(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], scroll_offset: float, rows: list['StratRow']) -> None:
         """Paint this column in the given rect."""
         ...
     
@@ -68,6 +82,24 @@ class BaseColumn:
         self.title = title
         self.width = width
     
+    def provides_scale(self) -> bool:
+        """Whether this column defines the canonical depth scale."""
+        return False
+    
+    def get_scale(self, width: float) -> tuple[float, tuple[float, float]] | None:
+        """
+        Get the scale this column defines.
+        
+        Override in subclasses that provide scale (e.g., ImageColumn).
+        
+        Args:
+            width: Actual pixel width allocated to this column
+            
+        Returns:
+            (pixel_height, (min_depth, max_depth)) if provides_scale, else None
+        """
+        return None
+    
     def get_content_height(self, width: float, depth_range: tuple[float, float]) -> float:
         """
         Calculate the total content height needed (for scrolling).
@@ -83,7 +115,7 @@ class BaseColumn:
         """
         return 0.0
     
-    def paint(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], scroll_offset: float = 0.0) -> None:
+    def paint(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], scroll_offset: float = 0.0, rows: list[StratRow] = None) -> None:
         """
         Paint this column.
         
@@ -92,7 +124,11 @@ class BaseColumn:
             rect: The rectangular area allocated for this column
             depth_range: (min_depth, max_depth) in depth units
             scroll_offset: Vertical scroll offset in pixels
+            rows: Optional list of depth intervals (for dividers/regions)
         """
+        if rows is None:
+            rows = []
+        
         # Paint header (always fixed at top)
         self._paint_header(painter, rect)
         
@@ -105,7 +141,7 @@ class BaseColumn:
         
         # Adjust content rect for scroll offset
         scrolled_content_rect = content_rect.translated(0, -scroll_offset)
-        self._paint_content(painter, scrolled_content_rect, depth_range)
+        self._paint_content(painter, scrolled_content_rect, depth_range, rows)
         
         painter.restore()
     
@@ -123,7 +159,7 @@ class BaseColumn:
         # Draw title text
         painter.drawText(header_rect, Qt.AlignCenter, self.title)
     
-    def _paint_content(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float]) -> None:
+    def _paint_content(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], rows: list[StratRow]) -> None:
         """
         Paint the column content area.
         
@@ -133,8 +169,45 @@ class BaseColumn:
             painter: QPainter to draw with
             rect: Content area rectangle (already adjusted for scroll offset)
             depth_range: (min_depth, max_depth) in depth units
+            rows: List of depth intervals for dividers/regions
         """
         pass
+    
+    def _depth_to_pixel(self, depth: float, rect: QRectF, depth_range: tuple[float, float]) -> float:
+        """
+        Convert depth value to pixel Y coordinate within rect.
+        
+        Args:
+            depth: Depth value to convert
+            rect: Rectangle containing the content
+            depth_range: (min_depth, max_depth) full range
+            
+        Returns:
+            Y pixel coordinate
+        """
+        if depth_range[1] == depth_range[0]:
+            return rect.top()
+        
+        normalized = (depth - depth_range[0]) / (depth_range[1] - depth_range[0])
+        return rect.top() + (normalized * rect.height())
+    
+    def _pixel_to_depth(self, y: float, rect: QRectF, depth_range: tuple[float, float]) -> float:
+        """
+        Convert pixel Y coordinate to depth value.
+        
+        Args:
+            y: Y pixel coordinate
+            rect: Rectangle containing the content
+            depth_range: (min_depth, max_depth) full range
+            
+        Returns:
+            Depth value
+        """
+        if rect.height() == 0:
+            return depth_range[0]
+        
+        normalized = (y - rect.top()) / rect.height()
+        return depth_range[0] + (normalized * (depth_range[1] - depth_range[0]))
     
     @property
     def supports_interaction(self) -> bool:
@@ -155,9 +228,17 @@ class ImageColumn(BaseColumn):
     - QPixmap data
     - Automatic orientation correction (rotates if width > height)
     - Aspect ratio preservation
+    - Canonical depth scale (pixel height maps to physical depth range)
     """
     
-    def __init__(self, title: str, pixmap: QPixmap | None = None, width: int = 200) -> None:
+    def __init__(
+        self, 
+        title: str, 
+        pixmap: QPixmap | None = None, 
+        width: int = 200,
+        depth_range: tuple[float, float] | None = None,
+        defines_scale: bool = True
+    ) -> None:
         """
         Initialize image column.
         
@@ -165,9 +246,13 @@ class ImageColumn(BaseColumn):
             title: Column header title
             pixmap: Image to display (will be auto-rotated if needed)
             width: Relative width weight
+            depth_range: Physical depth range this image represents (min, max)
+            defines_scale: Whether this column defines the canonical depth scale
         """
         super().__init__(title, width)
         self._pixmap: QPixmap | None = None
+        self._depth_range = depth_range
+        self._defines_scale = defines_scale
         if pixmap:
             self.set_pixmap(pixmap)
     
@@ -185,6 +270,39 @@ class ImageColumn(BaseColumn):
     def get_pixmap(self) -> QPixmap | None:
         """Get the current pixmap."""
         return self._pixmap
+    
+    def set_depth_range(self, min_depth: float, max_depth: float) -> None:
+        """
+        Set the physical depth range this image represents.
+        
+        Args:
+            min_depth: Minimum depth (e.g., 0.0 cm)
+            max_depth: Maximum depth (e.g., 100.0 cm)
+        """
+        self._depth_range = (min_depth, max_depth)
+    
+    def provides_scale(self) -> bool:
+        """This column defines scale if it has both image and depth range."""
+        return self._defines_scale and self._pixmap is not None and self._depth_range is not None
+    
+    def get_scale(self, width: float) -> tuple[float, tuple[float, float]] | None:
+        """
+        Get the canonical scale: pixel height and physical depth range.
+        
+        Args:
+            width: Actual pixel width allocated to this column
+            
+        Returns:
+            (pixel_height, (min_depth, max_depth)) or None if no scale defined
+        """
+        if not self.provides_scale():
+            return None
+        
+        # Calculate pixel height from aspect ratio
+        aspect_ratio = self._pixmap.height() / self._pixmap.width()
+        pixel_height = width * aspect_ratio
+        
+        return (pixel_height, self._depth_range)
     
     def _ensure_vertical_orientation(self, pixmap: QPixmap) -> QPixmap:
         """
@@ -209,30 +327,49 @@ class ImageColumn(BaseColumn):
     
     def get_content_height(self, width: float, depth_range: tuple[float, float]) -> float:
         """
-        Calculate the height needed to display image at correct aspect ratio.
+        Calculate height based on aspect ratio.
+        
+        If this column provides scale, its natural height becomes canonical.
+        Otherwise, it stretches/compresses to match the provided depth_range scale.
         
         Args:
             width: Actual pixel width allocated to this column
-            depth_range: Not used for images
+            depth_range: External depth range (if this column doesn't define scale)
             
         Returns:
-            Height in pixels to maintain aspect ratio
+            Height in pixels
         """
         if not self._pixmap or self._pixmap.isNull():
             return 0.0
         
-        # Calculate height needed to maintain aspect ratio at given width
+        # Natural height from aspect ratio
         aspect_ratio = self._pixmap.height() / self._pixmap.width()
-        return width * aspect_ratio
+        natural_height = width * aspect_ratio
+        
+        # If we provide scale, use natural height
+        if self.provides_scale():
+            return natural_height
+        
+        # Otherwise, if external depth_range provided and we have our own range,
+        # scale proportionally
+        if self._depth_range and depth_range:
+            our_depth_span = self._depth_range[1] - self._depth_range[0]
+            external_depth_span = depth_range[1] - depth_range[0]
+            if external_depth_span > 0:
+                scale_factor = our_depth_span / external_depth_span
+                return natural_height * scale_factor
+        
+        return natural_height
     
-    def _paint_content(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float]) -> None:
+    def _paint_content(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], rows: list[StratRow]) -> None:
         """
-        Paint the image maintaining aspect ratio.
+        Paint the image maintaining aspect ratio, with dividers overlay.
         
         Args:
             painter: QPainter to draw with
             rect: Content area rectangle (already adjusted for scroll offset)
-            depth_range: Not used for images
+            depth_range: Depth range for positioning
+            rows: List of depth intervals (draws dividers between them)
         """
         if not self._pixmap or self._pixmap.isNull():
             return
@@ -326,25 +463,31 @@ class DataColumn(BaseColumn):
     
     def get_content_height(self, width: float, depth_range: tuple[float, float]) -> float:
         """
-        Content height matches the number of data points (1 pixel per data point).
+        Return arbitrary height - actual scaling happens in paint.
+        
+        Data points will be mapped to physical depths and rendered at whatever
+        scale the canvas provides via rect height.
         
         Args:
             width: Not used for data columns
-            depth_range: Not used for data columns
+            depth_range: Not used for height calculation
             
         Returns:
-            Height in pixels (one per data point)
+            Nominal height (actual layout determined by canvas scale)
         """
-        return float(len(self._data))
+        return float(len(self._data)) if self._data else 0.0
     
-    def _paint_content(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float]) -> None:
+    def _paint_content(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], rows: list[StratRow]) -> None:
         """
-        Paint the data as a line graph.
+        Paint the data as a line graph with optional row dividers.
+        
+        Maps data points to rect height proportionally so all columns align to the same scale.
         
         Args:
             painter: QPainter to draw with
             rect: Content area rectangle (already adjusted for scroll offset)
-            depth_range: Not used for data columns
+            depth_range: Depth range for positioning
+            rows: List of depth intervals (can draw dividers or highlights)
         """
         if not self._data or len(self._data) == 0:
             return
@@ -352,21 +495,26 @@ class DataColumn(BaseColumn):
         # Enable antialiasing for smooth lines
         painter.setRenderHint(QPainter.Antialiasing, True)
         
-        # Normalize data to column width
+        # Normalize data to column width (horizontal)
         data_range = self._max_value - self._min_value
         
         # Draw line graph
         painter.setPen(QPen(self._color, 1))
         
+        # Map data points to rect height proportionally
+        # This ensures data aligns with image at the same vertical positions
+        num_points = len(self._data)
+        height_per_point = rect.height() / num_points if num_points > 1 else rect.height()
+        
         points = []
         for i, value in enumerate(self._data):
-            # Normalize value to 0-1 range
+            # Normalize value to 0-1 range (horizontal position)
             normalized = (value - self._min_value) / data_range
             normalized = max(0.0, min(1.0, normalized))  # Clamp to 0-1
             
             # Map to pixel position
             x = rect.x() + (normalized * rect.width())
-            y = rect.y() + i  # 1 pixel per data point vertically
+            y = rect.y() + (i * height_per_point)  # Proportional to rect height
             
             points.append(QPointF(x, y))
         
