@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QPaintEvent, QPen, QFont, QColor
-from PySide6.QtCore import Qt, QRectF
+from PySide6.QtCore import Qt, QRectF, QPointF
 from .columns import HEADER_HEIGHT, TITLE_HEIGHT
 from .rows import StratRow
 
@@ -184,6 +184,80 @@ class StratigraphyCanvas(QWidget):
             if abs(y - divider_y) <= tolerance:
                 return i
         return None
+    
+    def _paint_column_header(self, painter: QPainter, rect: QRectF, column, dpr: float) -> None:
+        """
+        Paint a column header with title and optional metadata.
+        
+        Canvas draws borders separately as continuous lines across all headers.
+        
+        Args:
+            painter: QPainter to draw with
+            rect: Header rectangle
+            column: Column object with title and metadata
+            dpr: Device pixel ratio for HiDPI displays
+        """
+        # Draw header background
+        painter.fillRect(rect, Qt.white)
+        
+        # Get column metadata
+        metadata = column.get_header_metadata()
+        
+        # Draw title (default centered)
+        if 'unit' in metadata:
+            # For rulers: title on first line, unit in brackets on second line
+            title_rect = rect.adjusted(2, 5, -2, -HEADER_HEIGHT/2)
+            painter.setPen(Qt.black)
+            painter.drawText(title_rect, Qt.AlignCenter | Qt.AlignBottom, column.title)
+            
+            unit_rect = rect.adjusted(2, HEADER_HEIGHT/2, -2, -5)
+            painter.setPen(Qt.gray)
+            font = painter.font()
+            font.setPointSize(8)
+            painter.setFont(font)
+            painter.drawText(unit_rect, Qt.AlignCenter | Qt.AlignTop, f"({metadata['unit']})")
+            font.setPointSize(9)
+            painter.setFont(font)
+            painter.setPen(Qt.black)
+        elif 'domain_range' in metadata:
+            # For data columns: title centered, domain line below
+            painter.drawText(rect, Qt.AlignCenter, column.title)
+            
+            painter.save()
+            min_val, max_val = metadata['domain_range']
+            domain_line_y = rect.bottom() - 16
+            
+            # Draw domain line (inset by padding)
+            from .columns import DOMAIN_PADDING
+            painter.setPen(QPen(QColor(100, 100, 100), max(1, int(1 * dpr))))
+            line_x1 = rect.x() + DOMAIN_PADDING
+            line_x2 = rect.x() + rect.width() - DOMAIN_PADDING
+            painter.drawLine(QPointF(line_x1, domain_line_y), QPointF(line_x2, domain_line_y))
+            
+            # Draw min/max values
+            painter.setPen(QColor(80, 80, 80))
+            font = painter.font()
+            font.setPointSize(7)
+            painter.setFont(font)
+            
+            # Format as percentage if in 0-1 range
+            is_percentage = (min_val >= 0 and max_val <= 1)
+            min_text = f"{int(min_val * 100)}%" if is_percentage else f"{min_val:.2f}"
+            max_text = f"{int(max_val * 100)}%" if is_percentage else f"{max_val:.2f}"
+            
+            text_y = domain_line_y + 2
+            text_height = min(12, rect.bottom() - text_y)
+            
+            min_rect = QRectF(line_x1, text_y, 50, text_height)
+            painter.drawText(min_rect, Qt.AlignLeft | Qt.AlignTop, min_text)
+            
+            max_rect = QRectF(line_x2 - 50, text_y, 50, text_height)
+            painter.drawText(max_rect, Qt.AlignRight | Qt.AlignTop, max_text)
+            
+            painter.restore()
+        else:
+            # Default: simple centered title
+            painter.drawText(rect, Qt.AlignCenter, column.title)
     
     def _update_scroll_range(self) -> None:
         """Calculate maximum content height from all columns."""
@@ -420,36 +494,55 @@ class StratigraphyCanvas(QWidget):
         # Draw title text (normal size)
         painter.drawText(title_rect.adjusted(10, 0, 0, 0), Qt.AlignLeft | Qt.AlignVCenter, self.title)
         
-        # Calculate total width weight
+        # Calculate column layout
         total_weight = sum(col.width for col in self.columns)
+        column_x_positions = [0.0]  # Starting x positions for each column
+        x = 0.0
+        for col in self.columns:
+            x += (col.width / total_weight) * canvas_width
+            column_x_positions.append(round(x))  # Round to nearest pixel for consistent alignment
         
-        # Draw left border (starting below title)
-        painter.setPen(QPen(QColor(45, 45, 45), max(1, int(1 * dpr))))
-        painter.drawLine(0, int(TITLE_HEIGHT), 0, canvas_height)
-        
-        # Calculate actual pixel widths proportionally
-        x_offset = 0
-        
-        # Use max_content_height for column rects so all columns have the same vertical scale
-        # The visible portion is controlled by scroll_offset and clipping in column.paint()
-        content_height = self.max_content_height + HEADER_HEIGHT
-        
+        # Draw all column headers FIRST (backgrounds and content, no borders)
         for i, column in enumerate(self.columns):
-            # Calculate this column's actual pixel width based on weight
-            actual_width = (column.width / total_weight) * canvas_width
+            x_start = column_x_positions[i]
+            x_end = column_x_positions[i + 1]
+            header_rect = QRectF(x_start, TITLE_HEIGHT, x_end - x_start, HEADER_HEIGHT)
+            self._paint_column_header(painter, header_rect, column, dpr)
+        
+        # Draw ALL structural lines ON TOP (so they're not covered by header backgrounds)
+        painter.setPen(QPen(QColor(45, 45, 45), max(1, int(1 * dpr))))
+        
+        # Vertical lines (from title bottom to canvas bottom)
+        for x_pos in column_x_positions:
+            painter.drawLine(x_pos, int(TITLE_HEIGHT), x_pos, canvas_height)
+        
+        # Horizontal header lines (across full width)
+        header_top_y = int(TITLE_HEIGHT)
+        header_bottom_y = int(TITLE_HEIGHT + HEADER_HEIGHT)
+        painter.drawLine(0, header_top_y, canvas_width, header_top_y)
+        painter.drawLine(0, header_bottom_y, canvas_width, header_bottom_y)
+        
+        # Draw all column content
+        content_height = self.max_content_height
+        for i, column in enumerate(self.columns):
+            x_start = column_x_positions[i]
+            x_end = column_x_positions[i + 1]
+            width = x_end - x_start
             
-            # Define the rect for this column (offset by title height, full content height)
-            column_rect = QRectF(x_offset, TITLE_HEIGHT, actual_width, content_height)
+            # Content area (below header, with scrolling)
+            content_rect = QRectF(x_start, TITLE_HEIGHT + HEADER_HEIGHT, width, content_height)
             
-            # Let the column paint itself with scroll offset and rows
-            column.paint(painter, column_rect, self.depth_range, self.scroll_offset, self.rows)
+            # Save painter state and set clipping
+            painter.save()
+            painter.setClipRect(content_rect)
             
-            # Move to next column
-            x_offset += actual_width
+            # Adjust for scroll offset
+            scrolled_content_rect = content_rect.translated(0, -self.scroll_offset)
             
-            # Draw vertical separator line after each column (starting below title)
-            painter.setPen(QPen(QColor(45, 45, 45), 1))
-            painter.drawLine(int(x_offset), int(TITLE_HEIGHT), int(x_offset), canvas_height)
+            # Let column paint its data
+            column.paint_content(painter, scrolled_content_rect, self.depth_range, self.rows)
+            
+            painter.restore()
         
         # Draw row hover overlay (before dividers so dividers draw on top)
         if self.row_hover is not None and self.row_hover < len(self.rows):
@@ -479,16 +572,16 @@ class StratigraphyCanvas(QWidget):
                     
                     # Red if delete mode + hovered, blue if highlighted, dark grey otherwise
                     if i == self.divider_hover and self.interaction_mode == 'delete':
-                        painter.setPen(QPen(QColor(220, 50, 50), 2))  # Red, 2px
+                        painter.setPen(QPen(QColor(220, 50, 50), max(2, int(2 * dpr))))  # Red, DPR-aware
                     elif is_highlighted:
-                        painter.setPen(QPen(QColor(0, 120, 215), 2))  # Blue, 2px
+                        painter.setPen(QPen(QColor(0, 120, 215), max(2, int(2 * dpr))))  # Blue, DPR-aware
                     else:
-                        painter.setPen(QPen(QColor(80, 80, 80), 1))  # Dark grey, 1px
+                        painter.setPen(QPen(QColor(80, 80, 80), max(1, int(1 * dpr))))  # Dark grey, DPR-aware
                     painter.drawLine(0, int(y), canvas_width, int(y))
         
         # Draw preview line in add mode
         if self.interaction_mode == 'add' and self.preview_y is not None:
-            painter.setPen(QPen(QColor(180, 180, 180), 1))  # Light grey, 1px
+            painter.setPen(QPen(QColor(180, 180, 180), max(1, int(1 * dpr))))  # Light grey, DPR-aware
             painter.drawLine(0, int(self.preview_y), canvas_width, int(self.preview_y))
         
         painter.end()

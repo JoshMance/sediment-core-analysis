@@ -175,7 +175,7 @@ class ImageColumn(BaseColumn):
         
         return natural_height
     
-    def _paint_content(self, painter, rect: QRectF, depth_range: tuple[float, float], rows: list[StratRow]) -> None:
+    def paint_content(self, painter, rect: QRectF, depth_range: tuple[float, float], rows: list[StratRow]) -> None:
         """
         Paint the image maintaining aspect ratio, with dividers overlay.
         
@@ -197,8 +197,3 @@ class ImageColumn(BaseColumn):
         
         # Draw the image
         painter.drawPixmap(image_rect.toRect(), self._pixmap)
-    
-    @property
-    def has_data(self) -> bool:
-        """Whether this column contains valid image data."""
-        return self._pixmap is not None and not self._pixmap.isNull()

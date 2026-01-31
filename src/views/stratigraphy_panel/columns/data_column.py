@@ -93,56 +93,14 @@ class DataColumn(BaseColumn):
         """
         return float(len(self._data)) if self._data else 0.0
     
-    def _paint_header(self, painter: QPainter, rect: QRectF) -> None:
-        """Paint the column header with title and domain line."""
-        # Call parent to draw standard header
-        super()._paint_header(painter, rect)
-        
-        # Save painter state before modifying font
-        painter.save()
-        
-        # Draw domain indicator line below title
-        header_rect = QRectF(rect.x(), rect.y(), rect.width(), HEADER_HEIGHT)
-        domain_line_y = header_rect.bottom() - 16  # Leave room for text below (16px from bottom)
-        
-        # Draw domain line (inset by padding amount)
-        painter.setPen(QPen(QColor(100, 100, 100), 1))
-        line_x1 = rect.x() + DOMAIN_PADDING
-        line_x2 = rect.x() + rect.width() - DOMAIN_PADDING
-        painter.drawLine(QPointF(line_x1, domain_line_y), QPointF(line_x2, domain_line_y))
-        
-        # Draw min and max values below the line
-        painter.setPen(QColor(80, 80, 80))
-        font = painter.font()
-        font.setPointSize(7)
-        painter.setFont(font)
-        
-        # Format values as percentages if in 0-1 range
-        is_percentage = (self._min_value >= 0 and self._max_value <= 1)
-        
-        if is_percentage:
-            min_text = f"{int(self._min_value * 100)}%"
-            max_text = f"{int(self._max_value * 100)}%"
-        else:
-            min_text = f"{self._min_value:.2f}"
-            max_text = f"{self._max_value:.2f}"
-        
-        # Min value at left end (left-aligned from line start)
-        # Position text 2px below line, with 12px height to fit within header
-        text_y = domain_line_y + 2
-        text_height = min(12, header_rect.bottom() - text_y)  # Ensure it fits
-        
-        min_rect = QRectF(line_x1, text_y, 50, text_height)
-        painter.drawText(min_rect, Qt.AlignLeft | Qt.AlignTop, min_text)
-        
-        # Max value at right end (right-aligned to line end)
-        max_rect = QRectF(line_x2 - 50, text_y, 50, text_height)
-        painter.drawText(max_rect, Qt.AlignRight | Qt.AlignTop, max_text)
-        
-        # Restore painter state
-        painter.restore()
+    def get_header_metadata(self) -> dict:
+        """Return domain range for canvas to render in header."""
+        return {
+            'domain_range': (self._min_value, self._max_value),
+            'color': self._color
+        }
     
-    def _paint_content(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], rows: list[StratRow]) -> None:
+    def paint_content(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], rows: list[StratRow]) -> None:
         """
         Paint the data as a line graph with optional row dividers.
         
@@ -204,8 +162,3 @@ class DataColumn(BaseColumn):
         # Draw connected line
         for i in range(len(points) - 1):
             painter.drawLine(points[i], points[i + 1])
-    
-    @property
-    def has_data(self) -> bool:
-        """Whether this column contains data."""
-        return len(self._data) > 0

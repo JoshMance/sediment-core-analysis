@@ -41,42 +41,9 @@ class RulerColumn(BaseColumn):
         """Ruler consumes scale, does not provide it."""
         return False
     
-    def _paint_header(self, painter, rect) -> None:
-        """Paint header with title and unit on separate lines."""
-        from PySide6.QtGui import QPen
-        from PySide6.QtCore import Qt
-        from .base import HEADER_HEIGHT
-        
-        header_rect = rect.adjusted(0, 0, 0, -(rect.height() - HEADER_HEIGHT))
-        
-        # Draw header background
-        painter.fillRect(header_rect, Qt.white)
-        
-        # Draw header borders (top, bottom, left only - right is drawn by next column)
-        painter.setPen(QPen(Qt.black, 1))
-        # Top border
-        painter.drawLine(header_rect.topLeft(), header_rect.topRight())
-        # Bottom border
-        painter.drawLine(header_rect.bottomLeft(), header_rect.bottomRight())
-        # Left border
-        painter.drawLine(header_rect.topLeft(), header_rect.bottomLeft())
-        
-        # Draw title text on first line
-        title_rect = header_rect.adjusted(2, 5, -2, -HEADER_HEIGHT/2)
-        painter.drawText(title_rect, Qt.AlignCenter | Qt.AlignBottom, self.title)
-        
-        # Draw unit in brackets on second line
-        if self._unit:
-            unit_rect = header_rect.adjusted(2, HEADER_HEIGHT/2, -2, -5)
-            painter.setPen(Qt.gray)
-            font = painter.font()
-            font.setPointSize(8)
-            painter.setFont(font)
-            painter.drawText(unit_rect, Qt.AlignCenter | Qt.AlignTop, f"({self._unit})")
-            # Reset font
-            font.setPointSize(9)
-            painter.setFont(font)
-            painter.setPen(Qt.black)
+    def get_header_metadata(self) -> dict:
+        """Return unit for canvas to render in header."""
+        return {'unit': self._unit}
     
     def _calculate_tick_interval(self, depth_span: float) -> tuple[float, float]:
         """
@@ -110,7 +77,7 @@ class RulerColumn(BaseColumn):
         
         return (major_interval, minor_interval)
     
-    def _paint_content(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], rows: list[StratRow]) -> None:
+    def paint_content(self, painter: QPainter, rect: QRectF, depth_range: tuple[float, float], rows: list[StratRow]) -> None:
         """
         Paint the ruler with ticks and labels.
         
@@ -180,8 +147,3 @@ class RulerColumn(BaseColumn):
                 painter.setPen(QPen(QColor(60, 60, 60), 2))
             
             major_depth += major_interval
-    
-    @property
-    def has_data(self) -> bool:
-        """Ruler always has data (it renders based on scale)."""
-        return True
