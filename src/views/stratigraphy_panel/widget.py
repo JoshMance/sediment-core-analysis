@@ -10,6 +10,7 @@ class StratigraphyPanel(QWidget):
         
         # Canvas (private)
         self._canvas = StratigraphyCanvas(self)
+        self._canvas.setStyleSheet("StratigraphyCanvas { background-color: #F0F0F0; }")
         
         # Scrollbar
         self._scrollbar = QScrollBar()
@@ -41,6 +42,32 @@ class StratigraphyPanel(QWidget):
         toolbar = QToolBar()
         toolbar.setMovable(False)
         toolbar.setIconSize(QSize(20, 20))
+        toolbar.setStyleSheet("""
+            QToolBar { 
+                background-color: #F0F0F0; 
+                border: none;
+                spacing: 5px;
+            }
+            QPushButton {
+                background-color: #F0F0F0;
+                border: 1px solid #C0C0C0;
+                border-radius: 3px;
+                padding: 5px 10px;
+                color: #333;
+            }
+            QPushButton:hover {
+                background-color: #E0E0E0;
+                border-color: #A0A0A0;
+            }
+            QPushButton:checked {
+                background-color: #0078D4;
+                color: white;
+                border-color: #0078D4;
+            }
+            QPushButton:pressed {
+                background-color: #005A9E;
+            }
+        """)
         
         # Add button
         self.add_btn = QPushButton("Add")
@@ -117,3 +144,7 @@ class StratigraphyPanel(QWidget):
     def add_row_divider(self, depth: float) -> None:
         """Add a horizontal divider at the specified depth."""
         self._canvas.add_row_divider(depth)
+    
+    def get_rows(self):
+        """Get the list of row objects from the canvas."""
+        return self._canvas.rows

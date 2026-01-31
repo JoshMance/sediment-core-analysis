@@ -122,18 +122,20 @@ class DataColumn(BaseColumn):
         domain_rect = rect.adjusted(DOMAIN_PADDING, 0, -DOMAIN_PADDING, 0)
         
         # Draw vertical guide lines at min, mid, and max positions
-        painter.setPen(QPen(QColor(200, 200, 200), 1))
+        pen = QPen(QColor(200, 200, 200), 1)
+        pen.setCosmetic(True)  # Always 1 physical pixel
+        painter.setPen(pen)
         
-        # Min line (left edge)
-        min_x = domain_rect.x()
+        # Min line (left edge) - vertical: x + 0.5
+        min_x = domain_rect.x() + 0.5
         painter.drawLine(QPointF(min_x, domain_rect.top()), QPointF(min_x, domain_rect.bottom()))
         
-        # Mid line (center)
-        mid_x = domain_rect.x() + domain_rect.width() / 2
+        # Mid line (center) - vertical: x + 0.5
+        mid_x = domain_rect.x() + domain_rect.width() / 2 + 0.5
         painter.drawLine(QPointF(mid_x, domain_rect.top()), QPointF(mid_x, domain_rect.bottom()))
         
-        # Max line (right edge)
-        max_x = domain_rect.x() + domain_rect.width()
+        # Max line (right edge) - vertical: x + 0.5
+        max_x = domain_rect.x() + domain_rect.width() + 0.5
         painter.drawLine(QPointF(max_x, domain_rect.top()), QPointF(max_x, domain_rect.bottom()))
         
         # Normalize data to domain width (horizontal)

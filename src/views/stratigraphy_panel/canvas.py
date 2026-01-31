@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QPaintEvent, QPen, QFont, QColor
 from PySide6.QtCore import Qt, QRectF, QPointF
-from .columns import HEADER_HEIGHT, TITLE_HEIGHT
+from .columns import HEADER_HEIGHT, TITLE_HEIGHT, HEADER_GAP
 from .rows import StratRow
 
 class StratigraphyCanvas(QWidget):
@@ -69,7 +69,7 @@ class StratigraphyCanvas(QWidget):
     
     def set_scroll_offset(self, offset: float) -> None:
         """Set scroll offset programmatically (e.g., from scrollbar)."""
-        available_height = self.height() - TITLE_HEIGHT - HEADER_HEIGHT
+        available_height = self.height() - TITLE_HEIGHT - HEADER_HEIGHT - HEADER_GAP
         max_scroll = max(0.0, self.max_content_height - available_height)
         self.scroll_offset = max(0.0, min(offset, max_scroll))
         self.update()
@@ -143,11 +143,11 @@ class StratigraphyCanvas(QWidget):
             Y pixel coordinate (including title/header offset and scroll)
         """
         if self.depth_range[1] == self.depth_range[0]:
-            return TITLE_HEIGHT + HEADER_HEIGHT
+            return TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP
         
         normalized = (depth - self.depth_range[0]) / (self.depth_range[1] - self.depth_range[0])
         content_y = normalized * self.max_content_height
-        return TITLE_HEIGHT + HEADER_HEIGHT + content_y - self.scroll_offset
+        return TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP + content_y - self.scroll_offset
     
     def _pixel_y_to_depth(self, y: float) -> float:
         """
@@ -159,8 +159,8 @@ class StratigraphyCanvas(QWidget):
         Returns:
             Depth value
         """
-        # Remove title/header offset and add scroll offset
-        content_y = y - TITLE_HEIGHT - HEADER_HEIGHT + self.scroll_offset
+        # Remove title/header/gap offset and add scroll offset
+        content_y = y - TITLE_HEIGHT - HEADER_HEIGHT - HEADER_GAP + self.scroll_offset
         
         if self.max_content_height == 0:
             return self.depth_range[0]
@@ -225,11 +225,13 @@ class StratigraphyCanvas(QWidget):
             
             painter.save()
             min_val, max_val = metadata['domain_range']
-            domain_line_y = rect.bottom() - 16
+            domain_line_y = rect.bottom() - 16 + 0.5  # Horizontal: y + 0.5
             
             # Draw domain line (inset by padding)
             from .columns import DOMAIN_PADDING
-            painter.setPen(QPen(QColor(100, 100, 100), max(1, int(1 * dpr))))
+            pen = QPen(QColor(100, 100, 100), 1)
+            pen.setCosmetic(True)
+            painter.setPen(pen)
             line_x1 = rect.x() + DOMAIN_PADDING
             line_x2 = rect.x() + rect.width() - DOMAIN_PADDING
             painter.drawLine(QPointF(line_x1, domain_line_y), QPointF(line_x2, domain_line_y))
@@ -297,7 +299,7 @@ class StratigraphyCanvas(QWidget):
         
         # Notify scrollbar of potential change
         if self.scroll_changed:
-            available_height = self.height() - TITLE_HEIGHT - HEADER_HEIGHT
+            available_height = self.height() - TITLE_HEIGHT - HEADER_HEIGHT - HEADER_GAP
             max_scroll = max(0.0, self.max_content_height - available_height)
             self.scroll_changed(self.scroll_offset, max_scroll, available_height)
     
@@ -308,7 +310,7 @@ class StratigraphyCanvas(QWidget):
         scroll_amount = -delta / 2  # Convert to pixels (faster scrolling)
         
         # Update scroll offset with bounds checking
-        available_height = self.height() - TITLE_HEIGHT - HEADER_HEIGHT
+        available_height = self.height() - TITLE_HEIGHT - HEADER_HEIGHT - HEADER_GAP
         max_scroll = max(0.0, self.max_content_height - available_height)
         
         self.scroll_offset = max(0.0, min(self.scroll_offset + scroll_amount, max_scroll))
@@ -327,7 +329,7 @@ class StratigraphyCanvas(QWidget):
             # Add mode: click in chart area to add divider
             if self.interaction_mode == 'add':
                 # Only add if clicking in chart area (below header)
-                if y > TITLE_HEIGHT + HEADER_HEIGHT:
+                if y > TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP:
                     depth = self._pixel_y_to_depth(y)
                     # Clamp to depth range
                     depth = max(self.depth_range[0], min(depth, self.depth_range[1]))
@@ -377,7 +379,7 @@ class StratigraphyCanvas(QWidget):
             self.last_pan_pos = event.pos()
             
             # Update scroll offset (opposite direction of mouse movement)
-            available_height = self.height() - TITLE_HEIGHT - HEADER_HEIGHT
+            available_height = self.height() - TITLE_HEIGHT - HEADER_HEIGHT - HEADER_GAP
             max_scroll = max(0.0, self.max_content_height - available_height)
             
             self.scroll_offset = max(0.0, min(self.scroll_offset - delta_y, max_scroll))
@@ -392,7 +394,7 @@ class StratigraphyCanvas(QWidget):
             if self.interaction_mode == 'add':
                 # Track preview position for add mode
                 y = event.pos().y()
-                if y > TITLE_HEIGHT + HEADER_HEIGHT:
+                if y > TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP:
                     self.preview_y = y
                 else:
                     self.preview_y = None
@@ -412,7 +414,7 @@ class StratigraphyCanvas(QWidget):
                 row_idx = None
                 if divider_idx is None and self.rows:
                     y = event.pos().y()
-                    if y > TITLE_HEIGHT + HEADER_HEIGHT:
+                    if y > TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP:
                         depth = self._pixel_y_to_depth(y)
                         # Find which row contains this depth
                         for i, row in enumerate(self.rows):
@@ -469,7 +471,7 @@ class StratigraphyCanvas(QWidget):
         # Antialiasing disabled
         # painter.setRenderHint(QPainter.Antialiasing)
         # painter.setRenderHint(QPainter.TextAntialiasing)
-        painter.fillRect(self.rect(), Qt.white)
+        painter.fillRect(self.rect(), Qt.white)  # White background for content area
         
         # Get device pixel ratio for HiDPI displays
         dpr = self.devicePixelRatio()
@@ -486,10 +488,12 @@ class StratigraphyCanvas(QWidget):
         painter.fillRect(title_rect, Qt.white)
         
         # Draw title borders (left, top, right only - no bottom to avoid double line)
-        painter.setPen(QPen(QColor(45, 45, 45), max(1, int(1 * dpr))))
-        painter.drawLine(0, 0, int(canvas_width), 0)  # Top
-        painter.drawLine(0, 0, 0, int(TITLE_HEIGHT))  # Left
-        painter.drawLine(int(canvas_width), 0, int(canvas_width), int(TITLE_HEIGHT))  # Right
+        pen = QPen(QColor(45, 45, 45), 1)
+        pen.setCosmetic(True)  # Always 1 physical pixel
+        painter.setPen(pen)
+        painter.drawLine(0, 0.5, int(canvas_width), 0.5)  # Top (horizontal: y + 0.5)
+        painter.drawLine(0.5, 0, 0.5, int(TITLE_HEIGHT))  # Left (vertical: x + 0.5)
+        painter.drawLine(int(canvas_width) - 0.5, 0, int(canvas_width) - 0.5, int(TITLE_HEIGHT))  # Right (vertical: x + 0.5)
         
         # Draw title text (normal size)
         painter.drawText(title_rect.adjusted(10, 0, 0, 0), Qt.AlignLeft | Qt.AlignVCenter, self.title)
@@ -510,17 +514,21 @@ class StratigraphyCanvas(QWidget):
             self._paint_column_header(painter, header_rect, column, dpr)
         
         # Draw ALL structural lines ON TOP (so they're not covered by header backgrounds)
-        painter.setPen(QPen(QColor(45, 45, 45), max(1, int(1 * dpr))))
+        pen = QPen(QColor(45, 45, 45), 1)
+        pen.setCosmetic(True)  # Always 1 physical pixel
+        painter.setPen(pen)
         
-        # Vertical lines (from title bottom to canvas bottom)
-        for x_pos in column_x_positions:
-            painter.drawLine(x_pos, int(TITLE_HEIGHT), x_pos, canvas_height)
+        # Fill the gap area with grey
+        gap_rect = QRectF(0, TITLE_HEIGHT + HEADER_HEIGHT, canvas_width, HEADER_GAP)
+        painter.fillRect(gap_rect, QColor(240, 240, 240))
         
-        # Horizontal header lines (across full width)
-        header_top_y = int(TITLE_HEIGHT)
-        header_bottom_y = int(TITLE_HEIGHT + HEADER_HEIGHT)
+        # Horizontal header lines (across full width) - offset by 0.5 for crispness
+        header_top_y = int(TITLE_HEIGHT) + 0.5
+        header_bottom_y = int(TITLE_HEIGHT + HEADER_HEIGHT) + 0.5
+        content_top_y = int(TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP) + 0.5
         painter.drawLine(0, header_top_y, canvas_width, header_top_y)
         painter.drawLine(0, header_bottom_y, canvas_width, header_bottom_y)
+        painter.drawLine(0, content_top_y, canvas_width, content_top_y)  # Bottom of gap / top of content
         
         # Draw all column content
         content_height = self.max_content_height
@@ -529,8 +537,8 @@ class StratigraphyCanvas(QWidget):
             x_end = column_x_positions[i + 1]
             width = x_end - x_start
             
-            # Content area (below header, with scrolling)
-            content_rect = QRectF(x_start, TITLE_HEIGHT + HEADER_HEIGHT, width, content_height)
+            # Content area (below header + gap, with scrolling)
+            content_rect = QRectF(x_start, TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP, width, content_height)
             
             # Save painter state and set clipping
             painter.save()
@@ -551,9 +559,9 @@ class StratigraphyCanvas(QWidget):
             y_bottom = self._depth_to_pixel_y(row.max_depth)
             
             # Only draw if visible
-            if y_bottom >= TITLE_HEIGHT + HEADER_HEIGHT and y_top <= canvas_height:
+            if y_bottom >= TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP and y_top <= canvas_height:
                 # Clamp to visible area
-                visible_top = max(y_top, TITLE_HEIGHT + HEADER_HEIGHT)
+                visible_top = max(y_top, TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP)
                 visible_bottom = min(y_bottom, canvas_height)
                 
                 # Draw semi-transparent blue overlay
@@ -565,23 +573,52 @@ class StratigraphyCanvas(QWidget):
             for i in range(len(self.rows) - 1):  # Exclude last row (bottom boundary)
                 y = self._depth_to_pixel_y(self.rows[i].max_depth)
                 # Only draw if visible in viewport
-                if TITLE_HEIGHT + HEADER_HEIGHT <= y <= canvas_height:
+                if TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP <= y <= canvas_height:
                     # Check if this divider should be highlighted (hovered directly, or part of hovered row)
                     is_highlighted = (i == self.divider_hover or 
                                     (self.row_hover is not None and (i == self.row_hover or i == self.row_hover - 1)))
                     
                     # Red if delete mode + hovered, blue if highlighted, dark grey otherwise
                     if i == self.divider_hover and self.interaction_mode == 'delete':
-                        painter.setPen(QPen(QColor(220, 50, 50), max(2, int(2 * dpr))))  # Red, DPR-aware
+                        pen = QPen(QColor(220, 50, 50), 2)
+                        pen.setCosmetic(True)
+                        painter.setPen(pen)
                     elif is_highlighted:
-                        painter.setPen(QPen(QColor(0, 120, 215), max(2, int(2 * dpr))))  # Blue, DPR-aware
+                        pen = QPen(QColor(0, 120, 215), 2)
+                        pen.setCosmetic(True)
+                        painter.setPen(pen)
                     else:
-                        painter.setPen(QPen(QColor(80, 80, 80), max(1, int(1 * dpr))))  # Dark grey, DPR-aware
-                    painter.drawLine(0, int(y), canvas_width, int(y))
+                        pen = QPen(QColor(80, 80, 80), 1)
+                        pen.setCosmetic(True)
+                        painter.setPen(pen)
+                    painter.drawLine(0, int(y) + 0.5, canvas_width, int(y) + 0.5)  # Horizontal: y + 0.5
         
         # Draw preview line in add mode
         if self.interaction_mode == 'add' and self.preview_y is not None:
-            painter.setPen(QPen(QColor(180, 180, 180), max(1, int(1 * dpr))))  # Light grey, DPR-aware
-            painter.drawLine(0, int(self.preview_y), canvas_width, int(self.preview_y))
+            pen = QPen(QColor(180, 180, 180), 1)
+            pen.setCosmetic(True)
+            painter.setPen(pen)
+            painter.drawLine(0, int(self.preview_y) + 0.5, canvas_width, int(self.preview_y) + 0.5)  # Horizontal: y + 0.5
+        
+        # Draw vertical column separator lines LAST (on top of all content and dividers)
+        pen = QPen(QColor(45, 45, 45), 1)
+        pen.setCosmetic(True)  # Always 1 physical pixel
+        painter.setPen(pen)
+        
+        # Draw left border as continuous line (crosses the gap)
+        painter.drawLine(0.5, int(TITLE_HEIGHT), 0.5, canvas_height)
+        
+        # Draw right border as continuous line (crosses the gap)
+        painter.drawLine(int(canvas_width) - 0.5, int(TITLE_HEIGHT), int(canvas_width) - 0.5, canvas_height)
+        
+        # Draw internal column separators in two sections (skip the gap)
+        for i, x_pos in enumerate(column_x_positions):
+            # Skip first (left border) and last (right border) positions
+            if i == 0 or i == len(column_x_positions) - 1:
+                continue
+            # Header section
+            painter.drawLine(x_pos + 0.5, int(TITLE_HEIGHT), x_pos + 0.5, int(TITLE_HEIGHT + HEADER_HEIGHT))
+            # Content section (skip the gap)
+            painter.drawLine(x_pos + 0.5, int(TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP), x_pos + 0.5, canvas_height)
         
         painter.end()

@@ -10,6 +10,7 @@ from ..rows import StratRow
 # Layout constants
 HEADER_HEIGHT = 55
 TITLE_HEIGHT = 50
+HEADER_GAP = 5  # Gap between header and content area
 DOMAIN_PADDING = 10  # Inner padding for data columns
 
 

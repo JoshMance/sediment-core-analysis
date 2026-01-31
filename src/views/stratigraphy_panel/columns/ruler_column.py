@@ -72,6 +72,9 @@ class RulerColumn(BaseColumn):
         else:
             major_interval = 10 * magnitude
         
+        # Halve intervals to get twice as many ticks
+        major_interval = major_interval / 2
+        
         # Minor interval is 1/5 of major
         minor_interval = major_interval / 5
         
@@ -103,7 +106,9 @@ class RulerColumn(BaseColumn):
         ruler_x = rect.x() + rect.width()
         
         # Draw minor ticks
-        painter.setPen(QPen(QColor(120, 120, 120), 1))
+        pen = QPen(QColor(120, 120, 120), 1)
+        pen.setCosmetic(True)  # Always 1 physical pixel
+        painter.setPen(pen)
         minor_depth = (int(min_depth / minor_interval) + 1) * minor_interval
         
         while minor_depth < max_depth:
@@ -111,7 +116,7 @@ class RulerColumn(BaseColumn):
             is_major = abs(minor_depth % major_interval) < minor_interval * 0.01
             
             if not is_major:
-                y = self._depth_to_pixel(minor_depth, rect, depth_range)
+                y = self._depth_to_pixel(minor_depth, rect, depth_range) + 0.5  # Horizontal: y + 0.5
                 if rect.top() <= y <= rect.bottom():
                     tick_start = ruler_x - self._minor_tick_length
                     tick_end = ruler_x
@@ -120,11 +125,13 @@ class RulerColumn(BaseColumn):
             minor_depth += minor_interval
         
         # Draw major ticks with labels
-        painter.setPen(QPen(QColor(60, 60, 60), 2))
+        pen = QPen(QColor(60, 60, 60), 2)
+        pen.setCosmetic(True)  # Always 2 physical pixels
+        painter.setPen(pen)
         major_depth = (int(min_depth / major_interval) + 1) * major_interval
         
         while major_depth <= max_depth:
-            y = self._depth_to_pixel(major_depth, rect, depth_range)
+            y = self._depth_to_pixel(major_depth, rect, depth_range) + 0.5  # Horizontal: y + 0.5
             
             if rect.top() <= y <= rect.bottom():
                 # Draw major tick (extends left from ruler line)
