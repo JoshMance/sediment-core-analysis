@@ -2,11 +2,11 @@
 import sys
 import os
 
-# Add parent directories to path for standalone execution
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Add src directory to path for standalone execution
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from PySide6.QtWidgets import QApplication
-from views.file_panel.widget import FilePanel
+from views.panels.file_panel.widget import FilePanel
 
 
 def main():

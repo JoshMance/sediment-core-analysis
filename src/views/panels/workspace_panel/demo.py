@@ -2,13 +2,13 @@
 import sys
 import os
 
-# Add parent directories to path for standalone execution
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Add src directory to path for standalone execution
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 import numpy as np
 from pathlib import Path
 from PySide6.QtWidgets import QApplication
-from views.workspace_panel.widget import WorkspacePanel
+from views.panels.workspace_panel.widget import WorkspacePanel
 from models.datatypes import Image
 
 

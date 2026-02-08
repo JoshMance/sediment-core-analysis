@@ -1,7 +1,14 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QToolBar, QPushButton, 
-                                QLabel, QLineEdit, QSizePolicy, QSlider)
-from PySide6.QtGui import QPixmap, QIcon, QDoubleValidator
+                                QLabel, QLineEdit, QSlider)
+from PySide6.QtGui import QPixmap, QDoubleValidator, QImage
 from PySide6.QtCore import QSize, Qt
+
+import sys
+import os
+import numpy as np
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
+from models.datatypes import Image, Core
 from .canvas import ImageCanvas, MODE_PAN, MODE_SELECT, MODE_CALIBRATE
 from .signals import ImageInteractionSignals
 
@@ -18,6 +25,7 @@ class ImagePanel(QWidget):
         self.canvas = ImageCanvas(self)
 
         # State
+        self._image: Image | None = None  # Current Image datatype
         self._current_mode = MODE_PAN
         self._calibration_mm_per_pixel = None  # Set after calibration
 
@@ -162,14 +170,6 @@ class ImagePanel(QWidget):
             widget_y = (mid_img_y + img_offset_y) * self.canvas._zoom + self.canvas._pan_y
             
             # Position input widget above the line
-            canvas_pos = self.canvas.mapToGlobal(self.canvas.pos())
-            global_x = canvas_pos.x() + int(widget_x - self.calib_input_widget.width() / 2)
-            global_y = canvas_pos.y() + int(widget_y - self.calib_input_widget.height() - 15)
-            
-            # Convert back to parent widget coordinates
-            parent_pos = self.mapFromGlobal(self.canvas.mapToGlobal(
-                self.canvas.pos()
-            ))
             self.calib_input_widget.move(
                 int(widget_x - self.calib_input_widget.width() / 2),
                 int(widget_y - self.calib_input_widget.height() - 15)
@@ -237,6 +237,12 @@ class ImagePanel(QWidget):
                 # Print selection size
                 print(f"Selected region: {pixmap.width()} x {pixmap.height()} pixels")
                 
+                # Create Core from selection
+                core = self._create_core_from_pixmap(pixmap)
+                print(f"Created Core: {core}")
+                print(f"  Image shape: {core.image.shape}")
+                print(f"  Depth range: {core.depth_range_mm} mm")
+                
                 # Scale pixmap to fit preview while maintaining aspect ratio
                 scaled_pixmap = pixmap.scaled(
                     self.preview_label.size(),
@@ -298,16 +304,71 @@ class ImagePanel(QWidget):
 
     # -------- Public API --------
 
-    def set_image(self, pixmap: QPixmap | None) -> None:
-        """Set the image to display and emit change signal."""
+    def set_image(self, image: Image | None) -> None:
+        """Set the Image datatype to display."""
+        self._image = image
+        pixmap = self._image_to_pixmap(image) if image else None
         self.canvas.set_pixmap(pixmap)
-        self.signals.imageChanged.emit(pixmap)
+        self.signals.imageChanged.emit(image)
 
-    def set_mode(self, mode: str) -> None:
-        """Set interaction mode (reserved for future extension)."""
-        # Implementation handled by controller
-        pass
+    def get_image(self) -> Image | None:
+        """Get the current Image datatype."""
+        return self._image
 
     def clear(self) -> None:
         """Clear the displayed image."""
+        self._image = None
         self.canvas.set_pixmap(None)
+
+    # -------- Internal Conversion --------
+
+    def _image_to_pixmap(self, image: Image) -> QPixmap | None:
+        """Convert Image datatype to QPixmap for rendering."""
+        if image.data is None:
+            return None
+        
+        # Image.data is (height, width, 3) RGB numpy array
+        h, w, channels = image.data.shape
+        bytes_per_line = channels * w
+        
+        # Create QImage from numpy data (expects contiguous array)
+        qimage = QImage(
+            image.data.tobytes(),
+            w, h,
+            bytes_per_line,
+            QImage.Format_RGB888
+        )
+        
+        return QPixmap.fromImage(qimage)
+
+    def _pixmap_to_ndarray(self, pixmap: QPixmap) -> np.ndarray:
+        """Convert QPixmap to numpy array (RGB)."""
+        qimage = pixmap.toImage().convertToFormat(QImage.Format_RGB888)
+        w, h = qimage.width(), qimage.height()
+        
+        # Get raw bytes and reshape
+        ptr = qimage.bits()
+        arr = np.frombuffer(ptr, dtype=np.uint8).reshape((h, w, 3)).copy()
+        return arr
+
+    def _create_core_from_pixmap(self, pixmap: QPixmap) -> Core:
+        """Create a Core datatype from a cropped QPixmap."""
+        # Convert pixmap to numpy array
+        image_data = self._pixmap_to_ndarray(pixmap)
+        
+        # Create Image datatype
+        image = Image(
+            name="Cropped Core",
+            data=image_data
+        )
+        
+        # Create Core with current calibration (or default)
+        mm_per_px = self._calibration_mm_per_pixel or 0.5  # Default 0.5 mm/px
+        
+        core = Core(
+            name="Cropped Core",
+            image=image,
+            mm_per_px=mm_per_px
+        )
+        
+        return core
