@@ -7,14 +7,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 import numpy as np
 from PIL import Image as PILImage
-from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWidgets import QMainWindow
 
 from views.panels.image_panel.widget import ImagePanel
+from views.theme import create_demo_app
 from models.datatypes import Image
 
 
 def main():
-    app = QApplication(sys.argv)
+    app, _theme = create_demo_app(sys.argv)
 
     # Create main window
     window = QMainWindow()

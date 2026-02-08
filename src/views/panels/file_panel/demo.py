@@ -5,12 +5,12 @@ import os
 # Add src directory to path for standalone execution
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-from PySide6.QtWidgets import QApplication
 from views.panels.file_panel.widget import FilePanel
+from views.theme import create_demo_app
 
 
 def main():
-    app = QApplication(sys.argv)
+    app, _theme = create_demo_app(sys.argv)
     
     panel = FilePanel()
     panel.setWindowTitle("File Panel Demo")

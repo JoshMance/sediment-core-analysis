@@ -101,27 +101,58 @@ class Ribbon(QWidget):
         layout.setSpacing(0)
         layout.addWidget(self._tabs)
         
-        # Styling
+        # Styling - burgundy tab bar with white content
         self.setStyleSheet("""
             Ribbon {
-                background-color: #f5f5f5;
+                background-color: white;
                 border-bottom: 1px solid #ccc;
             }
             QTabWidget::pane {
-                border: none;
-                background-color: #f9f9f9;
+                border: 1px solid #ccc;
+                background: white;
+                top: -1px;
+            }
+            QTabBar {
+                background: #7C444E;
             }
             QTabBar::tab {
-                padding: 6px 16px;
-                background-color: transparent;
-                border: none;
+                color: white;
+                border-top-left-radius: 2px;
+                border-top-right-radius: 2px;
+                padding: 5px 24px;
+                margin-top: 5px;
+                margin-left: 5px;
+                margin-right: 2px;
+                font-size: 13px;
             }
             QTabBar::tab:selected {
-                background-color: #f9f9f9;
-                border-bottom: 2px solid #0078d4;
+                background: white;
+                color: black;
+                border-top-left-radius: 2px;
+                border-top-right-radius: 2px;
+                border-bottom: 1px solid white;
             }
             QTabBar::tab:hover:!selected {
-                background-color: #e8e8e8;
+                background: #8E5560;
+                border-top-left-radius: 2px;
+                border-top-right-radius: 2px;
+            }
+            RibbonButton {
+                background: #f8f8f8;
+                color: #333;
+                border: none;
+                border-radius: 4px;
+                padding: 10px 20px;
+                min-width: 60px;
+                font-size: 13px;
+            }
+            RibbonButton:hover {
+                background: #e5f1fb;
+                border: 1px solid #0078d4;
+            }
+            RibbonButton:pressed {
+                background: #cce4f7;
+                border: 1px solid #005a9e;
             }
         """)
         

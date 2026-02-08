@@ -1,7 +1,7 @@
 """Stratigraphy panel for visualization and interaction."""
 
 from .widget import StratigraphyPanel
-from .columns import BaseColumn, ImageColumn, DataColumn, RulerColumn
+from .columns import BaseColumn, ImageColumn, DataColumn, RulerColumn, LayerColumn, LayerStyle
 from .rows import StratRow
 
 __all__ = [
@@ -10,5 +10,7 @@ __all__ = [
     'ImageColumn',
     'DataColumn',
     'RulerColumn',
-    'StratRow'
+    'LayerColumn',
+    'LayerStyle',
+    'StratRow',
 ]

@@ -7,12 +7,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 import numpy as np
 from PIL import Image as PILImage
-from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWidgets import QMainWindow
 from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtCore import Qt
 
 from views.panels.stratigraphy_panel.widget import StratigraphyPanel
 from views.panels.stratigraphy_panel.columns import BaseColumn, ImageColumn, DataColumn, RulerColumn, LayerColumn, LayerStyle
+from views.theme import create_demo_app
 from models.datatypes import Image, Core, ContinuousData, CategoricalData
 
 
@@ -69,7 +70,7 @@ def calculate_mean_color_for_depth_range(
 
 
 def main():
-    app = QApplication(sys.argv)
+    app, _theme = create_demo_app(sys.argv)
     
     # Create main window
     window = QMainWindow()

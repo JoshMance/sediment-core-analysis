@@ -1,0 +1,5 @@
+# TODO
+
+1. We must ensure that the Stratigraphy panel is correctly creating all columns by using transformation functions that act on the passed instance of the core datatype. Note: while this may already be implemented, these transformations should be explicitly stored. Also, we must decide whether to have multiple view column types, or do some kind of polymorphism.
+
+2. The Stratrigraphy panel should respect theme selection.

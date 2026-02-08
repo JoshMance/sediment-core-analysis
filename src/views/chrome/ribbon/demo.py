@@ -2,13 +2,14 @@
 from pathlib import Path
 import sys
 
-# Add ribbon folder to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
+# Add src folder to path for imports
+sys.path.insert(0, str(Path(__file__).parents[3]))
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QTextEdit
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QTextEdit
 from PySide6.QtGui import QIcon
 
-from widget import Ribbon, RibbonTab, RibbonGroup, RibbonButton
+from views.chrome.ribbon.widget import Ribbon, RibbonTab, RibbonGroup, RibbonButton
+from views.theme import create_demo_app
 
 
 class DemoWindow(QMainWindow):
@@ -107,7 +108,7 @@ class DemoWindow(QMainWindow):
 
 
 def main() -> None:
-    app = QApplication(sys.argv)
+    app, _theme = create_demo_app(sys.argv)
     window = DemoWindow()
     window.show()
     sys.exit(app.exec())
