@@ -410,3 +410,10 @@ class WidgetGallery(QDialog):
                 launch_help(w)
                 break
             w = w.parentWidget()
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    gallery = WidgetGallery()
+    gallery.show()
+    sys.exit(app.exec())
