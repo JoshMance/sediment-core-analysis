@@ -1,25 +1,35 @@
+from __future__ import annotations
+from typing import Callable
+
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QToolBar, QPushButton, 
                                 QLabel, QLineEdit, QSlider)
 from PySide6.QtGui import QPixmap, QDoubleValidator, QImage
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, QObject, Signal
 
-import sys
-import os
 import numpy as np
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-from models.datatypes import Image, Core
+from models import Image
 from .canvas import ImageCanvas, MODE_PAN, MODE_SELECT, MODE_CALIBRATE
-from .signals import ImageInteractionSignals
+
+
+class ImagePanelSignals(QObject):
+    """Signals emitted by ImagePanel."""
+    imageChanged = Signal(object)  # Image datatype
 
 class ImagePanel(QWidget):
-    """Main widget providing image display with pan/zoom interaction."""
+    """
+    Main widget providing image display with pan/zoom interaction.
+    
+    The panel RENDERS an Image - it does NOT own domain logic.
+    When user confirms selection or calibration, callbacks are invoked.
+    The controller (demo) handles callbacks and decides what to do.
+    """
     
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         # Signals
-        self.signals = ImageInteractionSignals()
+        self.signals = ImagePanelSignals()
 
         # Internal canvas
         self.canvas = ImageCanvas(self)
@@ -27,7 +37,11 @@ class ImagePanel(QWidget):
         # State
         self._image: Image | None = None  # Current Image datatype
         self._current_mode = MODE_PAN
-        self._calibration_mm_per_pixel = None  # Set after calibration
+        self._calibration_mm_per_pixel: float | None = None  # Set after calibration
+        
+        # Callbacks (set by controller/demo)
+        self.on_selection_confirmed: Callable[[QPixmap, float | None], None] | None = None
+        self.on_calibration_confirmed: Callable[[float], None] | None = None
 
         # Toolbar
         self.toolbar = self._create_toolbar()
@@ -231,19 +245,10 @@ class ImagePanel(QWidget):
     def _on_confirm_clicked(self) -> None:
         """Handle Confirm button click."""
         if self._current_mode == MODE_SELECT:
-            # Extract and show preview
+            # Extract selected region
             pixmap = self.canvas.get_selection_pixmap()
             if pixmap:
-                # Print selection size
-                print(f"Selected region: {pixmap.width()} x {pixmap.height()} pixels")
-                
-                # Create Core from selection
-                core = self._create_core_from_pixmap(pixmap)
-                print(f"Created Core: {core}")
-                print(f"  Image shape: {core.image.shape}")
-                print(f"  Depth range: {core.depth_range_mm} mm")
-                
-                # Scale pixmap to fit preview while maintaining aspect ratio
+                # Show preview
                 scaled_pixmap = pixmap.scaled(
                     self.preview_label.size(),
                     Qt.KeepAspectRatio,
@@ -251,6 +256,11 @@ class ImagePanel(QWidget):
                 )
                 self.preview_label.setPixmap(scaled_pixmap)
                 self.preview_label.show()
+                
+                # Invoke callback if set (controller handles domain logic)
+                if self.on_selection_confirmed is not None:
+                    self.on_selection_confirmed(pixmap, self._calibration_mm_per_pixel)
+            
             self._deactivate_selection()
         
         elif self._current_mode == MODE_CALIBRATE:
@@ -260,8 +270,10 @@ class ImagePanel(QWidget):
             
             if distance_mm > 0 and distance_pixels > 0:
                 self._calibration_mm_per_pixel = distance_mm / distance_pixels
-                print(f"Calibration set: {distance_pixels:.2f} pixels = {distance_mm} mm")
-                print(f"Scale: {self._calibration_mm_per_pixel:.6f} mm/pixel")
+                
+                # Invoke callback if set (controller can react to calibration)
+                if self.on_calibration_confirmed is not None:
+                    self.on_calibration_confirmed(self._calibration_mm_per_pixel)
             
             self._deactivate_calibration()
 
@@ -350,25 +362,3 @@ class ImagePanel(QWidget):
         ptr = qimage.bits()
         arr = np.frombuffer(ptr, dtype=np.uint8).reshape((h, w, 3)).copy()
         return arr
-
-    def _create_core_from_pixmap(self, pixmap: QPixmap) -> Core:
-        """Create a Core datatype from a cropped QPixmap."""
-        # Convert pixmap to numpy array
-        image_data = self._pixmap_to_ndarray(pixmap)
-        
-        # Create Image datatype
-        image = Image(
-            name="Cropped Core",
-            data=image_data
-        )
-        
-        # Create Core with current calibration (or default)
-        mm_per_px = self._calibration_mm_per_pixel or 0.5  # Default 0.5 mm/px
-        
-        core = Core(
-            name="Cropped Core",
-            image=image,
-            mm_per_px=mm_per_px
-        )
-        
-        return core

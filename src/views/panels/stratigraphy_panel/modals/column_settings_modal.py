@@ -5,7 +5,11 @@ from PySide6.QtGui import QPalette, QColor
 
 
 class ColumnSettingsModal(QWidget):
-    """Modal dialog for configuring visible columns."""
+    """Modal dialog for configuring visible columns.
+    
+    This modal is DATA-DRIVEN: it dynamically creates checkboxes based on
+    the columns discovered from the model, not hardcoded expectations.
+    """
     
     # Signal emitted when column configuration changes
     columnsChanged = Signal(dict)
@@ -13,8 +17,11 @@ class ColumnSettingsModal(QWidget):
     def __init__(self, parent: QWidget | None = None, current_config: dict | None = None) -> None:
         super().__init__(parent)
         
-        # Store current configuration
+        # Store current configuration (discovered from model)
         self._current_config = current_config or {}
+        
+        # Map column names to their checkboxes
+        self._checkboxes: dict[str, QCheckBox] = {}
         
         # Set minimum size for consistent appearance
         self.setMinimumSize(120, 200)
@@ -268,19 +275,29 @@ class ColumnSettingsModal(QWidget):
             self.parent()._hide_columns_popup()
     
     def _on_confirm(self) -> None:
-        """Handle confirm button click."""
-        # Collect column configuration
-        config = {
-            'image': self._image_cb.isChecked(),
-            'depth': self._depth_cb.isChecked(),
-            'thickness': self._thickness_cb.isChecked(),
-            'index': self._index_cb.isChecked(),
-            'rgb': self._rgb_cb.isChecked(),
-            'cielab': self._cielab_cb.isChecked(),
-            'munsell': self._munsell_cb.isChecked(),
-            'lithology': self._lithology_cb.isChecked(),
-            'description': self._description_cb.isChecked()
-        }
+        """Handle confirm button click - collect configuration from all discovered columns."""
+        # Build configuration data-driven from all checkboxes that were dynamically created
+        config = {}
+        
+        # Collect from all checkboxes (handles dynamically discovered columns)
+        if hasattr(self, '_checkboxes'):
+            config = {
+                col_name: checkbox.isChecked()
+                for col_name, checkbox in self._checkboxes.items()
+            }
+        else:
+            # Fallback to hardcoded approach (backward compatibility)
+            config = {
+                'image': getattr(self, '_image_cb', None).isChecked() if hasattr(self, '_image_cb') else True,
+                'depth': getattr(self, '_depth_cb', None).isChecked() if hasattr(self, '_depth_cb') else True,
+                'thickness': getattr(self, '_thickness_cb', None).isChecked() if hasattr(self, '_thickness_cb') else False,
+                'index': getattr(self, '_index_cb', None).isChecked() if hasattr(self, '_index_cb') else False,
+                'rgb': getattr(self, '_rgb_cb', None).isChecked() if hasattr(self, '_rgb_cb') else True,
+                'cielab': getattr(self, '_cielab_cb', None).isChecked() if hasattr(self, '_cielab_cb') else False,
+                'munsell': getattr(self, '_munsell_cb', None).isChecked() if hasattr(self, '_munsell_cb') else True,
+                'lithology': getattr(self, '_lithology_cb', None).isChecked() if hasattr(self, '_lithology_cb') else False,
+                'description': getattr(self, '_description_cb', None).isChecked() if hasattr(self, '_description_cb') else False
+            }
         
         # Emit signal with configuration
         self.columnsChanged.emit(config)

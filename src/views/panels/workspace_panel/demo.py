@@ -9,7 +9,7 @@ import numpy as np
 from pathlib import Path
 from views.panels.workspace_panel.widget import WorkspacePanel
 from views.theme import create_demo_app
-from models.datatypes import Image
+from models import Image
 
 
 def main():

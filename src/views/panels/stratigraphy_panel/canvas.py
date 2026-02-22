@@ -1,11 +1,24 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Callable
+
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QPaintEvent, QPen, QFont, QColor
 from PySide6.QtCore import Qt, QRectF, QPointF
-from .columns import HEADER_HEIGHT, TITLE_HEIGHT, HEADER_GAP
-from .rows import StratRow
+from .columns import HEADER_HEIGHT, TITLE_HEIGHT, HEADER_GAP, StratRow, rows_from_layers
+
+if TYPE_CHECKING:
+    from models import CoreAnalysis
+
 
 class StratigraphyCanvas(QWidget):
-    """Canvas widget for displaying stratigraphy data."""
+    """
+    Canvas widget for displaying stratigraphy data.
+    
+    The canvas RENDERS data from a CoreAnalysis - it does NOT own layer state.
+    When user interactions occur, the canvas emits callbacks instead of
+    mutating state. The controller (demo) handles callbacks, updates the
+    entity via services, and calls refresh() to update the view.
+    """
     
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -20,8 +33,16 @@ class StratigraphyCanvas(QWidget):
         # Depth range (for now, arbitrary units)
         self.depth_range = (0.0, 100.0)
         
-        # Rows (depth intervals between dividers)
-        self.rows: list[StratRow] = []
+        # Analysis reference (authoritative layer state lives here)
+        self._analysis: CoreAnalysis | None = None
+        
+        # Cached rows computed from analysis (read-only rendering hints)
+        self._cached_rows: list[StratRow] = []
+        
+        # Callbacks for boundary operations (set by controller/demo)
+        self.on_boundary_add: Callable[[float], None] | None = None  # depth in mm
+        self.on_boundary_delete: Callable[[int], None] | None = None  # layer index
+        self.on_boundary_move: Callable[[int, float], None] | None = None  # divider index, new_depth
         
         # Scroll state
         self.scroll_offset = 0.0
@@ -33,7 +54,8 @@ class StratigraphyCanvas(QWidget):
         self.last_pan_pos = None
         
         # Divider dragging state
-        self.dragging_divider: int | None = None  # Index of row whose max is being dragged
+        self.dragging_divider: int | None = None  # Index of divider being dragged
+        self._drag_preview_depth: float | None = None  # Preview depth during drag
         self.divider_hover: int | None = None  # Index of hovered divider
         self.row_hover: int | None = None  # Index of hovered row area
         self.setMouseTracking(True)  # Enable hover detection
@@ -43,6 +65,39 @@ class StratigraphyCanvas(QWidget):
         
         # Add mode preview line Y position
         self.preview_y: float | None = None
+    
+    @property
+    def rows(self) -> list[StratRow]:
+        """Get rows for rendering (computed from analysis or cached)."""
+        return self._cached_rows
+    
+    def set_analysis(self, analysis: CoreAnalysis) -> None:
+        """
+        Set the analysis to render.
+        
+        Rows are computed from analysis.layers. The view does NOT own
+        the layer state - CoreAnalysis is the authoritative source.
+        """
+        self._analysis = analysis
+        self._refresh_rows()
+        self._update_scroll_range()
+        self.update()
+    
+    def refresh(self) -> None:
+        """Recompute rows from analysis and repaint. Call after entity changes."""
+        self._refresh_rows()
+        self._update_scroll_range()
+        self.update()
+    
+    def _refresh_rows(self) -> None:
+        """Recompute cached rows from analysis."""
+        if self._analysis is None:
+            self._cached_rows = []
+        else:
+            self._cached_rows = rows_from_layers(
+                self._analysis.layers,
+                self._analysis.core,
+            )
         
     def add_column(self, column) -> None:
         """Add a column to the canvas."""
@@ -74,63 +129,48 @@ class StratigraphyCanvas(QWidget):
         self.scroll_offset = max(0.0, min(offset, max_scroll))
         self.update()
     
-    def add_row_divider(self, depth: float) -> None:
+    def _request_add_boundary(self, depth: float) -> None:
         """
-        Add a divider at the specified depth, creating/updating rows.
+        Request adding a boundary at the specified depth.
+        
+        Invokes the on_boundary_add callback if set. The controller
+        is responsible for actually modifying the analysis via services
+        and calling refresh().
         
         Args:
-            depth: Depth value where divider should be placed
+            depth: Depth value where boundary should be placed (in mm)
         """
-        # Find where to insert this depth
-        divider_depths = [self.depth_range[0]]
-        for row in self.rows:
-            divider_depths.append(row.max_depth)
-        divider_depths.append(self.depth_range[1])
-        
-        # Insert new depth (keep sorted, avoid duplicates)
-        if depth not in divider_depths:
-            divider_depths.append(depth)
-            divider_depths.sort()
-        
-        # Rebuild rows from dividers
-        self.rows = []
-        for i in range(len(divider_depths) - 1):
-            row = StratRow(
-                id=f"row_{i}",
-                min_depth=divider_depths[i],
-                max_depth=divider_depths[i + 1]
-            )
-            self.rows.append(row)
-        
-        self.update()
+        if self.on_boundary_add is not None:
+            self.on_boundary_add(depth)
     
-    def _delete_divider(self, divider_idx: int) -> None:
+    def _request_delete_boundary(self, divider_idx: int) -> None:
         """
-        Delete a divider, merging adjacent rows.
+        Request deleting the boundary at the given divider index.
+        
+        Invokes the on_boundary_delete callback if set. The controller
+        is responsible for actually modifying the analysis via services
+        and calling refresh().
         
         Args:
-            divider_idx: Index of the row whose max_depth is the divider to delete
+            divider_idx: Index of the divider to delete (boundary between layer[i] and layer[i+1])
         """
-        if divider_idx < 0 or divider_idx >= len(self.rows) - 1:
-            return  # Can't delete first or last boundary
+        if self.on_boundary_delete is not None:
+            self.on_boundary_delete(divider_idx)
+    
+    def _request_move_boundary(self, divider_idx: int, new_depth: float) -> None:
+        """
+        Request moving a boundary to a new depth.
         
-        # Merge rows[divider_idx] and rows[divider_idx + 1]
-        merged_row = StratRow(
-            id=f"row_{divider_idx}",
-            min_depth=self.rows[divider_idx].min_depth,
-            max_depth=self.rows[divider_idx + 1].max_depth
-        )
+        Invokes the on_boundary_move callback if set. The controller
+        is responsible for actually modifying the analysis via services
+        and calling refresh().
         
-        # Replace with merged row
-        self.rows[divider_idx] = merged_row
-        del self.rows[divider_idx + 1]
-        
-        # Renumber remaining rows
-        for i, row in enumerate(self.rows):
-            row.id = f"row_{i}"
-        
-        self.divider_hover = None
-        self.update()
+        Args:
+            divider_idx: Index of the divider being moved
+            new_depth: New depth for the boundary (in mm)
+        """
+        if self.on_boundary_move is not None:
+            self.on_boundary_move(divider_idx, new_depth)
     
     def _depth_to_pixel_y(self, depth: float) -> float:
         """
@@ -326,27 +366,30 @@ class StratigraphyCanvas(QWidget):
         if event.button() == Qt.LeftButton:
             y = event.pos().y()
             
-            # Add mode: click in chart area to add divider
+            # Add mode: click in chart area to request adding a boundary
             if self.interaction_mode == 'add':
                 # Only add if clicking in chart area (below header)
                 if y > TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP:
                     depth = self._pixel_y_to_depth(y)
                     # Clamp to depth range
                     depth = max(self.depth_range[0], min(depth, self.depth_range[1]))
-                    self.add_row_divider(depth)
+                    self._request_add_boundary(depth)
                 return
             
-            # Delete mode: click on divider to delete it
+            # Delete mode: click on divider to request deleting it
             if self.interaction_mode == 'delete':
                 divider_idx = self._find_divider_at_position(y)
                 if divider_idx is not None:
-                    self._delete_divider(divider_idx)
+                    self._request_delete_boundary(divider_idx)
                 return
             
             # Default mode: check if clicking on a divider for dragging
             divider_idx = self._find_divider_at_position(y)
             if divider_idx is not None:
                 self.dragging_divider = divider_idx
+                # Initialize drag preview with current boundary depth
+                if divider_idx < len(self.rows):
+                    self._drag_preview_depth = self.rows[divider_idx].max_depth
                 self.setCursor(Qt.SizeVerCursor)
             else:
                 # Start panning
@@ -357,20 +400,18 @@ class StratigraphyCanvas(QWidget):
     def mouseMoveEvent(self, event) -> None:
         """Handle mouse move for divider dragging, panning, or hover."""
         if self.dragging_divider is not None:
-            # Drag divider
+            # Drag divider - update preview depth (visual feedback)
             new_depth = self._pixel_y_to_depth(event.pos().y())
             
             # Clamp to adjacent rows
             idx = self.dragging_divider
-            min_limit = self.rows[idx].min_depth + 0.1  # Small gap minimum
-            max_limit = self.rows[idx + 1].max_depth - 0.1 if idx + 1 < len(self.rows) else self.depth_range[1]
+            if idx < len(self.rows) and idx + 1 < len(self.rows):
+                min_limit = self.rows[idx].min_depth + 0.1  # Small gap minimum
+                max_limit = self.rows[idx + 1].max_depth - 0.1
+                new_depth = max(min_limit, min(new_depth, max_limit))
             
-            new_depth = max(min_limit, min(new_depth, max_limit))
-            
-            # Update adjacent rows
-            self.rows[idx].max_depth = new_depth
-            self.rows[idx + 1].min_depth = new_depth
-            
+            # Update preview depth for visual feedback
+            self._drag_preview_depth = new_depth
             self.update()
             
         elif self.is_panning and self.last_pan_pos is not None:
@@ -448,7 +489,13 @@ class StratigraphyCanvas(QWidget):
         """Handle mouse release to stop dragging/panning."""
         if event.button() == Qt.LeftButton:
             if self.dragging_divider is not None:
+                # Drag completed - emit callback with final position
+                if self._drag_preview_depth is not None:
+                    self._request_move_boundary(self.dragging_divider, self._drag_preview_depth)
+                
+                # Clear drag state
                 self.dragging_divider = None
+                self._drag_preview_depth = None
             else:
                 self.is_panning = False
                 self.last_pan_pos = None
@@ -571,7 +618,13 @@ class StratigraphyCanvas(QWidget):
         # Draw horizontal dividers across all columns
         if self.rows:
             for i in range(len(self.rows) - 1):  # Exclude last row (bottom boundary)
-                y = self._depth_to_pixel_y(self.rows[i].max_depth)
+                # Use preview depth if this divider is being dragged
+                if self.dragging_divider == i and self._drag_preview_depth is not None:
+                    divider_depth = self._drag_preview_depth
+                else:
+                    divider_depth = self.rows[i].max_depth
+                
+                y = self._depth_to_pixel_y(divider_depth)
                 # Only draw if visible in viewport
                 if TITLE_HEIGHT + HEADER_HEIGHT + HEADER_GAP <= y <= canvas_height:
                     # Check if this divider should be highlighted (hovered directly, or part of hovered row)

@@ -1,10 +1,28 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Callable
+
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QToolBar, QPushButton, QScrollBar
 from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QPixmap, QImage, QColor
 from .canvas import StratigraphyCanvas
 from .modals import ColumnSettingsModal
+from .columns import BaseColumn, ImageColumn, DataColumn, RulerColumn, LayerColumn, LayerStyle
+
+if TYPE_CHECKING:
+    from models import CoreAnalysis, Image
+    from models.services import CoreAnalysisService
+
 
 class StratigraphyPanel(QWidget):
-    """Main widget for stratigraphy visualization and interaction."""
+    """
+    Main widget for stratigraphy visualization and interaction.
+    
+    The panel RENDERS data from a CoreAnalysis - it does NOT own layer state.
+    Set up callbacks for boundary operations, then call set_analysis() to
+    render the data. When user interactions occur, callbacks are invoked.
+    The controller should handle callbacks, update the entity via services,
+    and call refresh() to update the view.
+    """
     
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -16,18 +34,9 @@ class StratigraphyPanel(QWidget):
         # Store all columns for filtering
         self._all_columns = []
         
-        # Store current column configuration
-        self._current_config = {
-            'image': True,
-            'depth': True,
-            'thickness': False,
-            'index': False,
-            'rgb': True,
-            'cielab': False,
-            'munsell': True,
-            'lithology': False,
-            'description': False
-        }
+        # Column configuration - will be populated by _discover_available_columns()
+        # when set_analysis() is called. The model determines what columns exist.
+        self._current_config = {}
         
         # Scrollbar
         self._scrollbar = QScrollBar()
@@ -209,6 +218,8 @@ class StratigraphyPanel(QWidget):
                 should_show = config.get('index', False)
             elif 'red' in col_title or 'green' in col_title or 'blue' in col_title:
                 should_show = config.get('rgb', True)
+            elif 'l*' in col_title or 'a*' in col_title or 'b*' in col_title:
+                should_show = config.get('cielab', False)
             elif 'munsell' in col_title:
                 should_show = config.get('munsell', True)
             elif 'lithology' in col_title:
@@ -282,10 +293,185 @@ class StratigraphyPanel(QWidget):
         self._canvas.depth_range = (min_depth, max_depth)
         self._canvas.update()
     
-    def add_row_divider(self, depth: float) -> None:
-        """Add a horizontal divider at the specified depth."""
-        self._canvas.add_row_divider(depth)
+    def set_analysis(self, analysis: CoreAnalysis) -> None:
+        """
+        Set the CoreAnalysis to render.
+        
+        The widget automatically creates column instances from the model.
+        This is the DATA-DRIVEN VIEW PRINCIPLE: the widget discovers what
+        data exists and creates appropriate visualizations.
+        
+        Layers are rendered from analysis.layers. The view does NOT own
+        the layer state - CoreAnalysis is the authoritative source.
+        """
+        self._canvas.set_analysis(analysis)
+        
+        # Store analysis reference for column creation
+        self._analysis = analysis
+        
+        # Discover available columns from the model
+        self._current_config = self._discover_available_columns(analysis)
+        
+        # Create column instances from the model
+        self._all_columns = self._create_columns_from_analysis(analysis)
+        
+        # Apply visibility settings and show columns
+        self._apply_column_settings(self._current_config)
+    
+    def _discover_available_columns(self, analysis: CoreAnalysis) -> dict[str, bool]:
+        """
+        Introspect CoreAnalysis to discover available data columns.
+        
+        This is the MODEL-DRIVEN VIEW PRINCIPLE: the view discovers what
+        data exists in the model instead of hardcoding expectations.
+        
+        Returns dict mapping column name -> visibility (default True for intrinsic data).
+        
+        Column types discovered:
+        - 'image': Always available (Core.image)
+        - Derived data: Core.derived.rgb, Core.derived.lab
+        - Layer attributes: From analysis.schema.fields
+        - View-only: 'depth', 'thickness', 'index' (not in model)
+        """
+        config = {}
+        
+        # View-only columns (always available for rendering)
+        config['depth'] = True
+        config['thickness'] = False
+        config['index'] = False
+        
+        # Intrinsic: image always exists
+        config['image'] = True  
+        
+        # Derived data from Core: introspect what exists
+        core = analysis.core
+        if core.derived.rgb is not None:
+            config['rgb'] = True
+        if core.derived.lab is not None:
+            config['cielab'] = True  # UI name differs from field name
+        
+        # Layer categorical attributes from schema
+        for field_name in analysis.schema.fields.keys():
+            config[field_name] = field_name in ['munsell']  # Default visibility
+        
+        return config
+    
+    def _image_to_pixmap(self, img: Image) -> QPixmap | None:
+        """Convert Image datatype to QPixmap (view-layer conversion)."""
+        if img.data is None:
+            return None
+        h, w, c = img.data.shape
+        qimage = QImage(img.data.tobytes(), w, h, c * w, QImage.Format.Format_RGB888)
+        return QPixmap.fromImage(qimage)
+    
+    def _create_columns_from_analysis(self, analysis: CoreAnalysis) -> list:
+        """
+        Create column instances from CoreAnalysis.
+        
+        This is the DATA-DRIVEN approach: the widget discovers what data exists
+        in the model and creates appropriate column visualizations.
+        
+        View creates presentation layer (columns) from model data.
+        Controller/demo just provides the model and wires callbacks.
+        """
+        from models.services import CoreAnalysisService
+        
+        columns = []
+        core = analysis.core
+        depth_range_mm = core.depth_range_mm or (0.0, 100.0)
+        
+        # View-only columns (not model data)
+        columns.append(RulerColumn("Depth", width=40, unit="mm"))
+        
+        thickness_col = LayerColumn("Thickness", width=50, auto_thickness=True)
+        thickness_col.add_category("thickness", LayerStyle(color=QColor(0, 0, 0, 0), text_align="center"))
+        columns.append(thickness_col)
+        
+        index_col = LayerColumn("Index", width=40, auto_number=True)
+        index_col.add_category("numbered", LayerStyle(color=QColor(0, 0, 0, 0), text_align="center"))
+        columns.append(index_col)
+        
+        # Image column (intrinsic data)
+        core_pixmap = self._image_to_pixmap(core.image)
+        if core_pixmap:
+            image_col = ImageColumn("Image", pixmap=core_pixmap, width=70)
+            image_col.set_depth_range(depth_range_mm[0], depth_range_mm[1])
+            columns.append(image_col)
+        
+        # Munsell color column with callback
+        def munsell_color_callback(row):
+            """Get mean color for a row's depth range."""
+            from models import Layer
+            start_px = int(core.depth_to_px(row.min_depth))
+            end_px = int(core.depth_to_px(row.max_depth))
+            layer = Layer(start_px=start_px, end_px=end_px)
+            r, g, b = CoreAnalysisService.get_layer_color(analysis, layer)
+            return QColor(r, g, b)
+        
+        munsell_col = LayerColumn("Munsell", width=50, color_callback=munsell_color_callback, hide_text=True)
+        columns.append(munsell_col)
+        
+        # RGB data columns (derived data)
+        if core.derived.rgb is not None:
+            rgb_data = core.derived.rgb
+            r_values = list(rgb_data.values[:, 0])
+            g_values = list(rgb_data.values[:, 1])
+            b_values = list(rgb_data.values[:, 2])
+            
+            columns.append(DataColumn("Red", data=r_values, min_value=0.0, max_value=1.0, width=70, color=QColor(Qt.GlobalColor.red)))
+            columns.append(DataColumn("Green", data=g_values, min_value=0.0, max_value=1.0, width=70, color=QColor(Qt.GlobalColor.green)))
+            columns.append(DataColumn("Blue", data=b_values, min_value=0.0, max_value=1.0, width=70, color=QColor(Qt.GlobalColor.blue)))
+        
+        # CIELAB data columns (derived data)
+        if core.derived.lab is not None:
+            lab_data = core.derived.lab
+            l_values = list(lab_data.values[:, 0])
+            a_values = list(lab_data.values[:, 1])
+            b_star_values = list(lab_data.values[:, 2])
+            
+            columns.append(DataColumn("L*", data=l_values, min_value=0.0, max_value=100.0, width=70, color=QColor(Qt.GlobalColor.blue)))
+            columns.append(DataColumn("a*", data=a_values, min_value=-128.0, max_value=127.0, width=70, color=QColor(Qt.GlobalColor.blue)))
+            columns.append(DataColumn("b*", data=b_star_values, min_value=-128.0, max_value=127.0, width=70, color=QColor(Qt.GlobalColor.blue)))
+        
+        # Schema-based categorical columns
+        for field_name in analysis.schema.fields.keys():
+            if field_name not in ['munsell']:  # munsell already added above
+                display_name = field_name.replace('_', ' ').title()
+                columns.append(BaseColumn(display_name, width=100))
+        
+        return columns
+    
+    def refresh(self) -> None:
+        """Recompute rows from analysis and repaint. Call after entity changes."""
+        self._canvas.refresh()
+    
+    @property
+    def on_boundary_add(self) -> Callable[[float], None] | None:
+        """Callback invoked when user requests adding a boundary at depth (mm)."""
+        return self._canvas.on_boundary_add
+    
+    @on_boundary_add.setter
+    def on_boundary_add(self, callback: Callable[[float], None] | None) -> None:
+        self._canvas.on_boundary_add = callback
+    
+    @property
+    def on_boundary_delete(self) -> Callable[[int], None] | None:
+        """Callback invoked when user requests deleting a boundary (by index)."""
+        return self._canvas.on_boundary_delete
+    
+    @on_boundary_delete.setter
+    def on_boundary_delete(self, callback: Callable[[int], None] | None) -> None:
+        self._canvas.on_boundary_delete = callback
+    
+    @property
+    def on_boundary_move(self) -> Callable[[int, float], None] | None:
+        """Callback invoked when user drags a boundary to a new depth."""
+        return self._canvas.on_boundary_move
+    
+    @on_boundary_move.setter
+    def on_boundary_move(self, callback: Callable[[int, float], None] | None) -> None:
+        self._canvas.on_boundary_move = callback
     
     def get_rows(self):
-        """Get the list of row objects from the canvas."""
+        """Get the list of row objects from the canvas (for rendering hints)."""
         return self._canvas.rows
