@@ -16,6 +16,24 @@ uv run python -m src.tests.store_test
 # Views only
 uv run python -m src.tests.file_panel_test
 
-# Presenters + Views
+# Presenters + Views + Controller + Store
 uv run python -m src.tests.file_presenter_and_panel_test
+```
+
+## Image Loading (end-to-end)
+
+```bash
+# Full chain: FilePanel → FilePresenter → Controller → Store
+uv run python -m src.tests.image_loading_test
+```
+
+## WorkspacePanel Tests
+
+```bash
+# View + Presenter only (stub Controller — logs but doesn't delete)
+uv run python -m src.tests.workspace_panel_test
+
+# Full integration: FilePanel + WorkspacePanel with Controller + Store
+# Load images, delete them, watch every signal and method call in the log
+uv run python -m src.tests.workspace_test
 ```

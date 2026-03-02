@@ -12,6 +12,8 @@ from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout
 
 from src.views.panels.file_panel import FilePanel
 from src.presenters.file_presenter import FilePresenter
+from src.store import Store
+from src.controller import Controller
 from src.tests.helpers import LogWindow, SignalLogger
 
 
@@ -39,13 +41,19 @@ class FilePanelWithPresenterTest(QWidget):
         self.file_panel = FilePanel()
         layout.addWidget(self.file_panel)
         
+        # Create Store and Controller
+        self.store = Store()
+        self.controller = Controller(self.store)
+        
         # Create the FilePresenter and connect it to the view
-        self.file_presenter = FilePresenter(self.file_panel)
+        self.file_presenter = FilePresenter(self.file_panel, self.store, self.controller)
         
         # Log the setup
         self.log_window.add_log("Created FilePanel view")
+        self.log_window.add_log("Created Store")
+        self.log_window.add_log("Created Controller")
         self.log_window.add_log("Created FilePresenter")
-        self.log_window.add_log("Connected presenter to view")
+        self.log_window.add_log("Connected presenter → controller → store")
         
         # Set up signal logging
         self.signal_logger.connect_signal(
@@ -57,8 +65,12 @@ class FilePanelWithPresenterTest(QWidget):
             "pathChanged"
         )
         
+        # Log Store signals
+        self.store_logger = SignalLogger(self.log_window, "Store")
+        self.store_logger.connect_signal(self.store.entityAdded, "entityAdded")
+        
         self.log_window.add_log("Signal logging configured")
-        self.log_window.add_log("Ready! Select files to see presenter output in console")
+        self.log_window.add_log("Ready! Double-click an image to see the full slice")
 
 
 def main():

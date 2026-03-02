@@ -1,0 +1,107 @@
+@startuml architecture
+
+skinparam backgroundColor white
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam componentStyle rectangle
+skinparam arrowThickness 1.5
+skinparam roundCorner 6
+skinparam rectangleBorderThickness 2
+skinparam legendBorderThickness 1
+
+title Architecture — Who Talks to Who
+
+legend bottom right
+  |= Colour |= Type |
+  |<#0066CC>| Method call |
+  |<#FF6600>| Qt Signal |
+  |<#228B22>| I/O |
+endlegend
+
+' ══════════════════════════════════════
+' External
+' ══════════════════════════════════════
+
+actor "User" as user #ECECEC
+database "OS\nFilesystem" as os #E8E8E8
+
+' ══════════════════════════════════════
+' Application boundary
+' ══════════════════════════════════════
+
+rectangle "Application" as app #F5F5F5 {
+
+  rectangle "Frontend" as frontend #E8E8E8 {
+    ' ── Views (sky blue) ───────────────
+    rectangle "Panel A"  as vA #87CEEB
+    rectangle "Panel B"  as vB #87CEEB
+
+    ' ── Presenters (mint green) ───────
+    rectangle "Presenter A"  as pA #66CDAA
+    rectangle "Presenter B"  as pB #66CDAA
+  }
+
+  rectangle "Backend" as backend #E0E0E0 {
+    ' ── Controller (salmon) ──────────
+    rectangle "Controller"  as ctrl #FA8072
+
+    ' ── Store (gold) ─────────────────
+    rectangle "Store"  as store #FFD700
+  }
+}
+
+' ══════════════════════════════════════
+' User → Views  (interaction)
+' ══════════════════════════════════════
+
+user --> vA
+user --> vB
+
+' ══════════════════════════════════════
+' Views → Presenters  (signal: raw UI events)
+' ══════════════════════════════════════
+
+vA -[#FF6600]-> pA : <color:#FF6600>UI event</color>
+vB -[#FF6600]-> pB : <color:#FF6600>UI event</color>
+
+' ══════════════════════════════════════
+' Presenters → Views  (method call: update display)
+' ══════════════════════════════════════
+
+pA -[#0066CC]-> vA : <color:#0066CC>update display</color>
+pB -[#0066CC]-> vB : <color:#0066CC>update display</color>
+
+' ══════════════════════════════════════
+' Presenters → Controller  (method call: user intent)
+' ══════════════════════════════════════
+
+pA -[#0066CC]-> ctrl : <color:#0066CC>user intent</color>
+pB -[#0066CC]-> ctrl : <color:#0066CC>user intent</color>
+
+' ══════════════════════════════════════
+' Controller → Store  (method call: state mutation)
+' ══════════════════════════════════════
+
+ctrl -[#0066CC]-> store : <color:#0066CC>mutate state</color>
+
+' ══════════════════════════════════════
+' Presenters → Store  (method call: read state)
+' ══════════════════════════════════════
+
+pA -[#0066CC]-> store : <color:#0066CC>read state</color>
+pB -[#0066CC]-> store : <color:#0066CC>read state</color>
+
+' ══════════════════════════════════════
+' Store → Presenters  (signal: state changed)
+' ══════════════════════════════════════
+
+store -[#FF6600]-> pA : <color:#FF6600>state changed</color>
+store -[#FF6600]-> pB : <color:#FF6600>state changed</color>
+
+' ══════════════════════════════════════
+' Controller → OS  (I/O)
+' ══════════════════════════════════════
+
+ctrl -[#228B22]-> os : <color:#228B22>file read/write</color>
+
+@enduml

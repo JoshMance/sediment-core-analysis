@@ -61,32 +61,29 @@ without building a custom one.
 
 ### 3. Controller
 
-> Receives user intent from Presenters, mutates the Store, handles undo/redo.
+> Receives user intent from Presenters, performs I/O, constructs entities, and writes to the Store.
 
-| What               | Implementation                                                                           |
-| ------------------ | ---------------------------------------------------------------------------------------- |
-| Command processing | `QObject` subclass. Presenters call methods on it directly.                              |
-| Undo/redo          | Owns a `QUndoStack`. Every mutation is wrapped in a `QUndoCommand`.                      |
-| Business logic     | Calls entity methods/functions for validation or transformation before writing to Store. |
-| Session save/load  | Owns `.sedivis` file persistence — reads Store state to save, populates Store on load.   |
+| What              | Implementation                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| Orchestration     | Plain Python class. Presenters call methods on it directly.                              |
+| I/O               | Delegates to internal `loaders.py` — pure file-reading helpers (images, CSV, etc.)       |
+| Business logic    | Calls entity methods/functions for validation or transformation before writing to Store. |
+| Session save/load | Owns `.sedivis` file persistence — reads Store state to save, populates Store on load.   |
+| Undo/redo         | Will own a `QUndoStack` (not yet implemented).                                           |
 
 ```python
-class Controller(QObject):
+class Controller:
     def __init__(self, store: Store):
-        self.store = store
-        self.undo_stack = QUndoStack(self)
+        self._store = store
 
-    def create_entity(self, entity_type: str, **kwargs):
-        cmd = CreateEntityCommand(self.store, entity_type, **kwargs)
-        self.undo_stack.push(cmd)  # executes + records for undo
-
-    def delete_entity(self, entity_id: str):
-        cmd = DeleteEntityCommand(self.store, entity_id)
-        self.undo_stack.push(cmd)
+    def create_image_entity(self, file_path: str) -> str:
+        data = load_image(file_path)         # loaders.py — pure I/O
+        entity = ImageEntity(name=..., file_path=..., data=data)
+        return self._store.add(entity)       # Store emits entityAdded
 ```
 
-Each `QUndoCommand.undo()` and `redo()` modifies the Store, which emits signals,
-which updates Presenters automatically. No special undo notification path needed.
+**Internal modules:** `loaders.py` is internal to the controller package — nothing
+outside `controller/` imports it, just like `container.py` is internal to `store/`.
 
 **File Operations:** The Controller owns `.sedivis` session persistence. It reads
 all state from the Store to save, and clears + populates the Store on load.
@@ -167,6 +164,8 @@ exact manual/automated testing distinction as the application grows.
 - Visual verification and component logic testing
 - Example: `file_panel_test.py` tests view components
 - Example: `file_presenter_and_panel_test.py` tests presenter logic with views
+- Example: `vertical_slice_test.py` tests full chain: View → Presenter → Controller → Store
+- Example: `container_test.py` tests entity container CRUD (no Qt)
 - Helpers: Shared DRY components in `tests/helpers/`
 
 **Test organization**: Flat structure for simplicity with descriptive filenames.
@@ -187,56 +186,60 @@ added as the application grows beyond initial development.
 | `QListWidget` / `QTreeWidget` | Views                                  | Simple list/tree display   |
 | `QUndoStack`                  | Controller                             | Undo/redo management       |
 | `QUndoCommand`                | Controller                             | Each undoable action       |
-| `QObject`                     | Store, Controller, Presenters          | Signals/slots              |
+| `QObject`                     | Store, Presenters                      | Signals/slots              |
 | `Signal` / `Slot`             | Store → Presenters, Views → Presenters | Communication              |
 | `QAction`                     | Views                                  | Menu/toolbar items         |
 | `QFileDialog`                 | App                                    | Open/save dialogs          |
 
 ## Self-Designed
 
-| Component               | Size               | Notes                                                           |
-| ----------------------- | ------------------ | --------------------------------------------------------------- |
-| Entity classes          | ~20-50 lines each  | `dataclasses`, with `to_dict()`/`from_dict()`                   |
-| Store                   | ~100-150 lines     | `QObject` + dict. Emits signals on change.                      |
-| Controller              | ~100-200 lines     | Owns `QUndoStack`, calls entity logic, writes to Store.         |
-| QUndoCommand subclasses | ~20-40 lines each  | One per mutation type (create, delete, update, etc.)            |
-| Presenters              | ~50-100 lines each | One per panel. Wires Store ↔ View.                              |
-| Session serializer      | ~50 lines          | `json.dump`/`json.load` with entity `to_dict()`/`from_dict()`.  |
-| Science functions       | Various            | Domain-specific calculations in `src_legacy/science/functions/` |
-| Reference data          | Static files       | Scientific reference data in `src_legacy/science/data/`         |
+| Component               | Size               | Notes                                                             |
+| ----------------------- | ------------------ | ----------------------------------------------------------------- |
+| Entity classes          | ~20-50 lines each  | `dataclasses`, with `to_dict()`/`from_dict()`                     |
+| Store                   | ~100-150 lines     | `QObject` + dict. Emits signals on change.                        |
+| Controller              | ~40-200 lines      | Plain class. Calls loaders, constructs entities, writes to Store. |
+| Loaders                 | ~50 lines          | Internal to controller. Pure I/O (image loading, etc.)            |
+| QUndoCommand subclasses | ~20-40 lines each  | One per mutation type (planned).                                  |
+| Presenters              | ~50-100 lines each | One per panel. Wires Store ↔ View.                                |
+| Session serializer      | ~50 lines          | `json.dump`/`json.load` with entity `to_dict()`/`from_dict()`.    |
+| Science functions       | Various            | Domain-specific calculations in `src_legacy/science/functions/`   |
+| Reference data          | Static files       | Scientific reference data in `src_legacy/science/data/`           |
 
 ## Third-Party Libraries
 
-| Library                | Purpose                    | Verdict                                               |
-| ---------------------- | -------------------------- | ----------------------------------------------------- |
-| `dataclasses` (stdlib) | Entity definitions         | Use.                                                  |
-| `json` (stdlib)        | File save/load             | Use.                                                  |
-| `uuid` (stdlib)        | Entity IDs                 | Use.                                                  |
-| `pydantic`             | Validation + serialization | Optional. Useful if entities have complex validation. |
-| Everything else        | —                          | Not needed at this scale.                             |
+| Library                | Purpose                    | Verdict                                                       |
+| ---------------------- | -------------------------- | ------------------------------------------------------------- |
+| `dataclasses` (stdlib) | Entity definitions         | Use.                                                          |
+| `json` (stdlib)        | File save/load             | Use.                                                          |
+| `uuid` (stdlib)        | Entity IDs                 | Use.                                                          |
+| `imageio`              | Image file loading         | Use. Controller's `loaders.py` reads images via `imageio.v3`. |
+| `numpy`                | Array data                 | Use. Image pixel data stored as `NDArray[np.uint8]`.          |
+| `pydantic`             | Validation + serialization | Optional. Useful if entities have complex validation.         |
+| Everything else        | —                          | Not needed at this scale.                                     |
 
 ---
 
 ## Data Flow
 
 ```
-User clicks delete button
-  → View emits delete_requested signal (entity_id)
-  → Presenter receives signal
-  → Presenter calls controller.delete_entity(entity_id)
-  → Controller creates DeleteEntityCommand
-  → Controller pushes command onto QUndoStack (executes it)
-  → Command removes entity from Store
-  → Store emits entity_removed signal (entity_id)
-  → All Presenters listening to entity_removed react
+User double-clicks an image file
+  → FilePanel emits fileDoubleClicked(path)
+  → FilePresenter receives signal, checks extension
+  → FilePresenter calls controller.create_image_entity(path)
+  → Controller calls loaders.load_image(path) → pixel data
+  → Controller constructs ImageEntity(name, file_path, data)
+  → Controller calls store.add(entity)
+  → Store assigns UUID, stores entity, emits entityAdded(id, type)
+  → All Presenters listening to entityAdded react
   → Each Presenter updates its View
 ```
 
 ```
-User hits Ctrl+Z
-  → QUndoStack.undo() calls DeleteEntityCommand.undo()
-  → Command re-adds entity to Store
-  → Store emits entity_added signal
+User clicks delete button (planned)
+  → View emits delete_requested signal (entity_id)
+  → Presenter calls controller.delete_entity(entity_id)
+  → Controller removes entity from Store
+  → Store emits entityRemoved signal (entity_id)
   → Presenters react, Views update
 ```
 
@@ -244,7 +247,7 @@ User hits Ctrl+Z
 
 1. **Presenters never talk to each other** — they independently listen to Store signals
 2. **Presenters can read the Store** — only Controller can write it
-3. **Every Store write goes through QUndoCommand** — enables undo/redo
+3. **Only Controller writes to Store** — undo/redo via QUndoCommand planned
 4. **Views are dumb** — they emit signals for user actions, display what Presenters tell them
 5. **No custom Event Bus** — Store's Qt signals serve the same purpose
 6. **No separate Domain Services layer** — entity logic lives next to entity definitions
