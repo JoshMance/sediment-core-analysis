@@ -32,25 +32,29 @@ it operates on is clearer than a Services directory with one method per file.
 
 > Single source of truth. Holds all runtime entity instances.
 
-| What                | Implementation                                                                        |
-| ------------------- | ------------------------------------------------------------------------------------- |
-| Entity storage      | `QObject` subclass with a `dict[str, Entity]` keyed by ID.                            |
-| ID assignment       | `uuid.uuid4()` or sequential int counter.                                             |
-| Dependency tracking | `dict[str, set[str]]` mapping entity ID → dependent IDs.                              |
-| Change notification | Qt `Signal` per event type (e.g. `entity_added`, `entity_removed`, `entity_changed`). |
-| Session save/load   | `save_session(path)` / `load_session(path)` methods using `json` stdlib.              |
+| What                | Implementation                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| Public API          | `QObject` subclass. Facade for all state access.                                     |
+| Entity storage      | Delegates to internal `container.py` — `dict[str, Entity]` keyed by ID.              |
+| ID assignment       | `uuid.uuid4().hex` assigned on add if entity has no ID.                              |
+| Dependency tracking | Delegates to internal `graph.py` — `dict[str, set[str]]` mapping ID → dependent IDs. |
+| Change notification | Qt `Signal` per mutation (e.g. `entityAdded`, `entityRemoved`, `entityUpdated`).     |
+| Entity registry     | `entities/registry.py` — explicit `dict[str, type]` of known entity types.           |
 
 The Store is a `QObject` so it can emit signals directly. No custom Event Bus needed —
 Qt's signal/slot system already does topic-based subscriptions.
 
 ```python
 class Store(QObject):
-    entity_added = Signal(str)        # entity_id
-    entity_removed = Signal(str)      # entity_id
-    entity_changed = Signal(str, str) # entity_id, field_name
+    entityAdded   = Signal(str, str)  # entity_id, entity_type
+    entityRemoved = Signal(str, str)  # entity_id, entity_type
+    entityUpdated = Signal(str, str)  # entity_id, entity_type
 ```
 
-ViewModels connect to the Store signals they care about. This is the "Event Bus"
+**Internal modules** (`container.py`, `graph.py`, `signal_payloads.py`) are implementation
+details — nothing outside `store/` imports them directly.
+
+Presenters connect to Store signals to react to changes. This is the "Event Bus"
 without building a custom one.
 
 ---
@@ -64,6 +68,7 @@ without building a custom one.
 | Command processing | `QObject` subclass. Presenters call methods on it directly.                              |
 | Undo/redo          | Owns a `QUndoStack`. Every mutation is wrapped in a `QUndoCommand`.                      |
 | Business logic     | Calls entity methods/functions for validation or transformation before writing to Store. |
+| Session save/load  | Owns `.sedivis` file persistence — reads Store state to save, populates Store on load.   |
 
 ```python
 class Controller(QObject):
@@ -83,9 +88,9 @@ class Controller(QObject):
 Each `QUndoCommand.undo()` and `redo()` modifies the Store, which emits signals,
 which updates Presenters automatically. No special undo notification path needed.
 
-**File Operations:** The Store handles .sedivis state file persistence through
-`save_session(path)` and `load_session(path)` methods. Controller calls these
-via QUndoCommands for consistency (though file ops may not need undo).
+**File Operations:** The Controller owns `.sedivis` session persistence. It reads
+all state from the Store to save, and clears + populates the Store on load.
+The Store itself knows nothing about files or serialization.
 
 ---
 

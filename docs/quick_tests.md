@@ -1,5 +1,15 @@
 # Quick Tests
 
+## Store Tests
+
+```bash
+# Container only (no Qt — prints to stdout)
+uv run python -m src.tests.container_test
+
+# Store with signals (GUI — buttons + LogWindow)
+uv run python -m src.tests.store_test
+```
+
 ## FilePanel Tests
 
 ```bash

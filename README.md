@@ -8,7 +8,7 @@ Built with **Python 3.10+** and **PySide6** using clean **MVP architecture**.
 
 **Currently rebuilding from the ground up** following clean MVP architecture principles.
 
-- ✅ **Architecture designed** - See [PRINCIPLES.md](docs/architecture/PRINCIPLES.md)
+- ✅ **Architecture designed** - See [overview.md](docs/architecture/overview.md)
 - ✅ **Legacy UI preserved** - Available in `src_legacy/` for reference
 - 🔄 **Active rebuild** - Implementing new `src/` with MVP pattern
 - 🔄 **Core components** - Store, Controller, Presenters, Views being built
@@ -19,7 +19,7 @@ Built with **Python 3.10+** and **PySide6** using clean **MVP architecture**.
 
 Following **Model-View-Presenter (MVP)** pattern optimized for PySide6:
 
-![MVP Architecture](docs/architecture/PRINCIPLES.md)
+![MVP Architecture](docs/architecture/overview.md)
 
 ### Core Components
 
@@ -93,7 +93,7 @@ sediment-core-analysis/
 │
 └── docs/
     └── architecture/
-        └── PRINCIPLES.md      # 📋 MVP architecture guide
+        └── overview.md        # 📋 MVP architecture guide
 ```
 
 ---
@@ -135,7 +135,7 @@ uv run python -m src.tests.file_presenter_and_panel_test
 4. **Views are dumb** — emit signals, display what Presenters provide
 5. **No Qt in Entities** — plain Python dataclasses only
 
-See [Architecture Principles](docs/architecture/PRINCIPLES.md) for complete guide.
+See [Architecture Overview](docs/architecture/overview.md) for complete guide.
 
 ---
 
@@ -165,7 +165,7 @@ This project is currently in active architectural rebuild.
 4. Port existing View components with Presenter wrappers
 5. Migrate scientific functions to new structure
 
-**Before contributing:** Please read [PRINCIPLES.md](docs/architecture/PRINCIPLES.md) to understand the MVP architecture approach.
+**Before contributing:** Please read [overview.md](docs/architecture/overview.md) to understand the MVP architecture approach.
 
 ---
 
