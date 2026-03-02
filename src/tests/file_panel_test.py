@@ -40,7 +40,6 @@ class FilePanelTest(QWidget):
         self.signal_logger.connect_signal(self.file_panel.fileClicked, "fileClicked")
         self.signal_logger.connect_signal(self.file_panel.fileDoubleClicked, "fileDoubleClicked")
         self.signal_logger.connect_signal(self.file_panel.pathChanged, "pathChanged")
-        self.signal_logger.connect_signal(self.file_panel.fileSelected, "fileSelected")
         
         self.setLayout(layout)
         

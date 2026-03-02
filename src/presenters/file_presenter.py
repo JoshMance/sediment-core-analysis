@@ -14,12 +14,11 @@ class FilePresenter(QObject):
     def __init__(self, view: FilePanel):
         super().__init__()
         self.view = view
-        # Wiring the view's signals to local handlers
-        # We interpret selecting a file as choosing a file
-        self.view.fileSelected.connect(self._on_file_selected)
+        # Double-clicking a file means the user wants to select/open it
+        self.view.fileDoubleClicked.connect(self._on_file_selected)
 
-    # If view shows that the user has selected a file, then we check its type
-    # and handle accordingly, passing over unsupported file types
+    # Presenter interprets a double-click as file selection,
+    # checks the type and handles accordingly
     def _on_file_selected(self, file_path: str):
         _, ext = os.path.splitext(file_path.lower())
         match ext:

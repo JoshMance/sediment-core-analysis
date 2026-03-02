@@ -49,10 +49,6 @@ class FilePanelWithPresenterTest(QWidget):
         
         # Set up signal logging
         self.signal_logger.connect_signal(
-            self.file_panel.fileSelected, 
-            "fileSelected"
-        )
-        self.signal_logger.connect_signal(
             self.file_panel.fileDoubleClicked, 
             "fileDoubleClicked"
         )

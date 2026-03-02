@@ -6,11 +6,10 @@ from PySide6.QtCore import QSize, Signal, QDir
 class FilePanel(QWidget):
     """File system navigation panel - shows files and emits signals for integration."""
     
-    # Signals for integration with other components
-    fileClicked = Signal(object)  # QModelIndex
-    fileDoubleClicked = Signal(object)  # QModelIndex
-    pathChanged = Signal(str)  # Current directory path
-    fileSelected = Signal(str)  # Full file path
+    # Signals - raw UI events only, no interpretation
+    fileClicked = Signal(str)      # File path on single-click
+    fileDoubleClicked = Signal(str) # File path on double-click
+    pathChanged = Signal(str)       # Current directory path
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -80,28 +79,16 @@ class FilePanel(QWidget):
         return toolbar
     
     def _on_file_clicked(self, index):
-        """Handle file/folder click - emit signals for integration."""
-        self.fileClicked.emit(index)
-        
-        if self._model.isDir(index):
-            # If it's a directory, we could auto-navigate (optional)
-            pass
-        else:
-            # It's a file - emit the full path for other components
-            file_path = self._model.filePath(index)
-            self.fileSelected.emit(file_path)
+        """Handle single-click - emit file path."""
+        if not self._model.isDir(index):
+            self.fileClicked.emit(self._model.filePath(index))
     
     def _on_file_double_clicked(self, index):
-        """Handle file/folder double-click."""
-        self.fileDoubleClicked.emit(index)
-        
+        """Handle double-click - navigate into dirs, emit file path for files."""
         if self._model.isDir(index):
-            # Navigate into the directory
             self._navigate_to_index(index)
         else:
-            # It's a file - emit the full path
-            file_path = self._model.filePath(index)
-            self.fileSelected.emit(file_path)
+            self.fileDoubleClicked.emit(self._model.filePath(index))
     
     def _go_home(self):
         """Navigate to user's home directory."""
