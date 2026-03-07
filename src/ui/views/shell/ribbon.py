@@ -30,7 +30,7 @@ class Ribbon(QWidget):
         layout.setSpacing(0)
         layout.addWidget(self._tabs)
 
-        self.setFixedHeight(110)
+        self.setFixedHeight(150)
         self._build_tabs()
 
     # -- public API -----------------------------------------------

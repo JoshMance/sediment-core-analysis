@@ -11,6 +11,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from src.domain.entities.image_entity import ImageEntity
+from src.domain.entities.core_entity import CoreEntity
 from src.domain.store import Store
 from src.application.services.load_image import load_image
 
@@ -55,6 +56,25 @@ class AppController:
             file_path=path,
             data=data,
         )
+        return self._store.add(entity)
+
+    def create_core_entity(
+        self,
+        name: str,
+        data: object,
+        source_image_id: str | None = None,
+    ) -> str:
+        """Construct a CoreEntity and add it to the Store.
+
+        Args:
+            name: Display name for the core.
+            data: Cropped image array (H, W, 3) uint8.
+            source_image_id: ID of the source ImageEntity, if any.
+
+        Returns:
+            The entity id assigned by the Store.
+        """
+        entity = CoreEntity(name=name, data=data, source_image_id=source_image_id)
         return self._store.add(entity)
 
     def delete_entity(self, entity_id: str) -> object:

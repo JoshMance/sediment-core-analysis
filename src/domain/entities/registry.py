@@ -4,7 +4,9 @@ Single source of truth for all entity types in the application.
 Used by the store's container for type validation, filtering, and stats.
 """
 from src.domain.entities.image_entity import ImageEntity
+from src.domain.entities.core_entity import CoreEntity
 
 ENTITY_TYPES: dict[str, type] = {
     "ImageEntity": ImageEntity,
+    "CoreEntity": CoreEntity,
 }

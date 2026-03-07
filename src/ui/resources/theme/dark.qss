@@ -68,6 +68,19 @@ QFrame[frameShape="5"] {  /* QFrame::VLine */
     margin: 4px 2px;
 }
 
+/* -- Status bar --------------------------------------------- */
+QStatusBar {
+    background-color: @bg_panel;
+    color: @fg_muted;
+    border-top: 1px solid @border_inner;
+    padding: 0 6px;
+    font-size: 12px;
+}
+
+QStatusBar::item {
+    border: none;
+}
+
 /* -- Ribbon buttons (QToolButton) --------------------------- */
 QToolButton {
     background-color: transparent;

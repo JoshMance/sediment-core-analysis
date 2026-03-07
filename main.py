@@ -73,14 +73,14 @@ def main() -> None:
     central_layout = QVBoxLayout(central)
     central_layout.setContentsMargins(0, 0, 0, 0)
     central_layout.addWidget(ribbon)
-    central_layout.addWidget(QWidget(), 1)
-    central_layout.addWidget(bottom_row, 4)
+    central_layout.addWidget(bottom_row, 1)
 
     # -- Window ---------------------------------------------------
     window = QMainWindow()
     window.setWindowTitle("Sediment Core Analysis")
     window.setCentralWidget(central)
     window.resize(1200, 800)
+    window.statusBar().showMessage("Ready")
     window.show()
 
     sys.exit(app.exec())
