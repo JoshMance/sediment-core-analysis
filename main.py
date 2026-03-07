@@ -13,10 +13,12 @@ from src.application import AppController
 # UI layer - views
 from src.ui.views.panels.file_panel import FilePanel
 from src.ui.views.panels.workspace_panel import WorkspacePanel
+from src.ui.views.shell.ribbon import Ribbon
 
 # UI layer - presenters
 from src.ui.presenters.file_presenter import FilePresenter
 from src.ui.presenters.workspace_presenter import WorkspacePresenter
+from src.ui.presenters.ribbon_presenter import RibbonPresenter
 
 
 def apply_theme(app: QApplication) -> None:
@@ -62,12 +64,15 @@ def main() -> None:
     controller = AppController(store, component_watcher=watch)
 
     # -- UI - views -----------------------------------------------
+    ribbon = Ribbon()
+    watch("Ribbon", ribbon)
     file_panel = FilePanel()
     watch("FilePanel", file_panel)
     workspace_panel = WorkspacePanel()
     watch("WorkspacePanel", workspace_panel)
 
     # -- UI - presenters ------------------------------------------
+    ribbon_presenter = RibbonPresenter(ribbon, controller)
     file_presenter = FilePresenter(file_panel, store, controller)
     workspace_presenter = WorkspacePresenter(workspace_panel, store, controller)
 
@@ -85,6 +90,7 @@ def main() -> None:
     central = QWidget()
     central_layout = QVBoxLayout(central)
     central_layout.setContentsMargins(0, 0, 0, 0)
+    central_layout.addWidget(ribbon)
     central_layout.addWidget(QWidget(), 1)
     central_layout.addWidget(bottom_row, 4)
 

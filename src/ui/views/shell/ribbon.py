@@ -1,0 +1,87 @@
+"""Ribbon -- tabbed toolbar across the top of the window."""
+from __future__ import annotations
+
+from pathlib import Path
+
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabWidget
+from PySide6.QtCore import Signal
+
+from src.ui.views.widgets.ribbon_button import RibbonButton
+from src.ui.views.widgets.ribbon_group import RibbonGroup
+
+_ICONS = Path(__file__).resolve().parents[2] / "resources" / "icons"
+
+
+class Ribbon(QWidget):
+    """
+    Every button click emits ``buttonClicked(button_name)`` so the
+    presenter only needs to connect one signal.
+    """
+
+    buttonClicked = Signal(str)
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+
+        self._tabs = QTabWidget()
+        self._tabs.setDocumentMode(True)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self._tabs)
+
+        self.setFixedHeight(110)
+        self._build_tabs()
+
+    # -- public API -----------------------------------------------
+
+    def set_button_enabled(self, name: str, enabled: bool) -> None:
+        """Enable / disable a button by its label."""
+        btn = self._buttons.get(name)
+        if btn:
+            btn.setEnabled(enabled)
+
+    # -- internals ------------------------------------------------
+
+    def _build_tabs(self) -> None:
+        """Assemble all tabs, groups, and buttons."""
+        self._buttons: dict[str, RibbonButton] = {}
+
+        # -- Home tab
+        home = self._make_tab()
+        self._add_group(home, "File", ["Open", "Save"])
+        self._add_group(home, "Edit", ["Undo", "Redo"])
+        self._tabs.addTab(home, "Home")
+
+        # -- View tab
+        view = self._make_tab()
+        self._add_group(view, "Zoom", ["Zoom In", "Zoom Out", "Fit"])
+        self._tabs.addTab(view, "View")
+
+        # -- Analysis tab
+        analysis = self._make_tab()
+        self._add_group(analysis, "Core", ["Calibrate", "Analyse"])
+        self._tabs.addTab(analysis, "Analysis")
+
+    def _make_tab(self) -> QWidget:
+        """Create an empty tab with a left-aligned horizontal layout."""
+        tab = QWidget()
+        lay = QHBoxLayout(tab)
+        lay.setContentsMargins(4, 4, 4, 4)
+        lay.setSpacing(8)
+        lay.addStretch()
+        return tab
+
+    def _add_group(self, tab: QWidget, title: str, labels: list[str]) -> None:
+        """Add a RibbonGroup with the given buttons to *tab*."""
+        group = RibbonGroup(title)
+        for label in labels:
+            icon_file = label.lower().replace(" ", "-") + ".svg"
+            btn = RibbonButton(label, icon_path=_ICONS / icon_file)
+            btn.clicked.connect(lambda checked=False, name=label: self.buttonClicked.emit(name))
+            group.add_button(btn)
+            self._buttons[label] = btn
+        # insert before the stretch
+        lay = tab.layout()
+        lay.insertWidget(lay.count() - 1, group)
