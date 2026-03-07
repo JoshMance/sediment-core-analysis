@@ -1,0 +1,222 @@
+/* ============================================================
+   Sedivis — Light Theme
+   ============================================================ */
+
+/* -- Base --------------------------------------------------- */
+QWidget {
+    background-color: @bg;
+    color: @fg;
+    font-size: 13px;
+}
+
+/* -- Main window -------------------------------------------- */
+QMainWindow {
+    background-color: @bg;
+}
+
+/* -- Ribbon tab widget -------------------------------------- */
+QTabWidget::pane {
+    border: none;
+    background-color: @bg;
+}
+
+QTabBar {
+    background-color: @bg;
+}
+
+QTabBar::tab {
+    background-color: @bg;
+    color: @fg_muted;
+    padding: 5px 14px;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+QTabBar::tab:selected {
+    color: @fg;
+    border-bottom: 2px solid @accent;
+    background-color: @bg_raised;
+}
+
+QTabBar::tab:hover:!selected {
+    color: @fg;
+    background-color: @bg_hover;
+}
+
+/* -- Ribbon buttons (QToolButton) --------------------------- */
+QToolButton {
+    background-color: transparent;
+    color: @fg;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 6px;
+}
+
+QToolButton:hover {
+    background-color: @btn_hover;
+}
+
+QToolButton:pressed {
+    background-color: @accent;
+    color: @on_accent;
+}
+
+QToolButton:disabled {
+    color: @fg_disabled;
+}
+
+/* -- Toolbars ----------------------------------------------- */
+QToolBar {
+    background-color: @bg_raised;
+    border: none;
+    spacing: 2px;
+    padding: 2px;
+}
+
+QToolBar QToolButton {
+    background-color: transparent;
+    border-radius: 3px;
+    padding: 3px 5px;
+}
+
+QToolBar QToolButton:hover {
+    background-color: @btn_hover;
+}
+
+/* -- Push buttons ------------------------------------------- */
+QPushButton {
+    background-color: @bg_button;
+    color: @fg;
+    border: 1px solid @border;
+    border-radius: 3px;
+    padding: 4px 12px;
+    min-width: 60px;
+}
+
+QPushButton:hover {
+    background-color: @bg_button_hover;
+    border-color: @border_hover;
+}
+
+QPushButton:pressed {
+    background-color: @accent;
+    border-color: @accent;
+    color: @on_accent;
+}
+
+QPushButton:disabled {
+    background-color: @bg_raised;
+    color: @fg_disabled;
+    border-color: @border_inner;
+}
+
+/* -- Tree views (file panel, workspace panel) --------------- */
+QTreeView,
+QTreeWidget {
+    background-color: @bg_panel;
+    alternate-background-color: @bg_alt;
+    color: @fg;
+    border: none;
+    selection-background-color: @selection;
+    selection-color: @fg;
+    outline: none;
+}
+
+QTreeView::item,
+QTreeWidget::item {
+    padding: 2px 0;
+}
+
+QTreeView::item:hover,
+QTreeWidget::item:hover {
+    background-color: @bg_hover_tint;
+}
+
+QTreeView::item:selected,
+QTreeWidget::item:selected {
+    background-color: @selection;
+}
+
+QTreeView::branch {
+    background-color: @bg_panel;
+}
+
+/* -- Header views ------------------------------------------- */
+QHeaderView {
+    background-color: @bg_panel;
+    border: none;
+}
+
+QHeaderView::section {
+    background-color: @bg_raised;
+    color: @fg_muted;
+    border: none;
+    border-right: 1px solid @border_inner;
+    padding: 3px 6px;
+    font-size: 12px;
+}
+
+QHeaderView::section:last {
+    border-right: none;
+}
+
+/* -- Scroll bars -------------------------------------------- */
+QScrollBar:vertical {
+    background-color: @bg;
+    width: 10px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background-color: @scrollbar;
+    border-radius: 5px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: @scrollbar_hover;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
+QScrollBar:horizontal {
+    background-color: @bg;
+    height: 10px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: @scrollbar;
+    border-radius: 5px;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: @scrollbar_hover;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0;
+}
+
+/* -- Labels ------------------------------------------------- */
+QLabel {
+    background-color: transparent;
+    color: @fg;
+}
+
+QLabel:disabled {
+    color: @fg_disabled;
+}
+
+/* -- Tooltips ----------------------------------------------- */
+QToolTip {
+    background-color: @bg_panel;
+    color: @fg;
+    border: 1px solid @border;
+    padding: 4px;
+}

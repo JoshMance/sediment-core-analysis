@@ -1,15 +1,11 @@
 """Ribbon -- tabbed toolbar across the top of the window."""
 from __future__ import annotations
 
-from pathlib import Path
-
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabWidget
 from PySide6.QtCore import Signal
 
 from src.ui.views.widgets.ribbon_button import RibbonButton
 from src.ui.views.widgets.ribbon_group import RibbonGroup
-
-_ICONS = Path(__file__).resolve().parents[2] / "resources" / "icons"
 
 
 class Ribbon(QWidget):
@@ -77,8 +73,7 @@ class Ribbon(QWidget):
         """Add a RibbonGroup with the given buttons to *tab*."""
         group = RibbonGroup(title)
         for label in labels:
-            icon_file = label.lower().replace(" ", "-") + ".svg"
-            btn = RibbonButton(label, icon_path=_ICONS / icon_file)
+            btn = RibbonButton(label)
             btn.clicked.connect(lambda checked=False, name=label: self.buttonClicked.emit(name))
             group.add_button(btn)
             self._buttons[label] = btn

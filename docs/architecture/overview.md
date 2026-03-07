@@ -215,6 +215,41 @@ and react independently.
 | Lists/trees    | `QListWidget`, `QTreeWidget` (simple), or `QListView`/`QTreeView` + `QAbstractItemModel` (if needed). |
 | Menus/toolbars | `QMenuBar`, `QToolBar`, `QAction`. Undo/redo actions from `QUndoStack.createUndoAction()`.            |
 
+### Styling — `src/ui/resources/theme/`
+
+| File          | Purpose                                                                                            |
+| ------------- | -------------------------------------------------------------------------------------------------- |
+| `colors.py`   | Token dicts `DARK` and `LIGHT` — the single source of truth for all colours                        |
+| `dark.qss`    | Dark stylesheet using `@token_name` placeholders                                                   |
+| `light.qss`   | Light stylesheet using `@token_name` placeholders                                                  |
+| `apply.py`    | `apply_theme(app, *, dark)` — loads the right QSS, substitutes tokens, calls `app.setStyleSheet()` |
+| `__init__.py` | Re-exports `apply_theme` so callers import from `src.ui.resources.theme`                           |
+
+All visual styling lives in `dark.qss` / `light.qss`, applied once at startup via
+`app.setStyleSheet()`. This means themes can be switched without touching any View code.
+
+To change a colour, edit `colors.py` only — the change propagates to both QSS files automatically.
+
+**Rules:**
+
+- Views must not call `setStyleSheet()` directly.
+- If a widget needs a distinct visual role (e.g. error state, primary action button),
+  the View sets a Qt property or `objectName`; the appearance is defined in the QSS.
+
+```python
+# View sets role — QSS defines its appearance
+button.setObjectName("primaryAction")
+field.setProperty("state", "error")
+field.style().unpolish(field)   # force QSS re-evaluation after property change
+field.style().polish(field)
+```
+
+```qss
+/* dark.qss */
+QPushButton#primaryAction { background: @accent; color: @on_accent; }
+QLineEdit[state="error"]  { border: 1px solid #e81123; }
+```
+
 ---
 
 ## Testing Strategy

@@ -53,6 +53,10 @@ uv sync
 # Run the application
 uv run python main.py
 
+# Force dark or light theme
+uv run python main.py --dark
+uv run python main.py --light
+
 # Run with signal log window
 uv run python main.py --dev
 ```
@@ -87,6 +91,8 @@ sediment-core-analysis/
 │   │   └── services/          # Pure I/O helpers (load_image, etc.)
 │   └── ui/                    # UI layer (outermost)
 │       ├── presenters/        # Store ↔ View wiring
+│       ├── resources/         # Static assets
+│       │   └── theme/         # QSS files + colour tokens + apply_theme()
 │       └── views/             # PySide6 widgets
 │           ├── panels/        # Dock panels
 │           ├── shell/         # Ribbon, main window
