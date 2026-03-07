@@ -13,7 +13,8 @@ Built with **Python 3.10+** and **PySide6** using clean **MVP architecture**.
 - ✅ **Application layer** — AppController + image loading service
 - ✅ **UI layer** — FilePanel, WorkspacePanel, FilePresenter, WorkspacePresenter
 - ✅ **Legacy UI preserved** — Available in `src_legacy/` for reference
-- 🔄 **Composition root** — `main.py` not yet wired to new `src/`
+- ✅ **Composition root** -- `main.py` wires all three layers
+- ✅ **Dev mode** -- `--dev` flag opens a signal log window
 
 ---
 
@@ -49,8 +50,11 @@ git clone https://github.com/your-username/sediment-core-analysis.git
 cd sediment-core-analysis
 uv sync
 
-# Run main application (work in progress)
-uv run main.py
+# Run the application
+uv run python main.py
+
+# Run with signal log window
+uv run python main.py --dev
 ```
 
 ### View Legacy Demos

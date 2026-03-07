@@ -1,7 +1,7 @@
 """WorkspacePanel - shows loaded entities and allows deletion.
 
-Pure view component. Knows nothing about Store, AppController, or entity
-internals. Displays rows of (name, type) and emits raw UI signals.
+Pure view component. Knows nothing about Store, Controller, or entity
+internals. Displays rows of (id, name, type) and emits raw UI signals.
 The Presenter tells it what to show via add_row / remove_row.
 """
 from PySide6.QtWidgets import (
@@ -23,9 +23,8 @@ class WorkspacePanel(QWidget):
 
         # ── Tree widget ─────────────────────────────────────
         self._tree = QTreeWidget()
-        self._tree.setHeaderLabels(["Name", "Type"])
+        self._tree.setHeaderLabels(["Name", "Type", "ID"])
         self._tree.setColumnCount(3)
-        self._tree.setColumnHidden(2, True)
         self._tree.setRootIsDecorated(False)
         self._tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
 

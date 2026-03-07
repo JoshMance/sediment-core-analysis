@@ -240,7 +240,15 @@ exact manual/automated testing distinction as the application grows.
 - Example: `image_loading_test.py` tests full chain: View → Presenter → AppController → Store
 - Example: `container_test.py` tests entity container CRUD (no Qt)
 - Helpers: Shared DRY components in `tests/helpers/`
+  **Dev mode** (`--dev` flag):
 
+Running `uv run python main.py --dev` opens a second window (DevLog) that
+auto-discovers and logs every Qt signal emitted by any watched Component.
+The AppController receives a `component_watcher` callback so Components
+created at runtime are also logged without changing main.py.
+
+DevLog lives in `tests/helpers/dev_log.py` -- it's debugging infrastructure,
+not application code, so it stays outside the three layers.
 **Test organization**: Flat structure for simplicity with descriptive filenames.
 
 **Deferred:** Async/threading strategy and comprehensive error handling will be
@@ -327,3 +335,4 @@ User clicks delete button (planned)
 6. **Views are dumb** — they emit signals for user actions, display what Presenters tell them
 7. **No custom Event Bus** — Store's Qt signals serve the same purpose
 8. **Domain Services placeholder** — `domain/services/` exists for entity specific transformations
+9. Services raise exceptions. The orchestrator decides what to do. That keeps the service reusable and the policy in one place.

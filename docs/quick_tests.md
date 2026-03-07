@@ -1,5 +1,12 @@
 # Quick Tests
 
+## Dev Mode
+
+```bash
+# Run the app with signal logging -- opens a DevLog window
+uv run python main.py --dev
+```
+
 ## Store Tests
 
 ```bash
