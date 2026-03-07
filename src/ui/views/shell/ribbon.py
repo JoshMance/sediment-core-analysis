@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabWidget
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 
 from src.ui.views.widgets.ribbon_button import RibbonButton
 from src.ui.views.widgets.ribbon_group import RibbonGroup
@@ -19,8 +19,11 @@ class Ribbon(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
+        self.setObjectName("ribbon")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
         self._tabs = QTabWidget()
-        self._tabs.setDocumentMode(True)
+        # document mode disabled — Fusion ignores QTabBar background-color with it on
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)

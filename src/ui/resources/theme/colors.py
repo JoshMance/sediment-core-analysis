@@ -31,7 +31,8 @@ DARK: dict[str, str] = {
     "scrollbar":       "#4a4a4a",  # scrollbar handle
     "scrollbar_hover": "#666666",  # scrollbar handle hover
     # Accent
-    "accent":          "#0078d4",
+    "accent":          "#8A4C57",
+    "accent_hover":    "#7a3f4a",
     "on_accent":       "#ffffff",
 }
 
@@ -59,6 +60,7 @@ LIGHT: dict[str, str] = {
     "scrollbar":       "#cccccc",
     "scrollbar_hover": "#aaaaaa",
     # Accent
-    "accent":          "#0078d4",
+    "accent":          "#8A4C57",
+    "accent_hover":    "#7a3f4a",
     "on_accent":       "#ffffff",
 }

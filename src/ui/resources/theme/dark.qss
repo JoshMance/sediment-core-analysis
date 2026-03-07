@@ -15,32 +15,57 @@ QMainWindow {
 }
 
 /* -- Ribbon tab widget -------------------------------------- */
-QTabWidget::pane {
+QWidget#ribbon {
+    background-color: @accent;
+}
+
+QWidget#ribbon QTabWidget {
+    background-color: transparent;
+}
+
+QWidget#ribbon QTabWidget::pane {
     border: none;
-    background-color: @bg_raised;
+    background-color: @bg_panel;
 }
 
-QTabBar {
-    background-color: @bg;
+QWidget#ribbon QTabBar {
+    background-color: transparent;
 }
 
-QTabBar::tab {
-    background-color: @bg;
-    color: @fg_muted;
+QWidget#ribbon QTabBar::tab {
+    background-color: transparent;
+    color: @on_accent;
     padding: 5px 14px;
     border: none;
     border-bottom: 2px solid transparent;
 }
 
-QTabBar::tab:selected {
+QWidget#ribbon QTabBar::tab:selected {
     color: @fg;
-    border-bottom: 2px solid @accent;
-    background-color: @bg_raised;
+    border-bottom: 2px solid transparent;
+    background-color: @bg_panel;
 }
 
-QTabBar::tab:hover:!selected {
-    color: @fg;
-    background-color: @bg_hover;
+QWidget#ribbon QTabBar::tab:hover:!selected {
+    color: @on_accent;
+    background-color: @accent_hover;
+}
+
+/* Tab content widgets and ribbon groups */
+QTabWidget > QWidget,
+QTabWidget QWidget {
+    background-color: @bg_panel;
+}
+
+QFrame {
+    background-color: @bg_panel;
+    border: none;
+}
+
+QFrame[frameShape="5"] {  /* QFrame::VLine */
+    background-color: @border_inner;
+    max-width: 1px;
+    margin: 4px 2px;
 }
 
 /* -- Ribbon buttons (QToolButton) --------------------------- */
