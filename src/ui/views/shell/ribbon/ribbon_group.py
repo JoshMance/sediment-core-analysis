@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from src.ui.views.widgets.ribbon_button import RibbonButton
+from src.ui.views.shell.ribbon.ribbon_button import RibbonButton
 
 
 class RibbonGroup(QFrame):

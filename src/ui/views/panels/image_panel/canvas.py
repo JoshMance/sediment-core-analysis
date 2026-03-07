@@ -1,0 +1,336 @@
+"""ImageCanvas — pan, zoom, rotate, and selection overlay."""
+from __future__ import annotations
+
+from PySide6.QtCore import Qt, QPoint, QPointF, QRectF, Signal
+from PySide6.QtGui import (
+    QPainter, QPixmap, QPaintEvent, QWheelEvent, QMouseEvent,
+    QPen, QColor, QPainterPath,
+)
+from PySide6.QtWidgets import QWidget
+
+ZOOM_MIN = 0.1
+ZOOM_MAX = 10.0
+ZOOM_FACTOR = 1.1
+HANDLE_SIZE = 8
+HIT_TOLERANCE = 10
+
+
+class ImageCanvas(QWidget):
+    """Canvas widget for displaying and interacting with images.
+
+    Supports pan (left-drag or middle-drag), scroll-wheel zoom anchored at
+    cursor, rotation, and a resizable selection rectangle overlay.
+    Pure view — emits signals, does no domain logic.
+    """
+
+    selectionChanged = Signal(object)  # QRectF in image coordinates
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+
+        self._pixmap: QPixmap | None = None
+
+        # View transforms
+        self._zoom = 1.0
+        self._pan_x = 0.0
+        self._pan_y = 0.0
+        self._rotation = 0.0
+
+        # Selection state (stored in image coordinates, pre-rotation)
+        self._selection_rect: QRectF | None = None
+        self._selection_visible = False
+        self._dragging_selection: str | None = None
+        self._drag_start_pos = QPoint()
+        self._drag_start_rect = QRectF()
+
+        # Pan state
+        self._is_panning = False
+        self._last_mouse_pos = QPoint()
+
+        self.setMouseTracking(True)
+
+    # ── Public API ────────────────────────────────────────────
+
+    def set_pixmap(self, pixmap: QPixmap | None) -> None:
+        """Set the image to display and reset all view state."""
+        self._pixmap = pixmap
+        self._zoom = 1.0
+        self._pan_x = 0.0
+        self._pan_y = 0.0
+        self._rotation = 0.0
+        self._selection_rect = None
+        self._selection_visible = False
+        self.update()
+
+    def set_rotation(self, angle: float) -> None:
+        """Set rotation in degrees (display only — selection coords are unaffected)."""
+        self._rotation = angle % 360
+        self.update()
+
+    def get_rotation(self) -> float:
+        return self._rotation
+
+    def set_selection_visible(self, visible: bool) -> None:
+        """Show or hide the selection rectangle overlay."""
+        self._selection_visible = visible
+        if visible and self._selection_rect is None and self._pixmap:
+            img_w = self._pixmap.width()
+            img_h = self._pixmap.height()
+            self._selection_rect = QRectF(
+                img_w * 0.25, img_h * 0.25, img_w * 0.5, img_h * 0.5
+            )
+        self.update()
+
+    def get_selection_rect(self) -> QRectF | None:
+        return self._selection_rect
+
+    def get_selection_pixmap(self) -> QPixmap | None:
+        """Crop and return the selected region from the source pixmap."""
+        if not self._pixmap or not self._selection_rect:
+            return None
+        rect = self._selection_rect.toRect().intersected(self._pixmap.rect())
+        if rect.isEmpty():
+            return None
+        return self._pixmap.copy(rect)
+
+    def zoom_in(self) -> None:
+        self._apply_zoom(ZOOM_FACTOR, center_on_viewport=True)
+
+    def zoom_out(self) -> None:
+        self._apply_zoom(1.0 / ZOOM_FACTOR, center_on_viewport=True)
+
+    # ── Rendering ─────────────────────────────────────────────
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+        if not self._pixmap:
+            return
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        painter.translate(self._pan_x, self._pan_y)
+        painter.scale(self._zoom, self._zoom)
+
+        img_x = (self.width() / self._zoom - self._pixmap.width()) / 2
+        img_y = (self.height() / self._zoom - self._pixmap.height()) / 2
+
+        # Draw image with rotation applied around its center
+        painter.save()
+        if self._rotation != 0:
+            cx = img_x + self._pixmap.width() / 2
+            cy = img_y + self._pixmap.height() / 2
+            painter.translate(cx, cy)
+            painter.rotate(self._rotation)
+            painter.translate(-cx, -cy)
+        painter.drawPixmap(int(img_x), int(img_y), self._pixmap)
+        painter.restore()
+
+        # Draw selection in unrotated image space (after restore)
+        if self._selection_visible and self._selection_rect:
+            painter.translate(img_x, img_y)
+            self._draw_selection(painter)
+
+    def _draw_selection(self, painter: QPainter) -> None:
+        # Dimmed overlay outside the selection
+        if self._pixmap:
+            painter.save()
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(0, 0, 0, 180))
+            full_path = QPainterPath()
+            full_path.addRect(QRectF(0, 0, self._pixmap.width(), self._pixmap.height()))
+            sel_path = QPainterPath()
+            sel_path.addRect(self._selection_rect)
+            painter.drawPath(full_path.subtracted(sel_path))
+            painter.restore()
+
+        # Selection border
+        painter.setPen(QPen(QColor(0, 120, 215), 2 / self._zoom))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRect(self._selection_rect)
+
+        # Resize handles
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(0, 120, 215))
+        for handle_rect in self._get_selection_handles().values():
+            painter.drawRect(handle_rect)
+
+    # ── Mouse interaction ─────────────────────────────────────
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        delta = event.angleDelta().y()
+        factor = ZOOM_FACTOR if delta > 0 else (1.0 / ZOOM_FACTOR)
+        self._apply_zoom(factor, anchor_pos=event.position().toPoint())
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.MiddleButton:
+            self._is_panning = True
+            self._last_mouse_pos = event.position().toPoint()
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            return
+
+        if event.button() != Qt.MouseButton.LeftButton:
+            return
+
+        if self._selection_visible and self._selection_rect:
+            img_pos = self._widget_to_image(event.position().toPoint())
+            for handle_name, handle_rect in self._get_selection_handles().items():
+                if handle_rect.contains(img_pos):
+                    self._dragging_selection = f"resize_{handle_name}"
+                    self._drag_start_pos = event.position().toPoint()
+                    self._drag_start_rect = QRectF(self._selection_rect)
+                    return
+            if self._selection_rect.contains(img_pos):
+                self._dragging_selection = "move"
+                self._drag_start_pos = event.position().toPoint()
+                self._drag_start_rect = QRectF(self._selection_rect)
+                return
+
+        self._is_panning = True
+        self._last_mouse_pos = event.position().toPoint()
+        self.setCursor(Qt.CursorShape.ClosedHandCursor)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._dragging_selection and self._selection_rect:
+            img_pos = self._widget_to_image(event.position().toPoint())
+            delta_widget = event.position().toPoint() - self._drag_start_pos
+            delta_img = QPointF(delta_widget.x() / self._zoom, delta_widget.y() / self._zoom)
+
+            if self._dragging_selection == "move":
+                self._selection_rect.moveTo(
+                    self._drag_start_rect.x() + delta_img.x(),
+                    self._drag_start_rect.y() + delta_img.y(),
+                )
+            else:
+                self._resize_selection(
+                    self._dragging_selection, img_pos, self._drag_start_rect
+                )
+
+            self.selectionChanged.emit(self._selection_rect)
+            self.update()
+            return
+
+        if self._is_panning:
+            delta = event.position().toPoint() - self._last_mouse_pos
+            self._pan_x += delta.x()
+            self._pan_y += delta.y()
+            self._last_mouse_pos = event.position().toPoint()
+            self.update()
+            return
+
+        self._update_cursor(event.position().toPoint())
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() in (Qt.MouseButton.LeftButton, Qt.MouseButton.MiddleButton):
+            self._is_panning = False
+            self._dragging_selection = None
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+
+    # ── Internal helpers ──────────────────────────────────────
+
+    def _apply_zoom(
+        self,
+        zoom_factor: float,
+        center_on_viewport: bool = False,
+        anchor_pos: QPoint | None = None,
+    ) -> None:
+        if not self._pixmap:
+            return
+        new_zoom = self._zoom * zoom_factor
+        if not (ZOOM_MIN <= new_zoom <= ZOOM_MAX):
+            return
+
+        if center_on_viewport:
+            cx, cy = self.width() / 2, self.height() / 2
+            sx = (cx - self._pan_x) / self._zoom
+            sy = (cy - self._pan_y) / self._zoom
+            self._zoom = new_zoom
+            self._pan_x = cx - sx * self._zoom
+            self._pan_y = cy - sy * self._zoom
+        elif anchor_pos:
+            sx = (anchor_pos.x() - self._pan_x) / self._zoom
+            sy = (anchor_pos.y() - self._pan_y) / self._zoom
+            self._zoom = new_zoom
+            self._pan_x = anchor_pos.x() - sx * self._zoom
+            self._pan_y = anchor_pos.y() - sy * self._zoom
+        else:
+            self._zoom = new_zoom
+
+        self.update()
+
+    def _widget_to_image(self, widget_pos: QPoint) -> QPointF:
+        """Convert widget-space coordinates to image-space coordinates."""
+        if not self._pixmap:
+            return QPointF()
+        img_offset_x = (self.width() / self._zoom - self._pixmap.width()) / 2
+        img_offset_y = (self.height() / self._zoom - self._pixmap.height()) / 2
+        scene_x = (widget_pos.x() - self._pan_x) / self._zoom
+        scene_y = (widget_pos.y() - self._pan_y) / self._zoom
+        return QPointF(scene_x - img_offset_x, scene_y - img_offset_y)
+
+    def _get_selection_handles(self) -> dict[str, QRectF]:
+        if not self._selection_rect:
+            return {}
+        hs = HANDLE_SIZE / self._zoom
+        r = self._selection_rect
+        return {
+            "tl": QRectF(r.left() - hs / 2, r.top() - hs / 2, hs, hs),
+            "tr": QRectF(r.right() - hs / 2, r.top() - hs / 2, hs, hs),
+            "bl": QRectF(r.left() - hs / 2, r.bottom() - hs / 2, hs, hs),
+            "br": QRectF(r.right() - hs / 2, r.bottom() - hs / 2, hs, hs),
+            "t":  QRectF(r.center().x() - hs / 2, r.top() - hs / 2, hs, hs),
+            "b":  QRectF(r.center().x() - hs / 2, r.bottom() - hs / 2, hs, hs),
+            "l":  QRectF(r.left() - hs / 2, r.center().y() - hs / 2, hs, hs),
+            "r":  QRectF(r.right() - hs / 2, r.center().y() - hs / 2, hs, hs),
+        }
+
+    def _resize_selection(
+        self, handle: str, img_pos: QPointF, start_rect: QRectF
+    ) -> None:
+        min_size = 10
+        left, right = start_rect.left(), start_rect.right()
+        top, bottom = start_rect.top(), start_rect.bottom()
+        h = handle.replace("resize_", "")
+
+        if h == "t":
+            top = min(img_pos.y(), bottom - min_size)
+        elif h == "b":
+            bottom = max(img_pos.y(), top + min_size)
+        elif h == "l":
+            left = min(img_pos.x(), right - min_size)
+        elif h == "r":
+            right = max(img_pos.x(), left + min_size)
+        elif h == "tl":
+            top = min(img_pos.y(), bottom - min_size)
+            left = min(img_pos.x(), right - min_size)
+        elif h == "tr":
+            top = min(img_pos.y(), bottom - min_size)
+            right = max(img_pos.x(), left + min_size)
+        elif h == "bl":
+            bottom = max(img_pos.y(), top + min_size)
+            left = min(img_pos.x(), right - min_size)
+        elif h == "br":
+            bottom = max(img_pos.y(), top + min_size)
+            right = max(img_pos.x(), left + min_size)
+
+        self._selection_rect.setCoords(left, top, right, bottom)
+
+    def _update_cursor(self, widget_pos: QPoint) -> None:
+        if self._selection_visible and self._selection_rect:
+            img_pos = self._widget_to_image(widget_pos)
+            for handle_name, handle_rect in self._get_selection_handles().items():
+                if handle_rect.contains(img_pos):
+                    if handle_name in ("tl", "br"):
+                        self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+                    elif handle_name in ("tr", "bl"):
+                        self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+                    elif handle_name in ("t", "b"):
+                        self.setCursor(Qt.CursorShape.SizeVerCursor)
+                    else:
+                        self.setCursor(Qt.CursorShape.SizeHorCursor)
+                    return
+            if self._selection_rect.contains(img_pos):
+                self.setCursor(Qt.CursorShape.SizeAllCursor)
+                return
+        self.setCursor(Qt.CursorShape.ArrowCursor)

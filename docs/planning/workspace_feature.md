@@ -131,3 +131,147 @@ a natural path to session saving
 minimal moving parts
 
 And most importantly, it stays small and understandable, which matches your goal of preventing the architecture from becoming overly complicated.
+
+---
+
+# Plan: Workspace + ImagePanel
+
+## TL;DR
+
+Add the full Workspace system (WorkspaceState + WorkspaceService in application layer, WorkspaceView in shell/, WorkspacePresenter in ui/presenters/) and the first runtime panel (ImagePanel in panels/) that displays an image, allows pan/zoom/rotate/select, and creates a CoreEntity on confirm. Double-clicking an entity in VariablesList triggers the flow.
+
+---
+
+## Phase 1 — Application layer (WorkspaceState + WorkspaceService)
+
+**New: `src/application/workspace_state.py`**
+
+- `WorkspaceEntry` dataclass: `entity_id: str`, `panel_type: str`
+- `WorkspaceState(QObject)`: signals `panelAdded(object)` (WorkspaceEntry), `panelRemoved(str)` (entity_id), `panelFocusRequested(str)` (entity_id)
+- Public: `open(entry)` — emits `panelAdded` or `panelFocusRequested` if already open; `close(entity_id)` — emits `panelRemoved`; `is_open(entity_id) -> bool`
+
+**New: `src/application/services/workspace_service.py`**
+
+- Stateless function `open_entity(entity_id, store, workspace_state)`: validates entity exists, maps entity type → panel type via `_PANEL_TYPE_MAP = {"ImageEntity": "ImagePanel"}`, calls `workspace_state.open(entry)`
+
+**Modify: `src/application/app_controller.py`**
+
+- Accept `workspace_state: WorkspaceState` in `__init__` (alongside store)
+- Add `open_in_workspace(entity_id: str) -> None` — calls `workspace_service.open_entity(...)`
+
+---
+
+## Phase 2 — VariablesList double-click signal
+
+**Modify: `src/ui/views/shell/variables_list.py`**
+
+- Add `entityOpenRequested = Signal(str)` — fires entity_id on QTreeWidget `itemDoubleClicked`
+
+**Modify: `src/ui/presenters/variables_presenter.py`**
+
+- Connect `view.entityOpenRequested` → `controller.open_in_workspace`
+
+---
+
+## Phase 3 — ImagePanel view (parallel with Phase 1)
+
+**New: `src/ui/views/panels/image_panel/__init__.py`** — exports `ImagePanel`
+
+**New: `src/ui/views/panels/image_panel/canvas.py`** — `ImageCanvas(QWidget)`
+
+- Port from `src_legacy/views/panels/image_panel/canvas.py`
+- REMOVE: all calibration state/mode/drawing (`_calib_*`, `MODE_CALIBRATE`, `_draw_calibration`, `_widget_to_rotated_image`)
+- KEEP: pan, zoom (wheel + zoom_in/zoom_out methods), rotation, selection rectangle with resize handles
+- KEEP: `selection_changed = Signal(object)` (QRectF in image coords)
+- No inline styles (`setStyleSheet` calls)
+
+**New: `src/ui/views/panels/image_panel/image_panel.py`** — `ImagePanel(QWidget)`
+
+- Port from `src_legacy/views/panels/image_panel/widget.py`
+- REMOVE: calibration toolbar buttons, calib_input_widget, on_selection_confirmed/on_calibration_confirmed callbacks, preview_label with inline style
+- ADD: `selectionConfirmed = Signal(object)` emitted with `QPixmap` of selection when user clicks Confirm
+- Toolbar: zoom in, zoom out, rotation slider + label, separator, Select (checkable), separator, Confirm + Cancel (hidden until Select active)
+- Public: `set_pixmap(pixmap: QPixmap | None)`, `get_selection_pixmap() -> QPixmap | None`
+- No inline `setStyleSheet` calls anywhere; button sizing (`setFixedSize`) is acceptable
+
+---
+
+## Phase 4 — ImagePanelPresenter (depends on Phase 1 + Phase 3)
+
+**New: `src/ui/presenters/image_panel_presenter.py`** — `ImagePanelPresenter`
+
+- `__init__(self, view: ImagePanel, store: Store, controller: AppController, entity_id: str)`
+- On init: fetches `ImageEntity` from store, converts `entity.data` (NDArray uint8 RGB) to `QPixmap`, calls `view.set_pixmap(pixmap)`
+- Connects `view.selectionConfirmed` → `_on_selection_confirmed(pixmap)`
+- `_on_selection_confirmed`: converts QPixmap → numpy array (via QImage.Format_RGB888), calls `controller.create_core_entity(name=f"{entity_name}_core", data=arr, source_image_id=entity_id)`
+
+---
+
+## Phase 5 — WorkspaceView (parallel with Phase 3)
+
+**New: `src/ui/views/shell/workspace_view.py`** — `WorkspaceView(QWidget)`
+
+- Wraps `QTabWidget` with `setTabsClosable(True)`, `tabCloseRequested` signal
+- Public: `add_tab(widget, title, entity_id)` — stores `entity_id → tab_index` mapping; `remove_tab(entity_id)`; `focus_tab(entity_id)`
+- Emits `tabClosed = Signal(str)` (entity_id) when user closes a tab
+
+---
+
+## Phase 6 — WorkspacePresenter (depends on Phases 1, 3, 4, 5)
+
+**New: `src/ui/presenters/workspace_presenter.py`** — `WorkspacePresenter`
+
+- `__init__(self, view: WorkspaceView, workspace_state: WorkspaceState, store: Store, controller: AppController)`
+- Connects: `workspace_state.panelAdded` → `_on_panel_added`; `workspace_state.panelFocusRequested` → `view.focus_tab`; `view.tabClosed` → `workspace_state.close`
+- `_on_panel_added(entry)`: looks up `_PANEL_FACTORIES[entry.panel_type]`, calls factory → (panel_view, panel_presenter), stores both (to prevent GC), calls `view.add_tab(panel_view, entity_name, entry.entity_id)`
+- Panel factory registry (module-level dict): `{"ImagePanel": _make_image_panel}`; factory callable signature: `(entry, store, controller) -> (QWidget, object)`
+- Keeps `dict[entity_id → (panel_view, panel_presenter)]` to maintain lifetime
+
+---
+
+## Phase 7 — Wire up main.py (depends on all phases)
+
+- Create `workspace_state = WorkspaceState()` (alongside `store`)
+- Pass `workspace_state=workspace_state` to `AppController`
+- Create `workspace_view = WorkspaceView()` in views section
+- Create `workspace_presenter = WorkspacePresenter(workspace_view, workspace_state, store, controller)`
+- Update layout: replace empty `QWidget()` stretch=3 center with `workspace_view`
+
+---
+
+## Phase 8 — Manual test
+
+**New: `tests/workspace_test.py`** — end-to-end test: load image, double-click in VariablesList, check workspace opens tab, draw selection, confirm, check CoreEntity appears in VariablesList
+
+---
+
+## Relevant files
+
+- `src/application/app_controller.py` — add workspace_state + open_in_workspace
+- `src/application/workspace_state.py` — NEW
+- `src/application/services/workspace_service.py` — NEW
+- `src/ui/views/shell/workspace_view.py` — NEW (shell, always present)
+- `src/ui/views/shell/variables_list.py` — add entityOpenRequested signal
+- `src/ui/presenters/variables_presenter.py` — connect entityOpenRequested
+- `src/ui/views/panels/image_panel/` — NEW (3 files)
+- `src/ui/presenters/workspace_presenter.py` — NEW
+- `src/ui/presenters/image_panel_presenter.py` — NEW
+- `main.py` — wire workspace_state, workspace_view, workspace_presenter; update layout
+- Reference: `src_legacy/views/panels/image_panel/canvas.py` (port base)
+- Reference: `src_legacy/views/panels/image_panel/widget.py` (port base)
+
+## Verification
+
+1. `uv run python -m tests.workspace_test` — visual end-to-end
+2. `uv run python -m tests.container_test` — regression (no regressions)
+3. `uv run python main.py --light` — run app, double-click loaded image, confirm selection, check VariablesList shows new CoreEntity
+
+## Decisions
+
+- Double-click in VariablesList opens workspace tab
+- Tab title = entity name
+- If entity already open: focus existing tab, no duplicate
+- No calibration in this iteration — CalibrationMode stripped entirely from canvas
+- No inline setStyleSheet in any new file; button sizing (setFixedSize) is acceptable
+- WorkspaceState created at root in main.py (same pattern as Store) and passed to AppController
+- Panel view + presenter lifetime owned by WorkspacePresenter's dict

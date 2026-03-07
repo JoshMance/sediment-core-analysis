@@ -5,7 +5,7 @@ import logging
 
 from PySide6.QtCore import QObject
 
-from src.ui.views.shell.ribbon import Ribbon
+from src.ui.views.shell.ribbon.ribbon import Ribbon
 from src.application import AppController
 
 logger = logging.getLogger(__name__)

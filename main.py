@@ -9,16 +9,19 @@ from src.domain.store import Store
 
 # Application layer
 from src.application import AppController
+from src.application.workspace_state import WorkspaceState
 
 # UI layer - views
 from src.ui.views.shell.file_browser import FileBrowser
 from src.ui.views.shell.variables_list import VariablesList
-from src.ui.views.shell.ribbon import Ribbon
+from src.ui.views.shell.ribbon.ribbon import Ribbon
+from src.ui.views.shell.workspace import WorkspaceView
 
 # UI layer - presenters
 from src.ui.presenters.file_presenter import FilePresenter
 from src.ui.presenters.variables_presenter import VariablesPresenter
 from src.ui.presenters.ribbon_presenter import RibbonPresenter
+from src.ui.presenters.workspace_presenter import WorkspacePresenter
 from src.ui.resources.theme import apply_theme
 
 
@@ -43,7 +46,8 @@ def main() -> None:
     watch("Store", store)
 
     # -- Application ----------------------------------------------
-    controller = AppController(store, component_watcher=watch)
+    workspace_state = WorkspaceState()
+    controller = AppController(store, workspace_state=workspace_state, component_watcher=watch)
 
     # -- UI - views -----------------------------------------------
     ribbon = Ribbon()
@@ -52,11 +56,14 @@ def main() -> None:
     watch("FileBrowser", file_browser)
     variables_list = VariablesList()
     watch("VariablesList", variables_list)
+    workspace_view = WorkspaceView()
+    watch("WorkspaceView", workspace_view)
 
     # -- UI - presenters ------------------------------------------
     ribbon_presenter = RibbonPresenter(ribbon, controller)
     file_presenter = FilePresenter(file_browser, store, controller)
     variables_presenter = VariablesPresenter(variables_list, store, controller)
+    workspace_presenter = WorkspacePresenter(workspace_view, workspace_state, store, controller)
 
     if dev_log:
         dev_log.show()
@@ -66,7 +73,7 @@ def main() -> None:
     bottom_layout = QHBoxLayout(bottom_row)
     bottom_layout.setContentsMargins(0, 0, 0, 0)
     bottom_layout.addWidget(file_browser, 1)
-    bottom_layout.addWidget(QWidget(), 3)
+    bottom_layout.addWidget(workspace_view, 3)
     bottom_layout.addWidget(variables_list, 1)
 
     central = QWidget()

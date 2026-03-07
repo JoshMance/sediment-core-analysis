@@ -15,8 +15,9 @@ class VariablesList(QWidget):
     """Displays loaded entities and lets the user delete them."""
 
     # ── Signals (raw UI events only) ────────────────────────
-    deleteRequested = Signal(str)   # entity_id when user clicks Delete
-    entitySelected = Signal(str)    # entity_id when user clicks a row
+    deleteRequested = Signal(str)     # entity_id when user clicks Delete
+    entitySelected = Signal(str)      # entity_id when user single-clicks a row
+    entityOpenRequested = Signal(str) # entity_id when user double-clicks a row
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -35,6 +36,7 @@ class VariablesList(QWidget):
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
         self._tree.currentItemChanged.connect(self._on_selection_changed)
+        self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
 
         # ── Delete button ───────────────────────────────────
         self._delete_btn = QPushButton("Delete")
@@ -87,6 +89,10 @@ class VariablesList(QWidget):
         if has_selection:
             entity_id = current.text(2)
             self.entitySelected.emit(entity_id)
+
+    def _on_item_double_clicked(self, item, _column) -> None:
+        """Emit entityOpenRequested when the user double-clicks a row."""
+        self.entityOpenRequested.emit(item.text(2))
 
     def _on_delete_clicked(self):
         """Emit deleteRequested with the selected entity's id."""

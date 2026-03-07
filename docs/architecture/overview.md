@@ -139,13 +139,17 @@ without building a custom one.
 
 ```python
 class AppController:
-    def __init__(self, store: Store):
+    def __init__(self, store: Store, workspace_state: WorkspaceState | None = None):
         self._store = store
+        self._workspace_state = workspace_state
 
     def create_image_entity(self, file_path: str) -> str:
-        data = load_image(file_path)         # services/load_image.py — Application Service
-        entity = ImageEntity(name=..., file_path=..., data=data)
-        return self._store.add(entity)       # Store emits entityAdded
+        data = load_image(file_path)          # services/load_image.py
+        entity = ImageEntity(name=..., data=data)
+        return self._store.add(entity)        # Store emits entityAdded
+
+    def open_in_workspace(self, entity_id: str) -> None:
+        workspace_service.open_entity(entity_id, self._store, self._workspace_state)
 ```
 
 **Internal modules:** `services/` is internal to the Application package — nothing
@@ -159,7 +163,29 @@ The Store itself knows nothing about files or serialization.
 
 > Stateless helpers for I/O and external concerns. Internal to the Application layer.
 
-Currently contains `load_image.py` (reads image files via `imageio.v3`).
+Currently contains:
+
+- `load_image.py` — reads image files via `imageio.v3`.
+- `workspace_service.py` — maps entity types to panel types and calls `WorkspaceState.open`. Silently does nothing for entity types with no registered panel yet (e.g. `CoreEntity`).
+
+### WorkspaceState (Component) — `src/application/workspace_state.py`
+
+> Application-layer record of which panels are currently open. Long-lived QObject — not a widget.
+
+| What               | Implementation                                                          |
+| ------------------ | ----------------------------------------------------------------------- |
+| Panel tracking     | `_open: dict[str, WorkspaceEntry]` keyed by `entity_id`                 |
+| `open(entry)`      | Emits `panelAdded` on first open; `panelFocusRequested` if already open |
+| `close(entity_id)` | Removes entry, emits `panelRemoved`                                     |
+
+```python
+class WorkspaceState(QObject):
+    panelAdded          = Signal(object)  # WorkspaceEntry
+    panelRemoved        = Signal(str)     # entity_id
+    panelFocusRequested = Signal(str)     # entity_id — already open, just focus it
+```
+
+The UI layer (`WorkspacePresenter`) connects to these signals to create, destroy, and focus panel widgets.
 
 ---
 
@@ -218,10 +244,10 @@ and react independently.
 
 **`shell/` vs `panels/` — the key structural rule:**
 
-| Folder    | Rule                                                                                           | Examples                                    |
-| --------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `shell/`  | Views that are **created at startup and persist** for the lifetime of the application.         | `Ribbon`, `FileBrowser`, `VariablesList`    |
-| `panels/` | Views that are **created at runtime** on demand (e.g. when the user opens or creates a thing). | Entity editor panels, canvas views (future) |
+| Folder    | Rule                                                                                           | Examples                                                  |
+| --------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `shell/`  | Views that are **created at startup and persist** for the lifetime of the application.         | `Ribbon`, `FileBrowser`, `VariablesList`, `WorkspaceView` |
+| `panels/` | Views that are **created at runtime** on demand (e.g. when the user opens or creates a thing). | `ImagePanel`, entity editors                              |
 
 Nothing in `shell/` is created or destroyed while the app is running. Nothing in `panels/` exists at startup.
 
@@ -312,7 +338,8 @@ added as the application grows beyond initial development.
 | `QListWidget` / `QTreeWidget` | Views                                  | Simple list/tree display   |
 | `QUndoStack`                  | AppController                          | Undo/redo management       |
 | `QUndoCommand`                | AppController                          | Each undoable action       |
-| `QObject`                     | Store, Presenters                      | Signals/slots              |
+| `QTabWidget`                  | WorkspaceView                          | Tabbed panel host          |
+| `QObject`                     | Store, Presenters, WorkspaceState      | Signals/slots              |
 | `Signal` / `Slot`             | Store → Presenters, Views → Presenters | Communication              |
 | `QAction`                     | Views                                  | Menu/toolbar items         |
 | `QFileDialog`                 | App                                    | Open/save dialogs          |
@@ -368,6 +395,19 @@ User clicks delete button (planned)
   → AppController removes entity from Store
   → Store emits entityRemoved signal (entity_id)
   → Presenters react, Views update
+```
+
+```
+User double-clicks an entity in VariablesList
+  → VariablesList emits entityOpenRequested(entity_id)
+  → VariablesPresenter calls controller.open_in_workspace(entity_id)
+  → AppController calls workspace_service.open_entity(entity_id, store, workspace_state)
+  → WorkspaceService maps entity type → panel type ("ImageEntity" → "ImagePanel")
+  → WorkspaceService calls workspace_state.open(WorkspaceEntry(...))
+  → WorkspaceState emits panelAdded(entry)  [or panelFocusRequested if already open]
+  → WorkspacePresenter receives panelAdded, calls factory, creates (ImagePanel, ImagePanelPresenter)
+  → WorkspacePresenter calls workspace_view.add_tab(panel, title, entity_id)
+  → ImagePanelPresenter loads entity from Store, converts to QPixmap, calls panel.set_pixmap()
 ```
 
 ## Key Rules

@@ -28,6 +28,7 @@ class VariablesPresenter(QObject):
 
         # ── Listen to View signals ──────────────────────────
         self.view.deleteRequested.connect(self._on_delete_requested)
+        self.view.entityOpenRequested.connect(self._on_entity_open_requested)
 
     # ── Store → View ────────────────────────────────────────
 
@@ -47,3 +48,7 @@ class VariablesPresenter(QObject):
     def _on_delete_requested(self, entity_id: str):
         """User clicked Delete — route to AppController."""
         self.controller.delete_entity(entity_id)
+
+    def _on_entity_open_requested(self, entity_id: str):
+        """User double-clicked a row — open the entity in the workspace."""
+        self.controller.open_in_workspace(entity_id)

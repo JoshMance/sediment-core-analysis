@@ -10,29 +10,28 @@ Built with **Python 3.10+** and **PySide6** using clean **MVP architecture**.
 
 - ✅ **Architecture designed** — See [overview.md](docs/architecture/overview.md)
 - ✅ **Domain layer** — Store, Entities, Container built
-- ✅ **Application layer** — AppController + image loading service
+- ✅ **Application layer** — AppController, WorkspaceState, WorkspaceService, image loading
 - ✅ **UI layer** — FileBrowser, VariablesList, FilePresenter, VariablesPresenter
+- ✅ **Workspace system** — tabbed panel host with extensible factory; ImagePanel for image viewing and core selection
 - ✅ **Legacy UI preserved** — Available in `src_legacy/` for reference
-- ✅ **Composition root** -- `main.py` wires all three layers
-- ✅ **Dev mode** -- `--dev` flag opens a signal log window
+- ✅ **Composition root** — `main.py` wires all three layers
+- ✅ **Dev mode** — `--dev` flag opens a signal log window
 
 ---
 
 ## Architecture Overview
 
-Following **Model-View-Presenter (MVP)** pattern optimized for PySide6:
+Following **Model-View-Presenter (MVP)** pattern optimized for PySide6. Dependencies flow inward: **UI → Application → Domain**.
 
 See [Architecture Overview](docs/architecture/overview.md) for the full guide.
 
-### Core Components
+### Layers
 
-| Component         | Purpose                | Implementation                   |
-| ----------------- | ---------------------- | -------------------------------- |
-| **Entities**      | Domain models          | Plain Python dataclasses (no Qt) |
-| **Store**         | Single source of truth | QObject with signals             |
-| **AppController** | Orchestrates use-cases | Calls services, writes to Store  |
-| **Presenters**    | Wire Store ↔ Views     | One per panel, Qt signals/slots  |
-| **Views**         | Display only           | Dumb PySide6 widgets             |
+| Layer                              | What lives here                                                                                                                                                                                                                                                                                    |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Domain** `src/domain/`           | **Entities** — plain Python dataclasses (`ImageEntity`, `CoreEntity`). **Store** — `QObject` Component; single source of truth, emits signals on every mutation.                                                                                                                                   |
+| **Application** `src/application/` | **AppController** — long-lived Component; coordinates use-cases, the only writer to the Store. **WorkspaceState** — long-lived Component; tracks which panels are open (app-layer state, no widgets). **Services** — stateless helpers internal to this layer (`load_image`, `workspace_service`). |
+| **UI** `src/ui/`                   | **Presenters** — one Component per panel/sidebar; wire Store signals and View events to AppController calls. **Views** — dumb PySide6 widgets split into `shell/` (created at startup, always present) and `panels/` (created at runtime on demand).                                               |
 
 ---
 
@@ -88,15 +87,21 @@ sediment-core-analysis/
 │   │   ├── store/             # QObject state + signals
 │   │   └── services/          # Domain services (future)
 │   ├── application/           # Application layer
-│   │   └── services/          # Pure I/O helpers (load_image, etc.)
+│   │   ├── app_controller.py  # Orchestrates use-cases; sole writer to the Store
+│   │   ├── workspace_state.py # Tracks open panels (app-layer QObject, no widgets)
+│   │   └── services/          # I/O + orchestration helpers (load_image, workspace_service)
 │   └── ui/                    # UI layer (outermost)
 │       ├── presenters/        # Store ↔ View wiring
+│       │   ├── workspace_presenter.py   # Panel lifecycle + factory registry
+│       │   └── image_panel_presenter.py # ImageEntity → ImagePanel bridge
 │       ├── resources/         # Static assets
 │       │   └── theme/         # QSS files + colour tokens + apply_theme()
 │       └── views/             # PySide6 widgets
-│           ├── panels/        # Runtime panels (created on demand, e.g. entity editors)
-│           ├── shell/         # Persistent shell views (FileBrowser, VariablesList, Ribbon)
-│           └── widgets/       # Reusable widgets
+│           ├── panels/        # Runtime panels (created on demand)
+│           │   └── image_panel/  # Pan/zoom/rotate canvas + toolbar + selection
+            └── shell/         # Persistent shell views
+                ├── ribbon/    # Ribbon view + RibbonButton + RibbonGroup
+                └── workspace.py  # Tabbed panel host (always-present)
 │
 ├── tests/                     # Testing (outside src)
 │   └── helpers/               # Shared DRY components
@@ -175,9 +180,9 @@ This project is currently in active architectural rebuild.
 
 **Current priorities:**
 
-1. Wire `main.py` composition root to new `src/` layers
-2. Add undo/redo via QUndoStack in AppController
-3. Port remaining View components with Presenter wrappers
+1. Add undo/redo via QUndoStack in AppController
+2. Add CorePanel (view and crop controls for CoreEntity)
+3. Session save/load (`.sedivis` file — entity store + workspace state)
 4. Migrate scientific functions to new structure
 
 **Before contributing:** Please read [overview.md](docs/architecture/overview.md) to understand the MVP architecture approach.

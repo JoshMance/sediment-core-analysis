@@ -14,6 +14,7 @@ from src.domain.entities.image_entity import ImageEntity
 from src.domain.entities.core_entity import CoreEntity
 from src.domain.store import Store
 from src.application.services.load_image import load_image
+from src.application.workspace_state import WorkspaceState
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +25,11 @@ class AppController:
     def __init__(
         self,
         store: Store,
+        workspace_state: WorkspaceState | None = None,
         component_watcher: Callable[[str, object], None] | None = None,
     ) -> None:
         self._store = store
+        self._workspace_state = workspace_state
         self._component_watcher = component_watcher
 
     def _watch(self, name: str, obj: object) -> None:
@@ -87,3 +90,21 @@ class AppController:
             The removed entity.
         """
         return self._store.remove(entity_id)
+
+    def open_in_workspace(self, entity_id: str) -> None:
+        """Open an entity as a panel in the workspace.
+
+        Delegates to WorkspaceService which validates the entity and
+        determines the correct panel type. Silently ignored if no
+        WorkspaceState is configured.
+
+        Args:
+            entity_id: The id of the entity to open.
+        """
+        if self._workspace_state is None:
+            return
+        from src.application.services import workspace_service
+        try:
+            workspace_service.open_entity(entity_id, self._store, self._workspace_state)
+        except ValueError as e:
+            logger.warning("open_in_workspace: %s", e)
