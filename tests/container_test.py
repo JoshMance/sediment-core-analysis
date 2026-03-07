@@ -4,12 +4,12 @@ Manual test for EntityContainer — passive CRUD bucket
 Exercises all container operations in isolation (no Qt required).
 Prints results directly to stdout for quick verification.
 
-Run with: python -m src.tests.container_test
+Run with: python -m tests.container_test
 """
 from pathlib import Path
 
-from src.entities.image_entity import ImageEntity
-from src.store.container import EntityContainer
+from src.domain.entities.image_entity import ImageEntity
+from src.domain.store.container import EntityContainer
 
 
 def section(title: str) -> None:

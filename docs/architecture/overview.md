@@ -6,40 +6,103 @@ MVP (Model-View-Presenter) + Command Pattern — idiomatic PySide6
 
 > Why MVP over MVVM? PySide6 QWidgets have no real data binding. `Property()` is
 > designed for QML. In practice, QWidget ViewModels end up as Presenters — classes
-> that manually wire signals/slots between Views and data. Calling it MVP is honest
-> about what you're actually building.
+> that manually wire signals/slots between Views and data.
 
 ---
 
-## Components
+## Layers
 
-### 1. Entities (Model)
+The system is organised into three layers. Dependencies flow inward: UI → Application → Domain.
 
-> Your domain data. Plain Python.
+```
+┌─────────────────────────────────────────┐
+│  UI Layer          src/ui/              │
+│  (Views, Presenters)                    │
+├─────────────────────────────────────────┤
+│  Application Layer src/application/     │
+│  (AppController, Application Services)  │
+├─────────────────────────────────────────┤
+│  Domain Layer      src/domain/          │
+│  (Entities, Store, Domain Services)     │
+└─────────────────────────────────────────┘
+```
+
+### Domain Layer — `src/domain/`
+
+The innermost layer. Knows nothing about the Application or UI layers.
+
+Contains **Entities** (the domain objects), the **Store** (runtime Entity storage
+and change notification), and **Domain Services** (stateless operations that transform entities).
+
+### Application Layer — `src/application/`
+
+Orchestrates use cases. Depends on the Domain layer — may use Domain Services,
+read/write the Store, and construct Entities — but the Domain layer never
+depends on the Application layer.
+
+Contains the **AppController** (long-lived Component that coordinates user intent)
+and **Application Services** (stateless I/O helpers such as an image loader).
+
+Application Services may call Domain Services. Domain Services must **never**
+call Application Services.
+
+### UI Layer — `src/ui/`
+
+The outermost layer. Depends on both the Application and Domain layers.
+
+Contains **Presenters** (Components that wire Views to the Store and AppController)
+and **Views** (display-only widgets). Views know nothing about the domain or application layers.
+
+---
+
+## Ontology
+
+Three terms that cut across all layers:
+
+| Term          | Definition                                                                                                                                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Component** | A key runtime object within the system. Some Components are long-lived (e.g. the AppController or Store), while others such as Views and Presenters may be created and destroyed during execution.                              |
+| **Service**   | A stateless unit of application or domain logic responsible for performing operations that do not naturally belong to an Entity. Services are typically instantiated to perform a task and discarded once the task is complete. |
+| **Entity**    | A domain object representing something in the problem space, defined primarily by its identity. Entities maintain state over time and may contain simple logic that operates on their state.                                    |
+
+All three layers contain **Components**. **Entities** are defined and stored in the
+Domain layer, but the Application layer orchestrates their creation. Both the
+Application and Domain layers have their own **Services**, with the dependency
+rule that Application Services may use Domain Services but not vice versa.
+
+---
+
+## Domain Layer Detail
+
+### Entities — `src/domain/entities/`
+
+> Domain objects defined by identity. Maintain state over time. Plain Python.
 
 | What                        | Implementation                                                         |
 | --------------------------- | ---------------------------------------------------------------------- |
 | Entity classes (5-10 types) | `dataclasses` (stdlib). No Qt.                                         |
-| Business logic on entities  | Methods on the dataclass, or standalone functions in the same module.  |
-| Serialization               | `to_dict()` / `from_dict()` methods on each entity. Use `json` stdlib. |
+| Business logic on Entities  | Methods on the dataclass, or standalone functions in the same module.  |
+| Serialization               | `to_dict()` / `from_dict()` methods on each Entity. Use `json` stdlib. |
 
-No separate "Domain Services" layer. At this scale, a function next to the entity
-it operates on is clearer than a Services directory with one method per file.
+### Domain Services — `src/domain/services/`
 
----
+> Stateless operations that span multiple Entities. Currently a placeholder.
 
-### 2. Store
+At this scale, Entity logic lives next to the Entity it operates on. Domain
+Services will be added as cross-Entity operations emerge.
 
-> Single source of truth. Holds all runtime entity instances.
+### Store (Component) — `src/domain/store/`
+
+> Single source of truth. Long-lived Component that holds all runtime Entity instances.
 
 | What                | Implementation                                                                       |
 | ------------------- | ------------------------------------------------------------------------------------ |
 | Public API          | `QObject` subclass. Facade for all state access.                                     |
 | Entity storage      | Delegates to internal `container.py` — `dict[str, Entity]` keyed by ID.              |
-| ID assignment       | `uuid.uuid4().hex` assigned on add if entity has no ID.                              |
+| ID assignment       | `uuid.uuid4().hex` assigned on add if Entity has no ID.                              |
 | Dependency tracking | Delegates to internal `graph.py` — `dict[str, set[str]]` mapping ID → dependent IDs. |
 | Change notification | Qt `Signal` per mutation (e.g. `entityAdded`, `entityRemoved`, `entityUpdated`).     |
-| Entity registry     | `entities/registry.py` — explicit `dict[str, type]` of known entity types.           |
+| Entity registry     | `domain/entities/registry.py` — explicit `dict[str, type]` of known Entity types.    |
 
 The Store is a `QObject` so it can emit signals directly. No custom Event Bus needed —
 Qt's signal/slot system already does topic-based subscriptions.
@@ -52,59 +115,71 @@ class Store(QObject):
 ```
 
 **Internal modules** (`container.py`, `graph.py`, `signal_payloads.py`) are implementation
-details — nothing outside `store/` imports them directly.
+details — nothing outside `domain/store/` imports them directly.
 
 Presenters connect to Store signals to react to changes. This is the "Event Bus"
 without building a custom one.
 
 ---
 
-### 3. Controller
+## Application Layer Detail
 
-> Receives user intent from Presenters, performs I/O, constructs entities, and writes to the Store.
+### AppController (Component) — `src/application/`
+
+> Long-lived Component. Receives user intent from Presenters, performs I/O via
+> Application Services, constructs Entities, and writes to the Store.
 
 | What              | Implementation                                                                           |
 | ----------------- | ---------------------------------------------------------------------------------------- |
 | Orchestration     | Plain Python class. Presenters call methods on it directly.                              |
-| I/O               | Delegates to internal `loaders.py` — pure file-reading helpers (images, CSV, etc.)       |
-| Business logic    | Calls entity methods/functions for validation or transformation before writing to Store. |
+| I/O               | Delegates to Application Services — stateless helpers (e.g. `load_image.py`)             |
+| Business logic    | Calls Entity methods/functions for validation or transformation before writing to Store. |
 | Session save/load | Owns `.sedivis` file persistence — reads Store state to save, populates Store on load.   |
 | Undo/redo         | Will own a `QUndoStack` (not yet implemented).                                           |
 
 ```python
-class Controller:
+class AppController:
     def __init__(self, store: Store):
         self._store = store
 
     def create_image_entity(self, file_path: str) -> str:
-        data = load_image(file_path)         # loaders.py — pure I/O
+        data = load_image(file_path)         # services/load_image.py — Application Service
         entity = ImageEntity(name=..., file_path=..., data=data)
         return self._store.add(entity)       # Store emits entityAdded
 ```
 
-**Internal modules:** `loaders.py` is internal to the controller package — nothing
-outside `controller/` imports it, just like `container.py` is internal to `store/`.
+**Internal modules:** `services/` is internal to the Application package — nothing
+outside `application/` imports a Service directly, just like `container.py` is internal to `domain/store/`.
 
-**File Operations:** The Controller owns `.sedivis` session persistence. It reads
+**File Operations:** The AppController owns `.sedivis` session persistence. It reads
 all state from the Store to save, and clears + populates the Store on load.
 The Store itself knows nothing about files or serialization.
 
+### Application Services — `src/application/services/`
+
+> Stateless helpers for I/O and external concerns. Internal to the Application layer.
+
+Currently contains `load_image.py` (reads image files via `imageio.v3`).
+
 ---
 
-### 4. Presenters (one per panel/sidebar)
+## UI Layer Detail
 
-> Wires a View to the Store and Controller. Translates UI events into Controller calls.
+### Presenters (Components, one per panel/sidebar) — `src/ui/presenters/`
+
+> Components that wire a View to the Store and AppController. Created/destroyed
+> with their View. Translate UI events into AppController calls.
 
 | What         | Implementation                                                     |
 | ------------ | ------------------------------------------------------------------ |
 | Base class   | `QObject` (PySide6).                                               |
 | Reads data   | Connects to Store signals. Reads Store directly for current state. |
-| Writes data  | Calls Controller methods. Never writes to Store directly.          |
+| Writes data  | Calls AppController methods. Never writes to Store directly.       |
 | Updates View | Calls methods on its View to refresh display.                      |
 
 ```python
 class EntityListPresenter(QObject):
-    def __init__(self, view: EntityListView, store: Store, controller: Controller):
+    def __init__(self, view: EntityListView, store: Store, controller: AppController):
         self.view = view
         self.store = store
         self.controller = controller
@@ -127,11 +202,9 @@ class EntityListPresenter(QObject):
 Presenters don't talk to each other. They both listen to the same Store signals
 and react independently.
 
----
+### Views (Components, dumb widgets) — `src/ui/views/`
 
-### 5. Views (dumb widgets)
-
-> Display only. Emit signals for user actions. Know nothing about the domain.
+> Display-only Components. Emit signals for user actions. Know nothing about the domain.
 
 **Pragmatic pattern:** Views handle OS interactions (file dialogs, etc.) but emit raw inputs (`fileSelected(path)`) not domain conclusions (`createCoreAnalysis(...)`). Presenter interprets domain meaning.
 
@@ -164,7 +237,7 @@ exact manual/automated testing distinction as the application grows.
 - Visual verification and component logic testing
 - Example: `file_panel_test.py` tests view components
 - Example: `file_presenter_and_panel_test.py` tests presenter logic with views
-- Example: `vertical_slice_test.py` tests full chain: View → Presenter → Controller → Store
+- Example: `image_loading_test.py` tests full chain: View → Presenter → AppController → Store
 - Example: `container_test.py` tests entity container CRUD (no Qt)
 - Helpers: Shared DRY components in `tests/helpers/`
 
@@ -184,8 +257,8 @@ added as the application grows beyond initial development.
 | `QDockWidget`                 | Panel/Sidebar Views                    | 5 panels + 2-3 sidebars    |
 | `QWidget`                     | Panel contents                         | Custom panel interiors     |
 | `QListWidget` / `QTreeWidget` | Views                                  | Simple list/tree display   |
-| `QUndoStack`                  | Controller                             | Undo/redo management       |
-| `QUndoCommand`                | Controller                             | Each undoable action       |
+| `QUndoStack`                  | AppController                          | Undo/redo management       |
+| `QUndoCommand`                | AppController                          | Each undoable action       |
 | `QObject`                     | Store, Presenters                      | Signals/slots              |
 | `Signal` / `Slot`             | Store → Presenters, Views → Presenters | Communication              |
 | `QAction`                     | Views                                  | Menu/toolbar items         |
@@ -193,29 +266,30 @@ added as the application grows beyond initial development.
 
 ## Self-Designed
 
-| Component               | Size               | Notes                                                             |
-| ----------------------- | ------------------ | ----------------------------------------------------------------- |
-| Entity classes          | ~20-50 lines each  | `dataclasses`, with `to_dict()`/`from_dict()`                     |
-| Store                   | ~100-150 lines     | `QObject` + dict. Emits signals on change.                        |
-| Controller              | ~40-200 lines      | Plain class. Calls loaders, constructs entities, writes to Store. |
-| Loaders                 | ~50 lines          | Internal to controller. Pure I/O (image loading, etc.)            |
-| QUndoCommand subclasses | ~20-40 lines each  | One per mutation type (planned).                                  |
-| Presenters              | ~50-100 lines each | One per panel. Wires Store ↔ View.                                |
-| Session serializer      | ~50 lines          | `json.dump`/`json.load` with entity `to_dict()`/`from_dict()`.    |
-| Science functions       | Various            | Domain-specific calculations in `src_legacy/science/functions/`   |
-| Reference data          | Static files       | Scientific reference data in `src_legacy/science/data/`           |
+| What                    | Kind      | Size               | Notes                                                              |
+| ----------------------- | --------- | ------------------ | ------------------------------------------------------------------ |
+| Entity classes          | Entity    | ~20-50 lines each  | `dataclasses`, with `to_dict()`/`from_dict()`                      |
+| Store                   | Component | ~100-150 lines     | `QObject` + dict. Emits signals on change.                         |
+| AppController           | Component | ~40-200 lines      | Plain class. Calls Services, constructs Entities, writes to Store. |
+| Application Services    | Service   | ~50 lines          | Stateless. Internal to `application/`. E.g. image loading.         |
+| QUndoCommand subclasses | —         | ~20-40 lines each  | One per mutation type (planned).                                   |
+| Presenters              | Component | ~50-100 lines each | One per panel. Wires Store ↔ View.                                 |
+| Views                   | Component | Various            | PySide6 widgets. Display only.                                     |
+| Session serializer      | Service   | ~50 lines          | `json.dump`/`json.load` with Entity `to_dict()`/`from_dict()`.     |
+| Science functions       | —         | Various            | Domain-specific calculations in `src_legacy/science/functions/`    |
+| Reference data          | —         | Static files       | Scientific reference data in `src_legacy/science/data/`            |
 
 ## Third-Party Libraries
 
-| Library                | Purpose                    | Verdict                                                       |
-| ---------------------- | -------------------------- | ------------------------------------------------------------- |
-| `dataclasses` (stdlib) | Entity definitions         | Use.                                                          |
-| `json` (stdlib)        | File save/load             | Use.                                                          |
-| `uuid` (stdlib)        | Entity IDs                 | Use.                                                          |
-| `imageio`              | Image file loading         | Use. Controller's `loaders.py` reads images via `imageio.v3`. |
-| `numpy`                | Array data                 | Use. Image pixel data stored as `NDArray[np.uint8]`.          |
-| `pydantic`             | Validation + serialization | Optional. Useful if entities have complex validation.         |
-| Everything else        | —                          | Not needed at this scale.                                     |
+| Library                | Purpose                    | Verdict                                                                      |
+| ---------------------- | -------------------------- | ---------------------------------------------------------------------------- |
+| `dataclasses` (stdlib) | Entity definitions         | Use.                                                                         |
+| `json` (stdlib)        | File save/load             | Use.                                                                         |
+| `uuid` (stdlib)        | Entity IDs                 | Use.                                                                         |
+| `imageio`              | Image file loading         | Use. AppController's `services/load_image.py` reads images via `imageio.v3`. |
+| `numpy`                | Array data                 | Use. Image pixel data stored as `NDArray[np.uint8]`.                         |
+| `pydantic`             | Validation + serialization | Optional. Useful if entities have complex validation.                        |
+| Everything else        | —                          | Not needed at this scale.                                                    |
 
 ---
 
@@ -226,9 +300,9 @@ User double-clicks an image file
   → FilePanel emits fileDoubleClicked(path)
   → FilePresenter receives signal, checks extension
   → FilePresenter calls controller.create_image_entity(path)
-  → Controller calls loaders.load_image(path) → pixel data
-  → Controller constructs ImageEntity(name, file_path, data)
-  → Controller calls store.add(entity)
+  → AppController calls load_image(path) → pixel data
+  → AppController constructs ImageEntity(name, file_path, data)
+  → AppController calls store.add(entity)
   → Store assigns UUID, stores entity, emits entityAdded(id, type)
   → All Presenters listening to entityAdded react
   → Each Presenter updates its View
@@ -238,16 +312,18 @@ User double-clicks an image file
 User clicks delete button (planned)
   → View emits delete_requested signal (entity_id)
   → Presenter calls controller.delete_entity(entity_id)
-  → Controller removes entity from Store
+  → AppController removes entity from Store
   → Store emits entityRemoved signal (entity_id)
   → Presenters react, Views update
 ```
 
 ## Key Rules
 
-1. **Presenters never talk to each other** — they independently listen to Store signals
-2. **Presenters can read the Store** — only Controller can write it
-3. **Only Controller writes to Store** — undo/redo via QUndoCommand planned
-4. **Views are dumb** — they emit signals for user actions, display what Presenters tell them
-5. **No custom Event Bus** — Store's Qt signals serve the same purpose
-6. **No separate Domain Services layer** — entity logic lives next to entity definitions
+1. **Dependencies flow inward** — UI → Application → Domain, never the reverse
+2. **Application Services may use Domain Services** — Domain Services must never use Application Services
+3. **Presenters never talk to each other** — they independently listen to Store signals
+4. **Presenters can read the Store** — only AppController can write it
+5. **Only AppController writes to Store** — undo/redo via QUndoCommand planned
+6. **Views are dumb** — they emit signals for user actions, display what Presenters tell them
+7. **No custom Event Bus** — Store's Qt signals serve the same purpose
+8. **Domain Services placeholder** — `domain/services/` exists for entity specific transformations

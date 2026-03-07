@@ -1,28 +1,28 @@
 """
-Image loading end-to-end test: FilePanel → FilePresenter → Controller → Store
+Image loading end-to-end test: FilePanel → FilePresenter → AppController → Store
 
 Double-click an image file (.png, .jpg, .tif) and watch:
   1. FilePanel emits fileDoubleClicked(path)
   2. FilePresenter calls controller.create_image_entity(path)
-  3. Controller loads pixels via loaders.load_image, builds ImageEntity
-  4. Controller calls store.add(entity)
+  3. AppController loads pixels via load_image service, builds ImageEntity
+  4. AppController calls store.add(entity)
   5. Store emits entityAdded(id, "ImageEntity")
 
-Run with: python -m src.tests.image_loading_test
+Run with: python -m tests.image_loading_test
 """
 import sys
 
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout
 
-from src.views.panels.file_panel import FilePanel
-from src.presenters.file_presenter import FilePresenter
-from src.store import Store
-from src.controller import Controller
-from src.tests.helpers import LogWindow, SignalLogger
+from src.ui.views.panels.file_panel import FilePanel
+from src.ui.presenters.file_presenter import FilePresenter
+from src.domain.store import Store
+from src.application import AppController
+from tests.helpers import LogWindow, SignalLogger
 
 
 class ImageLoadingTest(QWidget):
-    """End-to-end image loading: View → Presenter → Controller → Store"""
+    """End-to-end image loading: View → Presenter → AppController → Store"""
 
     def __init__(self):
         super().__init__()
@@ -32,14 +32,14 @@ class ImageLoadingTest(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        # ── Log window ──────────────────────────────────────
+        # ── Log window ──────────────────────────────────────────
         self.log_window = LogWindow("Image Loading Logs", 520, 400)
         self.log_window.show()
         self.log_window.move(920, 100)
 
-        # ── Build the chain ─────────────────────────────────
+        # ── Build the chain ─────────────────────────────────────
         self.store = Store()
-        self.controller = Controller(self.store)
+        self.controller = AppController(self.store)
         self.file_panel = FilePanel()
         self.file_presenter = FilePresenter(self.file_panel, self.store, self.controller)
 

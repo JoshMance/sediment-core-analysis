@@ -1,6 +1,6 @@
 """WorkspacePanel - shows loaded entities and allows deletion.
 
-Pure view component. Knows nothing about Store, Controller, or entity
+Pure view component. Knows nothing about Store, AppController, or entity
 internals. Displays rows of (id, name, type) and emits raw UI signals.
 The Presenter tells it what to show via add_row / remove_row.
 """

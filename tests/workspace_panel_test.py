@@ -2,7 +2,7 @@
 Isolated test for WorkspacePanel + WorkspacePresenter
 
 Tests the view and presenter in isolation. Uses a real Store (because
-the presenter needs to listen to its signals), but a stub Controller
+the presenter needs to listen to its signals), but a stub AppController
 whose delete_entity just logs — nothing actually gets removed.
 
 Buttons let you simulate adding/removing entities so you can see:
@@ -10,18 +10,18 @@ Buttons let you simulate adding/removing entities so you can see:
   - View.deleteRequested signal fires when Delete is clicked
   - Stub controller receives the intent (logged, not acted on)
 
-Run with: python -m src.tests.workspace_panel_test
+Run with: python -m tests.workspace_panel_test
 """
 import sys
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
 
-from src.entities.image_entity import ImageEntity
-from src.views.panels.workspace_panel import WorkspacePanel
-from src.presenters.workspace_presenter import WorkspacePresenter
-from src.store import Store
-from src.tests.helpers import LogWindow, SignalLogger
+from src.domain.entities.image_entity import ImageEntity
+from src.ui.views.panels.workspace_panel import WorkspacePanel
+from src.ui.presenters.workspace_presenter import WorkspacePresenter
+from src.domain.store import Store
+from tests.helpers import LogWindow, SignalLogger
 
 
 class _StubController:
@@ -38,7 +38,7 @@ class _StubController:
 
 
 class WorkspacePanelTest(QWidget):
-    """Isolated test: WorkspacePanel + WorkspacePresenter (no real Controller)."""
+    """Isolated test: WorkspacePanel + WorkspacePresenter (no real AppController)."""
 
     def __init__(self):
         super().__init__()
@@ -93,7 +93,7 @@ class WorkspacePanelTest(QWidget):
 
         layout.addWidget(self.workspace_panel)
 
-        self.log_window.add_log("Wired: WorkspacePanel ↔ WorkspacePresenter ↔ Store (stub Controller)")
+        self.log_window.add_log("Wired: WorkspacePanel ↔ WorkspacePresenter ↔ Store (stub AppController)")
         self.log_window.add_log("Use buttons above to simulate Store mutations")
         self.log_window.add_log("Use the Delete button in the panel to test deleteRequested")
 

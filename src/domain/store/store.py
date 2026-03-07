@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QObject, Signal
 
-from src.store.container import EntityContainer
+from src.domain.store.container import EntityContainer
 
 
 class Store(QObject):

@@ -1,8 +1,8 @@
 """
-FilePresenter - connects FilePanel view to Controller
+FilePresenter - connects FilePanel view to AppController
 
 Follows MVP pattern where Presenter:
-- Handles View events -> calls Controller methods
+- Handles View events -> calls AppController methods
 - Handles Store events -> updates the View's state
 """
 from __future__ import annotations
@@ -11,13 +11,13 @@ import os
 
 from PySide6.QtCore import QObject
 
-from src.views.panels.file_panel import FilePanel
-from src.store import Store
-from src.controller import Controller
+from src.ui.views.panels.file_panel import FilePanel
+from src.domain.store import Store
+from src.application import AppController
 
 
 class FilePresenter(QObject):
-    def __init__(self, view: FilePanel, store: Store, controller: Controller):
+    def __init__(self, view: FilePanel, store: Store, controller: AppController):
         super().__init__()
         self.view = view
         self.store = store
@@ -30,11 +30,11 @@ class FilePresenter(QObject):
     def _on_file_selected(self, file_path: str):
         _, ext = os.path.splitext(file_path.lower())
         match ext:
-            case '.jpg' | '.jpeg' | '.png' | '.tif' | '.tiff':
+            case '.jpg' | '.jpeg' | '.png':
                 self.controller.create_image_entity(file_path)
 
             case '.csv':
-                print(f"Data file: {file_path}")  # TODO: controller.create_data_entity
+                print(f"Data file: {file_path}")
 
             case _:
                 print(f"Unknown file type: {file_path}")

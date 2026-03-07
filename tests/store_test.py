@@ -4,16 +4,16 @@ Manual test for Store — QObject facade with signals
 Exercises Store CRUD and verifies that signals fire correctly.
 Uses LogWindow + SignalLogger for visual signal monitoring.
 
-Run with: python -m src.tests.store_test
+Run with: python -m tests.store_test
 """
 import sys
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
 
-from src.entities.image_entity import ImageEntity
-from src.store import Store
-from src.tests.helpers import LogWindow, SignalLogger
+from src.domain.entities.image_entity import ImageEntity
+from src.domain.store import Store
+from tests.helpers import LogWindow, SignalLogger
 
 
 class StoreTest(QWidget):

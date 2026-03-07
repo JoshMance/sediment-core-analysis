@@ -6,12 +6,14 @@ Built with **Python 3.10+** and **PySide6** using clean **MVP architecture**.
 
 ## 🚧 Project Status
 
-**Currently rebuilding from the ground up** following clean MVP architecture principles.
+**Rebuilding from the ground up** following clean MVP architecture principles.
 
-- ✅ **Architecture designed** - See [overview.md](docs/architecture/overview.md)
-- ✅ **Legacy UI preserved** - Available in `src_legacy/` for reference
-- 🔄 **Active rebuild** - Implementing new `src/` with MVP pattern
-- 🔄 **Core components** - Store, Controller, Presenters, Views being built
+- ✅ **Architecture designed** — See [overview.md](docs/architecture/overview.md)
+- ✅ **Domain layer** — Store, Entities, Container built
+- ✅ **Application layer** — AppController + image loading service
+- ✅ **UI layer** — FilePanel, WorkspacePanel, FilePresenter, WorkspacePresenter
+- ✅ **Legacy UI preserved** — Available in `src_legacy/` for reference
+- 🔄 **Composition root** — `main.py` not yet wired to new `src/`
 
 ---
 
@@ -19,17 +21,17 @@ Built with **Python 3.10+** and **PySide6** using clean **MVP architecture**.
 
 Following **Model-View-Presenter (MVP)** pattern optimized for PySide6:
 
-![MVP Architecture](docs/architecture/overview.md)
+See [Architecture Overview](docs/architecture/overview.md) for the full guide.
 
 ### Core Components
 
-| Component      | Purpose                | Implementation                   |
-| -------------- | ---------------------- | -------------------------------- |
-| **Entities**   | Domain models          | Plain Python dataclasses (no Qt) |
-| **Store**      | Single source of truth | QObject with signals             |
-| **Controller** | Command processing     | QUndoStack + business logic      |
-| **Presenters** | Wire Store ↔ Views     | One per panel, Qt signals/slots  |
-| **Views**      | Display only           | Dumb PySide6 widgets             |
+| Component         | Purpose                | Implementation                   |
+| ----------------- | ---------------------- | -------------------------------- |
+| **Entities**      | Domain models          | Plain Python dataclasses (no Qt) |
+| **Store**         | Single source of truth | QObject with signals             |
+| **AppController** | Orchestrates use-cases | Calls services, writes to Store  |
+| **Presenters**    | Wire Store ↔ Views     | One per panel, Qt signals/slots  |
+| **Views**         | Display only           | Dumb PySide6 widgets             |
 
 ---
 
@@ -72,24 +74,29 @@ sediment-core-analysis/
 ├── main.py                    # Application entry point
 ├── pyproject.toml             # Dependencies & config
 │
-├── src/                       # 🆕 NEW: Clean MVP architecture
-│   ├── entities/              # Plain Python domain models
-│   ├── store/                 # QObject state + signals
-│   ├── controller/            # Commands + QUndoStack
-│   ├── presenters/            # Store ↔ View wiring
-│   ├── views/                 # PySide6 widgets
-│   │   ├── panels/            # Dock panels
-│   │   └── chrome/            # Ribbon, main window
-│   ├── science/               # Scientific computation
-│   │   ├── functions/         # Pure calculation functions
-│   │   └── data/              # Reference datasets
-│   └── tests/                 # Testing directories
-       └── helpers/           # Shared DRY components
+├── src/                       # Clean MVP architecture
+│   ├── domain/                # Domain layer (innermost)
+│   │   ├── entities/          # Plain Python domain models
+│   │   ├── store/             # QObject state + signals
+│   │   └── services/          # Domain services (future)
+│   ├── application/           # Application layer
+│   │   └── services/          # Pure I/O helpers (load_image, etc.)
+│   └── ui/                    # UI layer (outermost)
+│       ├── presenters/        # Store ↔ View wiring
+│       └── views/             # PySide6 widgets
+│           ├── panels/        # Dock panels
+│           ├── chrome/        # Ribbon, main window
+│           └── widgets/       # Reusable widgets
 │
-├── src_legacy/                # 🗂️ LEGACY: Previous implementation
+├── tests/                     # Testing (outside src)
+│   └── helpers/               # Shared DRY components
+│
+├── src_legacy/                # Legacy implementation (reference)
 │   ├── views/                 # Working UI components
-│   ├── models/                # Domain models (being refactored)
-│   └── science/               # Scientific functions (being migrated)
+│   ├── datatypes/             # Domain data types
+│   ├── entities/              # Domain entities
+│   ├── services/              # Business logic services
+│   └── science/               # Scientific functions
 │
 └── docs/
     └── architecture/
@@ -118,22 +125,21 @@ uv run ruff check src/ --fix
 ```bash
 uv run pytest
 # Manual tests (visual component verification)
-uv run python -m src.tests.{component}_test
+uv run python -m tests.{component}_test
 
 # Example: FilePanel tests
-uv run python -m src.tests.file_panel_test
-uv run python -m src.tests.file_presenter_and_panel_test
+uv run python -m tests.file_panel_test
+uv run python -m tests.file_presenter_and_panel_test
 ```
 
 ### Architecture Rules
 
 **Key Principles:**
 
-1. **Presenters never talk directly** — communicate via Store signals
-2. **Only Controller writes to Store** — Presenters read-only
-3. **All Store mutations via QUndoCommand** — automatic undo/redo
-4. **Views are dumb** — emit signals, display what Presenters provide
-5. **No Qt in Entities** — plain Python dataclasses only
+1. **Only AppController writes to Store** — Presenters are read-only
+2. **Views are dumb** — emit signals, display what Presenters provide
+3. **No Qt in Entities** — plain Python dataclasses only
+4. **Dependencies flow inward** — UI → Application → Domain
 
 See [Architecture Overview](docs/architecture/overview.md) for complete guide.
 
@@ -141,15 +147,15 @@ See [Architecture Overview](docs/architecture/overview.md) for complete guide.
 
 ## Tech Stack
 
-| Layer               | Technology                    |
-| ------------------- | ----------------------------- |
-| **GUI**             | PySide6 (Qt6) + MVP pattern   |
-| **State**           | Qt Signals/Slots + QUndoStack |
-| **Data**            | Plain Python dataclasses      |
-| **Science**         | NumPy, SciPy                  |
-| **Visualization**   | Matplotlib                    |
-| **Package Manager** | uv                            |
-| **Testing**         | pytest + visual demos         |
+| Layer               | Technology                  |
+| ------------------- | --------------------------- |
+| **GUI**             | PySide6 (Qt6) + MVP pattern |
+| **State**           | Qt Signals/Slots            |
+| **Data**            | Plain Python dataclasses    |
+| **Science**         | NumPy, SciPy                |
+| **Visualization**   | Matplotlib                  |
+| **Package Manager** | uv                          |
+| **Testing**         | pytest + visual demos       |
 
 ---
 
@@ -159,11 +165,10 @@ This project is currently in active architectural rebuild.
 
 **Current priorities:**
 
-1. Implement Store with Qt signals
-2. Create basic Entities (Core, Layer, etc.)
-3. Build Controller with undo/redo
-4. Port existing View components with Presenter wrappers
-5. Migrate scientific functions to new structure
+1. Wire `main.py` composition root to new `src/` layers
+2. Add undo/redo via QUndoStack in AppController
+3. Port remaining View components with Presenter wrappers
+4. Migrate scientific functions to new structure
 
 **Before contributing:** Please read [overview.md](docs/architecture/overview.md) to understand the MVP architecture approach.
 

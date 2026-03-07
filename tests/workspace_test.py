@@ -1,5 +1,5 @@
 """
-Full integration test: FilePanel + WorkspacePanel with Controller and Store
+Full integration test: FilePanel + WorkspacePanel with AppController and Store
 
 Load images via FilePanel, see them appear in WorkspacePanel, delete them
 from WorkspacePanel. Detailed logging shows every signal, method call,
@@ -7,15 +7,15 @@ and Store state change along the way.
 
 Load chain:
   FilePanel.fileDoubleClicked → FilePresenter._on_file_selected
-    → Controller.create_image_entity → Store.add → Store.entityAdded
+    → AppController.create_image_entity → Store.add → Store.entityAdded
     → WorkspacePresenter._on_entity_added → WorkspacePanel.add_row
 
 Delete chain:
   WorkspacePanel.deleteRequested → WorkspacePresenter._on_delete_requested
-    → Controller.delete_entity → Store.remove → Store.entityRemoved
+    → AppController.delete_entity → Store.remove → Store.entityRemoved
     → WorkspacePresenter._on_entity_removed → WorkspacePanel.remove_row
 
-Run with: python -m src.tests.workspace_test
+Run with: python -m tests.workspace_test
 """
 import sys
 
@@ -24,13 +24,13 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from src.views.panels.file_panel import FilePanel
-from src.views.panels.workspace_panel import WorkspacePanel
-from src.presenters.file_presenter import FilePresenter
-from src.presenters.workspace_presenter import WorkspacePresenter
-from src.store import Store
-from src.controller import Controller
-from src.tests.helpers import LogWindow, SignalLogger
+from src.ui.views.panels.file_panel import FilePanel
+from src.ui.views.panels.workspace_panel import WorkspacePanel
+from src.ui.presenters.file_presenter import FilePresenter
+from src.ui.presenters.workspace_presenter import WorkspacePresenter
+from src.domain.store import Store
+from src.application import AppController
+from tests.helpers import LogWindow, SignalLogger
 
 
 class WorkspaceTest(QWidget):
@@ -48,7 +48,7 @@ class WorkspaceTest(QWidget):
 
         # ── Core components ─────────────────────────────────
         self.store = Store()
-        self.controller = Controller(self.store)
+        self.controller = AppController(self.store)
 
         # ── Views ───────────────────────────────────────────
         self.file_panel = FilePanel()

@@ -4,15 +4,15 @@ Manual test for FilePanel - Visual verification with signal logging
 This manual test shows the FilePanel widget and logs all signals it emits.
 Use this to verify the view component works correctly and emits signals as expected.
 
-Run with: python -m src.tests.file_panel_test
+Run with: python -m tests.file_panel_test
 """
 
 import sys
 
 from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget
 
-from src.views.panels.file_panel import FilePanel
-from src.tests.helpers import LogWindow, SignalLogger
+from src.ui.views.panels.file_panel import FilePanel
+from tests.helpers import LogWindow, SignalLogger
 
 
 class FilePanelTest(QWidget):

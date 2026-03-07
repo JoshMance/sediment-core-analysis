@@ -1,19 +1,19 @@
-"""Controller — write coordinator for the application.
+"""AppController — core process that orchestrates the app.
 
-Receives intents from Presenters, performs I/O via loaders,
+Receives intents from Presenters, performs I/O via services,
 constructs entities, and delegates storage to the Store.
-The Controller is the only component that writes to the Store.
+The AppController is the only component that writes to the Store.
 """
 from __future__ import annotations
 
 from pathlib import Path
 
-from src.entities.image_entity import ImageEntity
-from src.store import Store
-from src.controller.loaders import load_image
+from src.domain.entities.image_entity import ImageEntity
+from src.domain.store import Store
+from src.application.services.load_image import load_image
 
 
-class Controller:
+class AppController:
     """Orchestrates mutations: intent → I/O → entity → Store."""
 
     def __init__(self, store: Store) -> None:
@@ -36,8 +36,8 @@ class Controller:
             file_path=path,
             data=data,
         )
-
         return self._store.add(entity)
+
     def delete_entity(self, entity_id: str) -> object:
         """Remove an entity from the Store.
 

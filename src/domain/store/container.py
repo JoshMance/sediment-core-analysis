@@ -12,7 +12,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import fields
 
-from src.entities.registry import ENTITY_TYPES
+from src.domain.entities.registry import ENTITY_TYPES
 
 
 class EntityContainer:

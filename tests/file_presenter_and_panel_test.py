@@ -4,17 +4,17 @@ Manual test for FilePanel + FilePresenter integration
 Tests the complete FilePanel view with FilePresenter working together.
 Shows the actual file panel with presenter logic handling file selections.
 
-Run with: python -m src.tests.file_presenter_and_panel_test
+Run with: python -m tests.file_presenter_and_panel_test
 """
 import sys
 
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout
 
-from src.views.panels.file_panel import FilePanel
-from src.presenters.file_presenter import FilePresenter
-from src.store import Store
-from src.controller import Controller
-from src.tests.helpers import LogWindow, SignalLogger
+from src.ui.views.panels.file_panel import FilePanel
+from src.ui.presenters.file_presenter import FilePresenter
+from src.domain.store import Store
+from src.application import AppController
+from tests.helpers import LogWindow, SignalLogger
 
 
 class FilePanelWithPresenterTest(QWidget):
@@ -41,9 +41,9 @@ class FilePanelWithPresenterTest(QWidget):
         self.file_panel = FilePanel()
         layout.addWidget(self.file_panel)
         
-        # Create Store and Controller
+        # Create Store and AppController
         self.store = Store()
-        self.controller = Controller(self.store)
+        self.controller = AppController(self.store)
         
         # Create the FilePresenter and connect it to the view
         self.file_presenter = FilePresenter(self.file_panel, self.store, self.controller)
@@ -51,7 +51,7 @@ class FilePanelWithPresenterTest(QWidget):
         # Log the setup
         self.log_window.add_log("Created FilePanel view")
         self.log_window.add_log("Created Store")
-        self.log_window.add_log("Created Controller")
+        self.log_window.add_log("Created AppController")
         self.log_window.add_log("Created FilePresenter")
         self.log_window.add_log("Connected presenter → controller → store")
         

@@ -1,10 +1,10 @@
-"""File loaders — pure I/O helpers for the Controller.
+"""Image loader — pure I/O service
 
-Each function reads a file from disk and returns data in the
-format expected by the corresponding entity. No signals, no
-Store interaction, no domain logic.
+Reads an image file from disk and returns pixel data in the
+format expected by an Image Entity. No signals, no Store
+interaction, no domain logic.
 
-Internal to the controller package.
+Internal to the application layer (services/).
 """
 from __future__ import annotations
 
