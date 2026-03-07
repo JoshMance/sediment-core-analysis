@@ -1,5 +1,5 @@
 """
-WorkspacePresenter - connects WorkspacePanel view to Store and AppController
+VariablesPresenter - connects VariablesList view to Store and AppController
 
 Follows MVP pattern where Presenter:
 - Handles View events → calls AppController methods
@@ -10,13 +10,13 @@ from __future__ import annotations
 
 from PySide6.QtCore import QObject
 
-from src.ui.views.panels.workspace_panel import WorkspacePanel
+from src.ui.views.shell.variables_list import VariablesList
 from src.domain.store import Store
 from src.application import AppController
 
 
-class WorkspacePresenter(QObject):
-    def __init__(self, view: WorkspacePanel, store: Store, controller: AppController):
+class VariablesPresenter(QObject):
+    def __init__(self, view: VariablesList, store: Store, controller: AppController):
         super().__init__()
         self.view = view
         self.store = store

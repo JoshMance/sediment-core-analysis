@@ -1,5 +1,5 @@
 """
-Isolated test for WorkspacePanel + WorkspacePresenter
+Isolated test for VariablesList + VariablesPresenter
 
 Tests the view and presenter in isolation. Uses a real Store (because
 the presenter needs to listen to its signals), but a stub AppController
@@ -10,7 +10,7 @@ Buttons let you simulate adding/removing entities so you can see:
   - View.deleteRequested signal fires when Delete is clicked
   - Stub controller receives the intent (logged, not acted on)
 
-Run with: python -m tests.workspace_panel_test
+Run with: python -m tests.variables_list_test
 """
 import sys
 from pathlib import Path
@@ -18,8 +18,8 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
 
 from src.domain.entities.image_entity import ImageEntity
-from src.ui.views.panels.workspace_panel import WorkspacePanel
-from src.ui.presenters.workspace_presenter import WorkspacePresenter
+from src.ui.views.shell.variables_list import VariablesList
+from src.ui.presenters.variables_presenter import VariablesPresenter
 from src.domain.store import Store
 from tests.helpers import LogWindow, SignalLogger
 
@@ -37,16 +37,16 @@ class _StubController:
         )
 
 
-class WorkspacePanelTest(QWidget):
-    """Isolated test: WorkspacePanel + WorkspacePresenter (no real AppController)."""
+class VariablesListTest(QWidget):
+    """Isolated test: VariablesList + VariablesPresenter (no real AppController)."""
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("WorkspacePanel Test — Isolated")
+        self.setWindowTitle("VariablesList Test — Isolated")
         self.setGeometry(100, 100, 500, 500)
 
-        # ── Log window ──────────────────────────────────────
-        self.log_window = LogWindow("WorkspacePanel Logs", 520, 500)
+        # ── Log window ────────────────────────────
+        self.log_window = LogWindow("VariablesList Logs", 520, 500)
         self.log_window.show()
         self.log_window.move(620, 100)
 
@@ -57,20 +57,20 @@ class WorkspacePanelTest(QWidget):
         self.stub_controller = _StubController(self.log_window)
 
         # ── View + Presenter ────────────────────────────────
-        self.workspace_panel = WorkspacePanel()
-        self.presenter = WorkspacePresenter(
-            self.workspace_panel, self.store, self.stub_controller,
+        self.variables_list = VariablesList()
+        self.presenter = VariablesPresenter(
+            self.variables_list, self.store, self.stub_controller,
         )
 
-        # ── Signal loggers ──────────────────────────────────
+        # ── Signal loggers ──────────────────────────
         store_logger = SignalLogger(self.log_window, "Store")
         store_logger.connect_signal(self.store.entityAdded, "entityAdded")
         store_logger.connect_signal(self.store.entityRemoved, "entityRemoved")
         self._store_logger = store_logger
 
-        panel_logger = SignalLogger(self.log_window, "WorkspacePanel")
-        panel_logger.connect_signal(self.workspace_panel.deleteRequested, "deleteRequested")
-        panel_logger.connect_signal(self.workspace_panel.entitySelected, "entitySelected")
+        panel_logger = SignalLogger(self.log_window, "VariablesList")
+        panel_logger.connect_signal(self.variables_list.deleteRequested, "deleteRequested")
+        panel_logger.connect_signal(self.variables_list.entitySelected, "entitySelected")
         self._panel_logger = panel_logger
 
         # ── Counter for dummy entities ──────────────────────
@@ -91,9 +91,9 @@ class WorkspacePanelTest(QWidget):
         remove_btn.clicked.connect(self._on_remove)
         layout.addWidget(remove_btn)
 
-        layout.addWidget(self.workspace_panel)
+        layout.addWidget(self.variables_list)
 
-        self.log_window.add_log("Wired: WorkspacePanel ↔ WorkspacePresenter ↔ Store (stub AppController)")
+        self.log_window.add_log("Wired: VariablesList ↔ VariablesPresenter ↔ Store (stub AppController)")
         self.log_window.add_log("Use buttons above to simulate Store mutations")
         self.log_window.add_log("Use the Delete button in the panel to test deleteRequested")
 
@@ -128,13 +128,13 @@ class WorkspacePanelTest(QWidget):
     def _refresh_status(self):
         self.status.setText(
             f"Store: {self.store.count()} entities | "
-            f"View rows: {self.workspace_panel.row_count()}"
+            f"View rows: {self.variables_list.row_count()}"
         )
 
 
 def main():
     app = QApplication(sys.argv)
-    test = WorkspacePanelTest()
+    test = VariablesListTest()
     test.show()
     sys.exit(app.exec())
 

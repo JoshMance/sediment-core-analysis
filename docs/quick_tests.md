@@ -17,30 +17,30 @@ uv run python -m tests.container_test
 uv run python -m tests.store_test
 ```
 
-## FilePanel Tests
+## FileBrowser Tests
 
 ```bash
 # Views only
-uv run python -m tests.file_panel_test
+uv run python -m tests.file_browser_test
 
 # Presenters + Views + Controller + Store
-uv run python -m tests.file_presenter_and_panel_test
+uv run python -m tests.file_browser_presenter_test
 ```
 
 ## Image Loading (end-to-end)
 
 ```bash
-# Full chain: FilePanel → FilePresenter → Controller → Store
+# Full chain: FileBrowser → FilePresenter → Controller → Store
 uv run python -m tests.image_loading_test
 ```
 
-## WorkspacePanel Tests
+## VariablesList Tests
 
 ```bash
 # View + Presenter only (stub Controller — logs but doesn't delete)
-uv run python -m tests.workspace_panel_test
+uv run python -m tests.variables_list_test
 
-# Full integration: FilePanel + WorkspacePanel with Controller + Store
+# Full integration: FileBrowser + VariablesList with Controller + Store
 # Load images, delete them, watch every signal and method call in the log
-uv run python -m tests.workspace_test
+uv run python -m tests.variables_test
 ```

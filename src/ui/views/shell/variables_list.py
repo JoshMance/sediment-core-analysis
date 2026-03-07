@@ -1,4 +1,4 @@
-"""WorkspacePanel - shows loaded entities and allows deletion.
+"""VariablesList - shows loaded entities and allows deletion.
 
 Pure view component. Knows nothing about Store, AppController, or entity
 internals. Displays rows of (name, type) and emits raw UI signals.
@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 
 
-class WorkspacePanel(QWidget):
+class VariablesList(QWidget):
     """Displays loaded entities and lets the user delete them."""
 
     # ── Signals (raw UI events only) ────────────────────────

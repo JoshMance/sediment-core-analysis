@@ -1,21 +1,21 @@
 """
-Full integration test: FilePanel + WorkspacePanel with AppController and Store
+Full integration test: FileBrowser + VariablesList with AppController and Store
 
-Load images via FilePanel, see them appear in WorkspacePanel, delete them
-from WorkspacePanel. Detailed logging shows every signal, method call,
+Load images via FileBrowser, see them appear in VariablesList, delete them
+from VariablesList. Detailed logging shows every signal, method call,
 and Store state change along the way.
 
 Load chain:
-  FilePanel.fileDoubleClicked → FilePresenter._on_file_selected
+  FileBrowser.fileDoubleClicked → FilePresenter._on_file_selected
     → AppController.create_image_entity → Store.add → Store.entityAdded
-    → WorkspacePresenter._on_entity_added → WorkspacePanel.add_row
+    → VariablesPresenter._on_entity_added → VariablesList.add_row
 
 Delete chain:
-  WorkspacePanel.deleteRequested → WorkspacePresenter._on_delete_requested
+  VariablesList.deleteRequested → VariablesPresenter._on_delete_requested
     → AppController.delete_entity → Store.remove → Store.entityRemoved
-    → WorkspacePresenter._on_entity_removed → WorkspacePanel.remove_row
+    → VariablesPresenter._on_entity_removed → VariablesList.remove_row
 
-Run with: python -m tests.workspace_test
+Run with: python -m tests.variables_test
 """
 import sys
 
@@ -24,21 +24,21 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from src.ui.views.panels.file_panel import FilePanel
-from src.ui.views.panels.workspace_panel import WorkspacePanel
+from src.ui.views.shell.file_browser import FileBrowser
+from src.ui.views.shell.variables_list import VariablesList
 from src.ui.presenters.file_presenter import FilePresenter
-from src.ui.presenters.workspace_presenter import WorkspacePresenter
+from src.ui.presenters.variables_presenter import VariablesPresenter
 from src.domain.store import Store
 from src.application import AppController
 from tests.helpers import LogWindow, SignalLogger
 
 
-class WorkspaceTest(QWidget):
-    """Full integration: load images + manage them in workspace."""
+class VariablesTest(QWidget):
+    """Full integration: load images + manage them in variables panel."""
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Workspace Test — Full Integration")
+        self.setWindowTitle("Variables Test — Full Integration")
         self.setGeometry(100, 100, 900, 650)
 
         # ── Log window ──────────────────────────────────────
@@ -51,15 +51,15 @@ class WorkspaceTest(QWidget):
         self.controller = AppController(self.store)
 
         # ── Views ───────────────────────────────────────────
-        self.file_panel = FilePanel()
-        self.workspace_panel = WorkspacePanel()
+        self.file_browser = FileBrowser()
+        self.variables_list = VariablesList()
 
-        # ── Presenters ──────────────────────────────────────
+        # ── Presenters ────────────────────────────
         self.file_presenter = FilePresenter(
-            self.file_panel, self.store, self.controller,
+            self.file_browser, self.store, self.controller,
         )
-        self.workspace_presenter = WorkspacePresenter(
-            self.workspace_panel, self.store, self.controller,
+        self.variables_presenter = VariablesPresenter(
+            self.variables_list, self.store, self.controller,
         )
 
         # ── Signal loggers ──────────────────────────────────
@@ -71,42 +71,42 @@ class WorkspaceTest(QWidget):
         # ── Layout ──────────────────────────────────────────
         splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        file_group = QGroupBox("File Panel")
+        file_group = QGroupBox("File Browser")
         file_layout = QVBoxLayout()
-        file_layout.addWidget(self.file_panel)
+        file_layout.addWidget(self.file_browser)
         file_group.setLayout(file_layout)
 
-        workspace_group = QGroupBox("Workspace Panel")
-        workspace_layout = QVBoxLayout()
+        variables_group = QGroupBox("Variables Panel")
+        variables_layout = QVBoxLayout()
         self.status_label = QLabel("Store: 0 entities")
-        workspace_layout.addWidget(self.status_label)
-        workspace_layout.addWidget(self.workspace_panel)
-        workspace_group.setLayout(workspace_layout)
+        variables_layout.addWidget(self.status_label)
+        variables_layout.addWidget(self.variables_list)
+        variables_group.setLayout(variables_layout)
 
         splitter.addWidget(file_group)
-        splitter.addWidget(workspace_group)
+        splitter.addWidget(variables_group)
         splitter.setSizes([500, 400])
 
         layout = QVBoxLayout(self)
         layout.addWidget(splitter)
 
         self.log_window.add_log("═══ Integration test ready ═══")
-        self.log_window.add_log("Chain: FilePanel → FilePresenter → Controller → Store → WorkspacePresenter → WorkspacePanel")
+        self.log_window.add_log("Chain: FileBrowser → FilePresenter → Controller → Store → VariablesPresenter → VariablesList")
         self.log_window.add_log("Double-click an image to load it. Select + Delete to remove it.")
         self.log_window.add_log("")
 
     def _setup_loggers(self):
         """Connect all signals to the log window with source labels."""
-        # FilePanel signals
-        fp_logger = SignalLogger(self.log_window, "FilePanel")
-        fp_logger.connect_signal(self.file_panel.fileDoubleClicked, "fileDoubleClicked")
-        fp_logger.connect_signal(self.file_panel.pathChanged, "pathChanged")
+        # FileBrowser signals
+        fp_logger = SignalLogger(self.log_window, "FileBrowser")
+        fp_logger.connect_signal(self.file_browser.fileDoubleClicked, "fileDoubleClicked")
+        fp_logger.connect_signal(self.file_browser.pathChanged, "pathChanged")
         self._fp_logger = fp_logger
 
-        # WorkspacePanel signals
-        wp_logger = SignalLogger(self.log_window, "WorkspacePanel")
-        wp_logger.connect_signal(self.workspace_panel.deleteRequested, "deleteRequested")
-        wp_logger.connect_signal(self.workspace_panel.entitySelected, "entitySelected")
+        # VariablesList signals
+        wp_logger = SignalLogger(self.log_window, "VariablesList")
+        wp_logger.connect_signal(self.variables_list.deleteRequested, "deleteRequested")
+        wp_logger.connect_signal(self.variables_list.entitySelected, "entitySelected")
         self._wp_logger = wp_logger
 
         # Store signals
@@ -164,15 +164,15 @@ class WorkspaceTest(QWidget):
         self.controller.create_image_entity = traced_create
         self.controller.delete_entity = traced_delete
 
-        # ── WorkspacePresenter trace ────────────────────────
-        original_on_added = self.workspace_presenter._on_entity_added
-        original_on_removed = self.workspace_presenter._on_entity_removed
-        original_on_delete_req = self.workspace_presenter._on_delete_requested
+        # ── VariablesPresenter trace ──────────────────────
+        original_on_added = self.variables_presenter._on_entity_added
+        original_on_removed = self.variables_presenter._on_entity_removed
+        original_on_delete_req = self.variables_presenter._on_delete_requested
 
         def traced_on_added(entity_id: str, entity_type: str):
             self.log_window.add_log(
                 f"_on_entity_added({entity_id}, {entity_type}) — adding row to view",
-                source="WkspPresenter",
+                source="VarsPresenter",
             )
             original_on_added(entity_id, entity_type)
             self._refresh_status()
@@ -180,7 +180,7 @@ class WorkspaceTest(QWidget):
         def traced_on_removed(entity_id: str, entity_type: str):
             self.log_window.add_log(
                 f"_on_entity_removed({entity_id}, {entity_type}) — removing row from view",
-                source="WkspPresenter",
+                source="VarsPresenter",
             )
             original_on_removed(entity_id, entity_type)
             self._refresh_status()
@@ -188,13 +188,13 @@ class WorkspaceTest(QWidget):
         def traced_on_delete_req(entity_id: str):
             self.log_window.add_log(
                 f"_on_delete_requested({entity_id}) — routing to Controller",
-                source="WkspPresenter",
+                source="VarsPresenter",
             )
             original_on_delete_req(entity_id)
 
-        self.workspace_presenter._on_entity_added = traced_on_added
-        self.workspace_presenter._on_entity_removed = traced_on_removed
-        self.workspace_presenter._on_delete_requested = traced_on_delete_req
+        self.variables_presenter._on_entity_added = traced_on_added
+        self.variables_presenter._on_entity_removed = traced_on_removed
+        self.variables_presenter._on_delete_requested = traced_on_delete_req
 
         # ── Store state dump after every mutation ───────────
         self.store.entityAdded.connect(self._dump_store_state)
@@ -217,13 +217,13 @@ class WorkspaceTest(QWidget):
     def _refresh_status(self):
         self.status_label.setText(
             f"Store: {self.store.count()} entities | "
-            f"View rows: {self.workspace_panel.row_count()}"
+            f"View rows: {self.variables_list.row_count()}"
         )
 
 
 def main():
     app = QApplication(sys.argv)
-    test = WorkspaceTest()
+    test = VariablesTest()
     test.show()
     sys.exit(app.exec())
 

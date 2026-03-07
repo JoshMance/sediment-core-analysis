@@ -11,7 +11,7 @@ Built with **Python 3.10+** and **PySide6** using clean **MVP architecture**.
 - ✅ **Architecture designed** — See [overview.md](docs/architecture/overview.md)
 - ✅ **Domain layer** — Store, Entities, Container built
 - ✅ **Application layer** — AppController + image loading service
-- ✅ **UI layer** — FilePanel, WorkspacePanel, FilePresenter, WorkspacePresenter
+- ✅ **UI layer** — FileBrowser, VariablesList, FilePresenter, VariablesPresenter
 - ✅ **Legacy UI preserved** — Available in `src_legacy/` for reference
 - ✅ **Composition root** -- `main.py` wires all three layers
 - ✅ **Dev mode** -- `--dev` flag opens a signal log window
@@ -94,8 +94,8 @@ sediment-core-analysis/
 │       ├── resources/         # Static assets
 │       │   └── theme/         # QSS files + colour tokens + apply_theme()
 │       └── views/             # PySide6 widgets
-│           ├── panels/        # Dock panels
-│           ├── shell/         # Ribbon, main window
+│           ├── panels/        # Runtime panels (created on demand, e.g. entity editors)
+│           ├── shell/         # Persistent shell views (FileBrowser, VariablesList, Ribbon)
 │           └── widgets/       # Reusable widgets
 │
 ├── tests/                     # Testing (outside src)
@@ -137,8 +137,8 @@ uv run pytest
 # Manual tests (visual component verification)
 uv run python -m tests.{component}_test
 
-# Example: FilePanel tests
-uv run python -m tests.file_panel_test
+# Example: FileBrowser tests
+uv run python -m tests.file_browser_test
 uv run python -m tests.file_presenter_and_panel_test
 ```
 

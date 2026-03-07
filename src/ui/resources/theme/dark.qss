@@ -148,7 +148,7 @@ QPushButton:disabled {
     border-color: @border_inner;
 }
 
-/* -- Tree views (file panel, workspace panel) --------------- */
+/* -- Tree views (file panel, variables panel) --------------- */
 QTreeView,
 QTreeWidget {
     background-color: @bg_panel;

@@ -211,9 +211,19 @@ and react independently.
 | What           | Implementation                                                                                        |
 | -------------- | ----------------------------------------------------------------------------------------------------- |
 | Main window    | `QMainWindow` with `QDockWidget` for each panel/sidebar.                                              |
-| Panel contents | Custom `QWidget` subclasses.                                                                          |
+| Shell views    | Custom `QWidget` subclasses in `shell/`.                                                              |
+| Runtime panels | Custom `QWidget` subclasses in `panels/`.                                                             |
 | Lists/trees    | `QListWidget`, `QTreeWidget` (simple), or `QListView`/`QTreeView` + `QAbstractItemModel` (if needed). |
 | Menus/toolbars | `QMenuBar`, `QToolBar`, `QAction`. Undo/redo actions from `QUndoStack.createUndoAction()`.            |
+
+**`shell/` vs `panels/` — the key structural rule:**
+
+| Folder    | Rule                                                                                           | Examples                                    |
+| --------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `shell/`  | Views that are **created at startup and persist** for the lifetime of the application.         | `Ribbon`, `FileBrowser`, `VariablesList`    |
+| `panels/` | Views that are **created at runtime** on demand (e.g. when the user opens or creates a thing). | Entity editor panels, canvas views (future) |
+
+Nothing in `shell/` is created or destroyed while the app is running. Nothing in `panels/` exists at startup.
 
 ### Styling — `src/ui/resources/theme/`
 
@@ -270,8 +280,8 @@ exact manual/automated testing distinction as the application grows.
 
 - Test files end in `_test.py` in flat structure
 - Visual verification and component logic testing
-- Example: `file_panel_test.py` tests view components
-- Example: `file_presenter_and_panel_test.py` tests presenter logic with views
+- Example: `file_browser_test.py` tests view components
+  - Example: `file_browser_presenter_test.py` tests presenter logic with views
 - Example: `image_loading_test.py` tests full chain: View → Presenter → AppController → Store
 - Example: `container_test.py` tests entity container CRUD (no Qt)
 - Helpers: Shared DRY components in `tests/helpers/`
@@ -340,7 +350,7 @@ added as the application grows beyond initial development.
 
 ```
 User double-clicks an image file
-  → FilePanel emits fileDoubleClicked(path)
+  → FileBrowser emits fileDoubleClicked(path)
   → FilePresenter receives signal, checks extension
   → FilePresenter calls controller.create_image_entity(path)
   → AppController calls load_image(path) → pixel data
@@ -371,3 +381,4 @@ User clicks delete button (planned)
 7. **No custom Event Bus** — Store's Qt signals serve the same purpose
 8. **Domain Services placeholder** — `domain/services/` exists for entity specific transformations
 9. Services raise exceptions. The orchestrator decides what to do. That keeps the service reusable and the policy in one place.
+10. **Shell vs Panels** — views in `shell/` are created at startup and persist; views in `panels/` are created at runtime on demand. Never put a startup view in `panels/`, never put a runtime view in `shell/`.

@@ -1,5 +1,5 @@
 """
-FilePresenter - connects FilePanel view to AppController
+FilePresenter - connects FileBrowser view to AppController
 
 Follows MVP pattern where Presenter:
 - Handles View events -> calls AppController methods
@@ -11,13 +11,13 @@ import os
 
 from PySide6.QtCore import QObject
 
-from src.ui.views.panels.file_panel import FilePanel
+from src.ui.views.shell.file_browser import FileBrowser
 from src.domain.store import Store
 from src.application import AppController
 
 
 class FilePresenter(QObject):
-    def __init__(self, view: FilePanel, store: Store, controller: AppController):
+    def __init__(self, view: FileBrowser, store: Store, controller: AppController):
         super().__init__()
         self.view = view
         self.store = store

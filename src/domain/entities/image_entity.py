@@ -1,4 +1,4 @@
-"""Image entity for the workspace."""
+"""Image entity for the variables panel."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field

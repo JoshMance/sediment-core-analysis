@@ -3,8 +3,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QToolBar, QPushButton,
 from PySide6.QtCore import QSize, Signal, QDir
 
 
-class FilePanel(QWidget):
-    """File system navigation panel - shows files and emits signals for integration."""
+class FileBrowser(QWidget):
+    """File system navigation sidebar — persists for the lifetime of the shell."""
     
     # Signals - raw UI events only, no interpretation
     fileClicked = Signal(str)      # File path on single-click

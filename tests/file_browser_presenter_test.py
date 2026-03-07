@@ -1,28 +1,28 @@
 """
-Manual test for FilePanel + FilePresenter integration
+Manual test for FileBrowser + FilePresenter integration
 
-Tests the complete FilePanel view with FilePresenter working together.
-Shows the actual file panel with presenter logic handling file selections.
+Tests the complete FileBrowser view with FilePresenter working together.
+Shows the actual file browser with presenter logic handling file selections.
 
-Run with: python -m tests.file_presenter_and_panel_test
+Run with: python -m tests.file_browser_presenter_test
 """
 import sys
 
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout
 
-from src.ui.views.panels.file_panel import FilePanel
+from src.ui.views.shell.file_browser import FileBrowser
 from src.ui.presenters.file_presenter import FilePresenter
 from src.domain.store import Store
 from src.application import AppController
 from tests.helpers import LogWindow, SignalLogger
 
 
-class FilePanelWithPresenterTest(QWidget):
-    """Integration test for FilePanel with FilePresenter"""
+class FileBrowserWithPresenterTest(QWidget):
+    """Integration test for FileBrowser with FilePresenter"""
     
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("FilePanel + FilePresenter Test")
+        self.setWindowTitle("FileBrowser + FilePresenter Test")
         self.setGeometry(100, 100, 800, 600)
         
         # Create layout
@@ -30,26 +30,26 @@ class FilePanelWithPresenterTest(QWidget):
         self.setLayout(layout)
         
         # Create log window for monitoring
-        self.log_window = LogWindow("FilePanel + FilePresenter Logs", 400, 300)
+        self.log_window = LogWindow("FileBrowser + FilePresenter Logs", 400, 300)
         self.log_window.show()
         self.log_window.move(850, 100)  # Position next to main window
         
         # Create signal logger (needs log_window)
-        self.signal_logger = SignalLogger(self.log_window, "File Panel")
+        self.signal_logger = SignalLogger(self.log_window, "FileBrowser")
         
-        # Create the FilePanel view
-        self.file_panel = FilePanel()
-        layout.addWidget(self.file_panel)
+        # Create the FileBrowser view
+        self.file_browser = FileBrowser()
+        layout.addWidget(self.file_browser)
         
         # Create Store and AppController
         self.store = Store()
         self.controller = AppController(self.store)
         
         # Create the FilePresenter and connect it to the view
-        self.file_presenter = FilePresenter(self.file_panel, self.store, self.controller)
+        self.file_presenter = FilePresenter(self.file_browser, self.store, self.controller)
         
         # Log the setup
-        self.log_window.add_log("Created FilePanel view")
+        self.log_window.add_log("Created FileBrowser view")
         self.log_window.add_log("Created Store")
         self.log_window.add_log("Created AppController")
         self.log_window.add_log("Created FilePresenter")
@@ -57,11 +57,11 @@ class FilePanelWithPresenterTest(QWidget):
         
         # Set up signal logging
         self.signal_logger.connect_signal(
-            self.file_panel.fileDoubleClicked, 
+            self.file_browser.fileDoubleClicked, 
             "fileDoubleClicked"
         )
         self.signal_logger.connect_signal(
-            self.file_panel.pathChanged, 
+            self.file_browser.pathChanged, 
             "pathChanged"
         )
         
@@ -74,11 +74,11 @@ class FilePanelWithPresenterTest(QWidget):
 
 
 def main():
-    """Run the FilePanel + FilePresenter integration test"""
+    """Run the FileBrowser + FilePresenter integration test"""
     app = QApplication(sys.argv)
     
     # Create the test window
-    test_window = FilePanelWithPresenterTest()
+    test_window = FileBrowserWithPresenterTest()
     test_window.show()
     
     # Run the application
