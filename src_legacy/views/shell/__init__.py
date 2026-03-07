@@ -1,4 +1,4 @@
-"""Chrome components - always-present UI elements."""
+"""Shell components - always-present UI elements."""
 from .ribbon import Ribbon, RibbonTab, RibbonGroup, RibbonButton
 
 __all__ = [

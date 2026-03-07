@@ -66,7 +66,7 @@ uv run src_legacy/views/panels/stratigraphy_panel/demo.py
 uv run src_legacy/views/panels/image_panel/demo.py
 uv run src_legacy/views/panels/file_panel/demo.py
 uv run src_legacy/views/panels/workspace_panel/demo.py
-uv run src_legacy/views/chrome/ribbon/demo.py
+uv run src_legacy/views/shell/ribbon/demo.py
 ```
 
 ---
@@ -89,7 +89,7 @@ sediment-core-analysis/
 │       ├── presenters/        # Store ↔ View wiring
 │       └── views/             # PySide6 widgets
 │           ├── panels/        # Dock panels
-│           ├── chrome/        # Ribbon, main window
+│           ├── shell/         # Ribbon, main window
 │           └── widgets/       # Reusable widgets
 │
 ├── tests/                     # Testing (outside src)

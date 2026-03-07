@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).parents[3]))
 from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QTextEdit
 from PySide6.QtGui import QIcon
 
-from views.chrome.ribbon.widget import Ribbon, RibbonTab, RibbonGroup, RibbonButton
+from views.shell.ribbon.widget import Ribbon, RibbonTab, RibbonGroup, RibbonButton
 from views.theme import create_demo_app
 
 

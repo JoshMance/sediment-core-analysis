@@ -1,7 +1,7 @@
-"""Views package - panels, chrome, and theme."""
+"""Views package - panels, shell, and theme."""
 
 from .panels import ImagePanel, FilePanel, WorkspacePanel, StratigraphyPanel
-from .chrome.ribbon import Ribbon
+from .shell.ribbon import Ribbon
 from .theme import ThemeColours, create_demo_app
 
 __all__ = [
@@ -10,7 +10,7 @@ __all__ = [
     'FilePanel', 
     'WorkspacePanel',
     'StratigraphyPanel',
-    # Chrome
+    # Shell
     'Ribbon',
     # Theme
     'ThemeColours',

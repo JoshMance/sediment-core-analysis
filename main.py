@@ -19,9 +19,30 @@ from src.ui.presenters.file_presenter import FilePresenter
 from src.ui.presenters.workspace_presenter import WorkspacePresenter
 
 
+def apply_theme(app: QApplication) -> None:
+    """Apply --light or --dark palette. Default follows the OS."""
+    if "--dark" in sys.argv:
+        from PySide6.QtGui import QColor, QPalette
+        from PySide6.QtCore import Qt
+        p = QPalette()
+        p.setColor(QPalette.Window, QColor(30, 30, 30))
+        p.setColor(QPalette.WindowText, QColor(220, 220, 220))
+        p.setColor(QPalette.Base, QColor(45, 45, 45))
+        p.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+        p.setColor(QPalette.Text, QColor(220, 220, 220))
+        p.setColor(QPalette.Button, QColor(53, 53, 53))
+        p.setColor(QPalette.ButtonText, QColor(220, 220, 220))
+        p.setColor(QPalette.Highlight, QColor(42, 130, 218))
+        p.setColor(QPalette.HighlightedText, Qt.black)
+        app.setPalette(p)
+    elif "--light" in sys.argv:
+        app.setPalette(app.style().standardPalette())
+
+
 def main() -> None:
     dev_mode = "--dev" in sys.argv
     app = QApplication(sys.argv)
+    apply_theme(app)
 
     # -- Dev log (optional) ---------------------------------------
     dev_log = None
