@@ -56,7 +56,7 @@ def main() -> None:
     watch("Store", store)
 
     # -- Application ----------------------------------------------
-    workspace_state = WorkspaceState()
+    workspace_state = WorkspaceState(store=store)
     controller = AppController(store, workspace_state=workspace_state, component_watcher=watch)
 
     # -- UI - views -----------------------------------------------

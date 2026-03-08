@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 from PySide6.QtCore import QObject, Signal
 
+from src.domain.store import Store
+
 
 @dataclass
 class WorkspaceEntry:
@@ -32,9 +34,12 @@ class WorkspaceState(QObject):
     panelRemoved = Signal(str)         # entity_id
     panelFocusRequested = Signal(str)  # entity_id
 
-    def __init__(self, parent: QObject | None = None) -> None:
+    def __init__(self, store: Store | None = None, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._entries: dict[str, WorkspaceEntry] = {}
+        if store is not None:
+            store.entityRemoved.connect(self._on_entity_removed)
+            store.storeReset.connect(self.clear)
 
     def open(self, entry: WorkspaceEntry) -> None:
         """Open a panel, or request focus if already open."""
@@ -56,4 +61,10 @@ class WorkspaceState(QObject):
     def clear(self) -> None:
         """Close all panels. Emits panelRemoved for each open entry."""
         for entity_id in list(self._entries):
+            self.close(entity_id)
+
+    # ── Store signal handlers ─────────────────────────────────
+
+    def _on_entity_removed(self, entity_id: str, _entity_type: str) -> None:
+        if self.is_open(entity_id):
             self.close(entity_id)

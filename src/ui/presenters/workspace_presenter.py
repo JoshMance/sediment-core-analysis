@@ -35,6 +35,7 @@ class WorkspacePresenter(QObject):
         self._panels: dict[str, tuple[QWidget, QObject]] = {}
 
         workspace_state.panelAdded.connect(self._on_panel_added)
+        workspace_state.panelRemoved.connect(self._on_panel_removed)
         workspace_state.panelFocusRequested.connect(self._view.focus_tab)
         view.tabClosed.connect(self._on_tab_closed)
 
@@ -47,6 +48,10 @@ class WorkspacePresenter(QObject):
         entity = self._store.get(entry.entity_id)
         title = getattr(entity, "name", entry.entity_id)
         self._view.add_tab(panel_view, title, entry.entity_id)
+
+    def _on_panel_removed(self, entity_id: str) -> None:
+        self._panels.pop(entity_id, None)
+        self._view.remove_tab(entity_id)
 
     # ── View → WorkspaceState ─────────────────────────────────
 
