@@ -1,11 +1,23 @@
 """Ribbon -- tabbed toolbar across the top of the window."""
 from __future__ import annotations
 
+from pathlib import Path
+
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabWidget
 from PySide6.QtCore import Qt, Signal
 
 from src.ui.views.shell.ribbon.ribbon_button import RibbonButton
 from src.ui.views.shell.ribbon.ribbon_group import RibbonGroup
+
+_ICONS_DIR = Path(__file__).parents[3] / "resources" / "icons"
+
+# Maps button label → icon filename (add entries as icons are provided)
+_ICON_MAP: dict[str, str] = {
+    "Load Image": "load-image.svg",
+    "Load Data": "load-data.svg",
+    "Load Map": "load-map.svg",
+}
 
 
 class Ribbon(QWidget):
@@ -50,6 +62,7 @@ class Ribbon(QWidget):
         # -- Home tab
         home = self._make_tab()
         self._add_group(home, "File", ["New", "Open", "Save", "Save As"])
+        self._add_group(home, "Image", ["Load Image", "Load Data", "Load Map"])
         self._add_group(home, "Edit", ["Undo", "Redo"])
         self._tabs.addTab(home, "Home")
 
@@ -77,6 +90,9 @@ class Ribbon(QWidget):
         group = RibbonGroup(title)
         for label in labels:
             btn = RibbonButton(label)
+            icon_path = _ICONS_DIR / _ICON_MAP[label] if label in _ICON_MAP else None
+            if icon_path and icon_path.exists():
+                btn.setIcon(QIcon(str(icon_path)))
             btn.clicked.connect(lambda checked=False, name=label: self.buttonClicked.emit(name))
             group.add_button(btn)
             self._buttons[label] = btn

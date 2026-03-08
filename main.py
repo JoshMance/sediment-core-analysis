@@ -18,12 +18,14 @@ from src.ui.views.shell.file_browser import FileBrowser
 from src.ui.views.shell.variables_list import VariablesList
 from src.ui.views.shell.ribbon.ribbon import Ribbon
 from src.ui.views.shell.workspace import WorkspaceView
+from src.ui.views.shell.status_bar import StatusBar
 
 # UI layer - presenters
 from src.ui.presenters.file_presenter import FilePresenter
 from src.ui.presenters.variables_presenter import VariablesPresenter
 from src.ui.presenters.ribbon_presenter import RibbonPresenter
 from src.ui.presenters.workspace_presenter import WorkspacePresenter
+from src.ui.presenters.status_bar_presenter import StatusBarPresenter
 from src.ui.resources.theme import apply_theme
 
 
@@ -95,7 +97,10 @@ def main() -> None:
     window.setWindowTitle("Sedivis")
     window.setCentralWidget(central)
     window.resize(1200, 800)
-    window.statusBar().showMessage("Ready")
+    status_bar = StatusBar()
+    window.setStatusBar(status_bar)
+    status_bar_presenter = StatusBarPresenter(status_bar, store)
+    status_bar.show_message("Ready")
     window.showMaximized()
 
     sys.exit(app.exec())

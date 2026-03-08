@@ -11,6 +11,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import imageio.v3 as iio
+
+# Extensions recognised by the load pipeline (used by UI file filters)
+IMAGE_EXTENSIONS: tuple[str, ...] = (".png", ".jpg", ".jpeg", ".tif", ".tiff")
 import numpy as np
 from numpy.typing import NDArray
 

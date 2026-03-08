@@ -13,6 +13,8 @@ Built with **Python 3.10+** and **PySide6** using clean **MVP architecture**.
 - ✅ **Application layer** — AppController, WorkspaceState, WorkspaceService, image loading
 - ✅ **UI layer** — FileBrowser, VariablesList, FilePresenter, VariablesPresenter
 - ✅ **Workspace system** — tabbed panel host with extensible factory; ImagePanel for image viewing and core selection
+- ✅ **Ribbon** — Home tab with File, Image (Load Image / Load Data / Load Map), and Edit groups; SVG icon support
+- ✅ **Status bar** — `StatusBar` view + `StatusBarPresenter`; reflects Store signals, reverts to "Ready" after 5 s
 - ✅ **Legacy UI preserved** — Available in `src_legacy/` for reference
 - ✅ **Composition root** — `main.py` wires all three layers
 - ✅ **Dev mode** — `--dev` flag opens a signal log window

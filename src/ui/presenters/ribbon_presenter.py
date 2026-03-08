@@ -109,6 +109,24 @@ class RibbonPresenter(QObject):
     def _analyse(self) -> None:
         logger.info("Analyse -- not implemented yet")
 
+    def _load_image(self) -> None:
+        dlg = QFileDialog(self._view)
+        dlg.setWindowTitle("Load Image")
+        dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
+        dlg.setFileMode(QFileDialog.FileMode.ExistingFile)
+        dlg.setNameFilter("Images (*.png *.jpg *.jpeg)")
+        if dlg.exec() != QFileDialog.DialogCode.Accepted:
+            return
+        paths = dlg.selectedFiles()
+        if paths:
+            self._controller.create_image_entity(paths[0])
+
+    def _load_data(self) -> None:
+        logger.info("Load Data -- not implemented yet")
+
+    def _load_map(self) -> None:
+        logger.info("Load Map -- not implemented yet")
+
     @property
     def _handlers(self) -> dict[str, object]:
         return {
@@ -123,4 +141,7 @@ class RibbonPresenter(QObject):
             "Fit": self._fit,
             "Calibrate": self._calibrate,
             "Analyse": self._analyse,
+            "Load Image": self._load_image,
+            "Load Data": self._load_data,
+            "Load Map": self._load_map,
         }
