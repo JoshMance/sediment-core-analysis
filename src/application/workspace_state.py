@@ -12,6 +12,13 @@ class WorkspaceEntry:
     entity_id: str
     panel_type: str
 
+    def to_dict(self) -> dict:
+        return {"entity_id": self.entity_id, "panel_type": self.panel_type}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "WorkspaceEntry":
+        return cls(entity_id=data["entity_id"], panel_type=data["panel_type"])
+
 
 class WorkspaceState(QObject):
     """Application-layer record of the logical workspace contents.
@@ -45,3 +52,8 @@ class WorkspaceState(QObject):
     def is_open(self, entity_id: str) -> bool:
         """Return True if a panel is currently open for this entity."""
         return entity_id in self._entries
+
+    def clear(self) -> None:
+        """Close all panels. Emits panelRemoved for each open entry."""
+        for entity_id in list(self._entries):
+            self.close(entity_id)

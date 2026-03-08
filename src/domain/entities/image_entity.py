@@ -29,3 +29,26 @@ class ImageEntity:
         if self.data is not None:
             return self.data.shape
         return None
+
+    def to_dict(self) -> dict:
+        """Serialise to a plain dict for session.json.
+
+        Pixel data is NOT included — the archive service owns writing the
+        asset file and will rewrite 'file_path' to the bundled asset path.
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "file_path": str(self.file_path) if self.file_path is not None else None,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ImageEntity":
+        """Reconstruct from a plain dict. Pixel data is not restored here —
+        the AppController reloads it from the resolved asset path."""
+        file_path = Path(data["file_path"]) if data.get("file_path") else None
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            file_path=file_path,
+        )

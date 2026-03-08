@@ -49,7 +49,7 @@ class Ribbon(QWidget):
 
         # -- Home tab
         home = self._make_tab()
-        self._add_group(home, "File", ["Open", "Save"])
+        self._add_group(home, "File", ["New", "Open", "Save", "Save As"])
         self._add_group(home, "Edit", ["Undo", "Redo"])
         self._tabs.addTab(home, "Home")
 

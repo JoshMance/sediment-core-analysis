@@ -6,6 +6,7 @@ Signal logger is redundent bc the dev_log exists?
 
 1. Finish building the store
 2. The controller should interact with the store through commands. Commands compose the store’s atomic CRUD operations and encapsulate business logic.
+3. As part of the app installer, register the `.sedivis` file extension with the OS — associate it with the app executable and assign `sedivis_file_icon.svg` (converted to `.ico`) so `.sedivis` files show the correct icon in Windows Explorer and the native Open/Save dialogs.
 
 ## Things to Avoid
 

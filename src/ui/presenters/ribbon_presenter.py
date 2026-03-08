@@ -2,13 +2,19 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from src.ui.views.shell.ribbon.ribbon import Ribbon
+from src.ui.resources.icon_provider import SedivisIconProvider
 from src.application import AppController
+from src.application.services.session_archive import ArchiveError
 
 logger = logging.getLogger(__name__)
+
+_FILE_FILTER = "Sedivis project (*.sedivis)"
 
 
 class RibbonPresenter(QObject):
@@ -28,14 +34,59 @@ class RibbonPresenter(QObject):
         else:
             logger.debug("No action wired for button: %s", name)
 
-    # -- action handlers ------------------------------------------
-    # Add real implementations as controller methods become available.
+    # -- session action handlers ----------------------------------
+
+    def _new(self) -> None:
+        self._controller.new_session()
 
     def _open(self) -> None:
-        logger.info("Open -- not implemented yet")
+        dlg = self._make_file_dialog(QFileDialog.AcceptMode.AcceptOpen)
+        if dlg.exec() != QFileDialog.DialogCode.Accepted:
+            return
+        paths = dlg.selectedFiles()
+        if not paths:
+            return
+        try:
+            self._controller.load_session(Path(paths[0]))
+        except ArchiveError as e:
+            QMessageBox.critical(self._view, "Open Failed", str(e))
 
     def _save(self) -> None:
-        logger.info("Save -- not implemented yet")
+        dlg = self._make_file_dialog(QFileDialog.AcceptMode.AcceptSave)
+        if dlg.exec() != QFileDialog.DialogCode.Accepted:
+            return
+        paths = dlg.selectedFiles()
+        if not paths:
+            return
+        p = Path(paths[0].strip())
+        if p.suffix.lower() != ".sedivis":
+            p = p.with_suffix(".sedivis")
+        try:
+            self._controller.save_session(p)
+        except ArchiveError as e:
+            QMessageBox.critical(self._view, "Save Failed", str(e))
+
+    def _make_file_dialog(self, mode: QFileDialog.AcceptMode) -> QFileDialog:
+        """Build a non-native QFileDialog so the custom sedivis icon is shown."""
+        dlg = QFileDialog(self._view)
+        dlg.setOption(QFileDialog.Option.DontUseNativeDialog, True)
+        dlg.setIconProvider(SedivisIconProvider())
+        dlg.setNameFilter(_FILE_FILTER)
+        dlg.setAcceptMode(mode)
+        if mode == QFileDialog.AcceptMode.AcceptOpen:
+            dlg.setFileMode(QFileDialog.FileMode.ExistingFile)
+            dlg.setWindowTitle("Open Project")
+        else:
+            dlg.setFileMode(QFileDialog.FileMode.AnyFile)
+            dlg.setWindowTitle("Save Project")
+            dlg.setDefaultSuffix("sedivis")
+        return dlg
+
+    def _save_as(self) -> None:
+        # Save As is identical to Save — dialog always prompts for a new path
+        self._save()
+
+    # -- other action handlers (stubs) ----------------------------
 
     def _undo(self) -> None:
         logger.info("Undo -- not implemented yet")
@@ -61,8 +112,10 @@ class RibbonPresenter(QObject):
     @property
     def _handlers(self) -> dict[str, object]:
         return {
+            "New": self._new,
             "Open": self._open,
             "Save": self._save,
+            "Save As": self._save_as,
             "Undo": self._undo,
             "Redo": self._redo,
             "Zoom In": self._zoom_in,

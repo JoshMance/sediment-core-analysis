@@ -20,8 +20,35 @@ class CoreEntity:
         data: Cropped core image as an (H, W, 3) uint8 RGB array.
         source_image_id: ID of the ImageEntity this was cropped from, if any.
         id: Assigned by the Store on add().
+        asset_ref: Archive-relative path to the sidecar PNG (e.g. 'assets/<id>_core.png').
+                   Populated by the archive service on load; not set during normal runtime.
     """
     name: str
     data: NDArray[np.uint8] | None = field(default=None, repr=False)
     source_image_id: str | None = None
     id: str | None = None
+    asset_ref: str | None = None
+
+    def to_dict(self) -> dict:
+        """Serialise to a plain dict for session.json.
+
+        Pixel data is NOT included — the archive service writes it as a
+        sidecar PNG and stores the path in 'asset_ref'.
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "source_image_id": self.source_image_id,
+            "asset_ref": self.asset_ref,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "CoreEntity":
+        """Reconstruct from a plain dict. Pixel data is not restored here —
+        the AppController loads it from the resolved asset path."""
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            source_image_id=data.get("source_image_id"),
+            asset_ref=data.get("asset_ref"),
+        )

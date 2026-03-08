@@ -24,9 +24,9 @@ class Store(QObject):
     entityAdded = Signal(str, str)
     entityRemoved = Signal(str, str)
     entityUpdated = Signal(str, str)  # TODO: include field_name + old/new value?
+    storeReset = Signal()             # emitted after all entities are cleared
 
     # TODO: batch signal — emitted after a batch of mutations completes
-    # TODO: reset signal — emitted when the store is cleared / reloaded
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -96,9 +96,9 @@ class Store(QObject):
     # ── Lifecycle ───────────────────────────────────────────────
 
     def clear(self) -> None:
-        """Remove all entities."""
+        """Remove all entities. Emits storeReset."""
         self._container.clear()
-        # TODO: emit a reset/cleared signal
+        self.storeReset.emit()
 
     # TODO: batch(...) — suppress intermediate signals, emit once at end
     # TODO: save / load — or delegate to a session module
