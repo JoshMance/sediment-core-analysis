@@ -1,7 +1,9 @@
 """The app root - creates the three layers and wires them together."""
 
 import sys
+from pathlib import Path
 
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
 
 # Domain layer
@@ -30,6 +32,12 @@ def main() -> None:
     app = QApplication(sys.argv)
     dark = True if "--dark" in sys.argv else (False if "--light" in sys.argv else None)
     apply_theme(app, dark=dark)
+
+    from PySide6.QtCore import Qt
+    _logo_dir = Path(__file__).parent / "src" / "ui" / "resources" / "logo"
+    _os_dark = app.styleHints().colorScheme() == Qt.ColorScheme.Dark
+    _logo = _logo_dir / ("logo_light.svg" if _os_dark else "logo_dark.svg")
+    app.setWindowIcon(QIcon(str(_logo)))
 
     # -- Dev log (optional) ---------------------------------------
     dev_log = None
@@ -84,11 +92,11 @@ def main() -> None:
 
     # -- Window ---------------------------------------------------
     window = QMainWindow()
-    window.setWindowTitle("Sediment Core Analysis")
+    window.setWindowTitle("Sedivis")
     window.setCentralWidget(central)
     window.resize(1200, 800)
     window.statusBar().showMessage("Ready")
-    window.show()
+    window.showMaximized()
 
     sys.exit(app.exec())
 

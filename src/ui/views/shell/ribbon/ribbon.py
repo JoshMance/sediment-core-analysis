@@ -67,7 +67,7 @@ class Ribbon(QWidget):
         """Create an empty tab with a left-aligned horizontal layout."""
         tab = QWidget()
         lay = QHBoxLayout(tab)
-        lay.setContentsMargins(4, 4, 4, 4)
+        lay.setContentsMargins(6, 6, 6, 6)
         lay.setSpacing(8)
         lay.addStretch()
         return tab
