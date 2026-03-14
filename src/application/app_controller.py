@@ -15,8 +15,10 @@ import imageio.v3 as iio
 
 from src.domain.entities.image_entity import ImageEntity
 from src.domain.entities.core_entity import CoreEntity
+from src.domain.entities.csv_entity import CsvEntity
 from src.domain.store import Store
 from src.application.services.load_image import load_image
+from src.application.services.load_csv import load_csv
 from src.application.services.session_archive import save as archive_save
 from src.application.services.session_archive import load as archive_load
 from src.application.services.session_archive import ArchiveError
@@ -98,6 +100,91 @@ class AppController:
         """
         return self._store.remove(entity_id)
 
+    def create_csv_entity(self, file_path: str) -> str | None:
+        """Load a CSV from disk and add it to the Store.
+
+        Args:
+            file_path: Absolute path to a CSV file.
+
+        Returns:
+            The entity id assigned by the Store, or None if loading failed.
+        """
+        path = Path(file_path)
+        try:
+            df = load_csv(path)
+        except (FileNotFoundError, ValueError) as e:
+            logger.error("Failed to load CSV: %s", e)
+            return None
+
+        entity = CsvEntity(
+            name=path.name,
+            file_path=path,
+            data=df,
+            columns=list(df.columns),
+            column_types={col: str(df[col].dtype) for col in df.columns},
+        )
+        return self._store.add(entity)
+
+    def rename_csv_column(self, entity_id: str, old_name: str, new_name: str) -> None:
+        """Rename a column on a CsvEntity in the Store.
+
+        Args:
+            entity_id: ID of the CsvEntity.
+            old_name: Current column name.
+            new_name: New column name.
+        """
+        entity = self._store.get(entity_id)
+        if entity is None or entity.data is None:
+            return
+        entity.data = entity.data.rename(columns={old_name: new_name})
+        entity.columns = list(entity.data.columns)
+        entity.column_types = {
+            col: str(entity.data[col].dtype) for col in entity.data.columns
+        }
+        self._store.update_field(entity_id, "data", entity.data)
+
+    def change_csv_column_type(
+        self, entity_id: str, col_name: str, new_type: str
+    ) -> None:
+        """Coerce a column to a new dtype on a CsvEntity in the Store.
+
+        Args:
+            entity_id: ID of the CsvEntity.
+            col_name: Column to coerce.
+            new_type: Target dtype string e.g. 'float64', 'int64', 'object', 'bool'.
+        """
+        entity = self._store.get(entity_id)
+        if entity is None or entity.data is None:
+            return
+        try:
+            entity.data[col_name] = entity.data[col_name].astype(new_type)
+        except Exception as e:
+            logger.warning("Type coercion failed for column '%s': %s", col_name, e)
+            return
+        entity.column_types[col_name] = new_type
+        self._store.update_field(entity_id, "data", entity.data)
+
+    def update_csv_cell(
+        self, entity_id: str, row: int, col: int, value: object
+    ) -> None:
+        """Update a single cell value on a CsvEntity in the Store.
+
+        Args:
+            entity_id: ID of the CsvEntity.
+            row: Row index.
+            col: Column index.
+            value: New cell value.
+        """
+        entity = self._store.get(entity_id)
+        if entity is None or entity.data is None:
+            return
+        try:
+            entity.data.iloc[row, col] = value
+        except Exception as e:
+            logger.warning("Cell update failed at (%d, %d): %s", row, col, e)
+            return
+        self._store.update_field(entity_id, "data", entity.data)
+
     def open_in_workspace(self, entity_id: str) -> None:
         """Open an entity as a panel in the workspace.
 
@@ -168,7 +255,7 @@ class AppController:
 
         entities, workspace_entries = archive_load(path, extract_dir)
 
-        # Add entities to Store and load pixel data
+        # Add entities to Store and load asset data
         for entity in entities:
             if isinstance(entity, ImageEntity) and entity.file_path:
                 try:
@@ -180,6 +267,17 @@ class AppController:
                     entity.data = iio.imread(entity.asset_ref)
                 except Exception as e:
                     logger.warning("Could not load core pixels for %s: %s", entity.id, e)
+            elif isinstance(entity, CsvEntity) and entity.asset_ref:
+                try:
+                    import pandas as pd
+                    entity.data = pd.read_csv(entity.asset_ref)
+                    entity.columns = list(entity.data.columns)
+                    entity.column_types = {
+                        col: str(entity.data[col].dtype)
+                        for col in entity.data.columns
+                    }
+                except Exception as e:
+                    logger.warning("Could not load CSV data for %s: %s", entity.id, e)
             self._store.add(entity)
 
         # Reopen workspace panels

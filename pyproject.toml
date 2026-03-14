@@ -10,6 +10,7 @@ dependencies = [
     "scipy>=1.11.0",
     "imageio>=2.31.0",
     "pooch>=1.7.0",
+    "pandas>=2.0",
 ]
 
 [project.optional-dependencies]

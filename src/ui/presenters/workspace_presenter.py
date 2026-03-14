@@ -85,6 +85,20 @@ def _make_image_panel(
     return view, presenter
 
 
+def _make_csv_panel(
+    entry: WorkspaceEntry,
+    store: Store,
+    controller: AppController,
+) -> tuple[QWidget, QObject]:
+    from src.ui.views.panels.csv_panel.csv_panel import CsvPanel
+    from src.ui.presenters.csv_panel_presenter import CsvPanelPresenter
+
+    view = CsvPanel()
+    presenter = CsvPanelPresenter(view, store, controller, entry.entity_id)
+    return view, presenter
+
+
 _PANEL_FACTORIES: dict[str, object] = {
     "ImagePanel": _make_image_panel,
+    "CsvPanel": _make_csv_panel,
 }

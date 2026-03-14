@@ -5,4 +5,4 @@
 | `.png`    | Image    |                     |
 | `.jpg`    | Image    |                     |
 | `.jpeg`   | Image    |                     |
-| `.csv`    | Data     | Not yet implemented |
+| `.csv`    | Data     |                     |

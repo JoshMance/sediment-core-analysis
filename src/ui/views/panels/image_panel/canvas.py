@@ -4,9 +4,11 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, QPoint, QPointF, QRectF, Signal
 from PySide6.QtGui import (
     QPainter, QPixmap, QPaintEvent, QWheelEvent, QMouseEvent,
-    QPen, QColor, QPainterPath,
+    QPen, QColor, QPainterPath, QImage,
 )
 from PySide6.QtWidgets import QWidget
+
+from src.ui.views.panels.image_panel.colour_calibrators import MunsellCalibrator, MunsellChipGrid
 
 ZOOM_MIN = 0.1
 ZOOM_MAX = 10.0
@@ -24,6 +26,9 @@ class ImageCanvas(QWidget):
     """
 
     selectionChanged = Signal(object)  # QRectF in image coordinates
+    # Emitted after the calibration colour flash completes.
+    # Payload: list of (rgb_tuple, MunsellChip) pairs.
+    calibrationComplete = Signal(list)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -49,6 +54,13 @@ class ImageCanvas(QWidget):
 
         self.setMouseTracking(True)
 
+        self._calibrator = MunsellCalibrator(parent=self)
+        self._chip_grid = MunsellChipGrid(parent=self)
+        self._calibration_samples: list = []
+        self._calibrator.pageSelected.connect(self._on_munsell_page_selected)
+        self._calibrator.confirmRequested.connect(self._on_confirm_calibration)
+        self._chip_grid.positionChanged.connect(self._update_preview_colours)
+
     # ── Public API ────────────────────────────────────────────
 
     def set_pixmap(self, pixmap: QPixmap | None) -> None:
@@ -61,6 +73,26 @@ class ImageCanvas(QWidget):
         self._selection_rect = None
         self._selection_visible = False
         self.update()
+        self._sync_calibrator()
+        self._chip_grid.hide()
+
+    def image_rect_in_widget(self) -> QRectF:
+        """Return the rendered image bounding rect in widget-space coordinates."""
+        if not self._pixmap:
+            return QRectF()
+        w = self._pixmap.width() * self._zoom
+        h = self._pixmap.height() * self._zoom
+        x = self.width() / 2 - w / 2 + self._pan_x
+        y = self.height() / 2 - h / 2 + self._pan_y
+        return QRectF(x, y, w, h)
+
+    def set_calibrator_visible(self, visible: bool) -> None:
+        """Show or hide the Munsell calibrator overlay."""
+        if visible:
+            self._sync_calibrator()
+            self._calibrator.show()
+        else:
+            self._calibrator.hide()
 
     def set_rotation(self, angle: float) -> None:
         """Set rotation in degrees (display only — selection coords are unaffected)."""
@@ -217,6 +249,7 @@ class ImageCanvas(QWidget):
             self._pan_y += delta.y()
             self._last_mouse_pos = event.position().toPoint()
             self.update()
+            self._sync_calibrator()
             return
 
         self._update_cursor(event.position().toPoint())
@@ -258,6 +291,103 @@ class ImageCanvas(QWidget):
             self._zoom = new_zoom
 
         self.update()
+        self._sync_calibrator()
+
+    def resizeEvent(self, event) -> None:  # noqa: ANN001
+        super().resizeEvent(event)
+        self._sync_calibrator()
+
+    def _sync_calibrator(self) -> None:
+        """Push the current canvas transform to the calibrator widget."""
+        if self._calibrator.isVisible():
+            self._calibrator.sync_to_canvas()
+
+    def _on_munsell_page_selected(self, page) -> None:
+        if page is None:
+            self._chip_grid.hide()
+        else:
+            self._chip_grid.set_page(page)
+            # Place at centre of canvas on first show for this page.
+            self._chip_grid.move(
+                max(0, (self.width() - self._chip_grid.width()) // 2),
+                max(0, (self.height() - self._chip_grid.height()) // 2),
+            )
+            self._chip_grid.show()
+            self._chip_grid.raise_()
+            self._update_preview_colours()
+
+    def _sample_current_grid(
+        self,
+    ) -> tuple[dict[tuple[int, int], tuple[int, int, int]], list] | None:
+        """Sample 3×3 mean RGB at every crosshair. Returns (colour_map, results) or None."""
+        if not self._pixmap or not self._chip_grid.isVisible():
+            return None
+        if not self._chip_grid.cell_chips:
+            return None
+        img = self._pixmap.toImage()
+        cw = self._chip_grid.width() / self._chip_grid.cols
+        ch_h = self._chip_grid.height() / self._chip_grid.rows
+        colour_map: dict[tuple[int, int], tuple[int, int, int]] = {}
+        results: list = []
+        for (r, c), chip in self._chip_grid.cell_chips.items():
+            wx = self._chip_grid.x() + c * cw + cw * 0.5
+            wy = self._chip_grid.y() + r * ch_h + ch_h * 0.5
+            img_pos = self._widget_to_image(QPoint(int(wx), int(wy)))
+            rgb = self._sample_3x3(img, img_pos)
+            colour_map[(r, c)] = rgb
+            results.append((rgb, chip))
+        return colour_map, results
+
+    def _update_preview_colours(self) -> None:
+        """Sample current grid and push colours + ratio to the calibrator mini-grid preview."""
+        ratio = self._current_cell_ratio()
+        result = self._sample_current_grid()
+        if result is None:
+            # Still update the mini grid shape even without a pixmap.
+            self._calibrator.set_preview_colours({}, ratio)
+            return
+        colour_map, _ = result
+        self._calibrator.set_preview_colours(colour_map, ratio)
+
+    def _current_cell_ratio(self) -> float:
+        """Return cell_h / cell_w for the current chip grid size."""
+        if not self._chip_grid.rows or not self._chip_grid.cols:
+            return 1.0
+        cw = self._chip_grid.width() / self._chip_grid.cols
+        ch = self._chip_grid.height() / self._chip_grid.rows
+        return ch / cw if cw > 0 else 1.0
+
+    def _on_confirm_calibration(self) -> None:
+        """Sample at current grid position, store results, and emit calibrationComplete."""
+        result = self._sample_current_grid()
+        if result is None:
+            return
+        colour_map, results = result
+        self._calibration_samples = results
+        self._calibrator.set_preview_colours(colour_map, self._current_cell_ratio())
+        print("=== Calibration samples ===")
+        for rgb, chip in results:
+            print(f"  RGB {rgb}  →  {chip.notation}")
+        self.calibrationComplete.emit(list(results))
+
+    def _sample_3x3(
+        self, img: QImage, img_pos: QPointF
+    ) -> tuple[int, int, int]:
+        """Return mean RGB of the 3×3 pixel block centred on img_pos."""
+        rs, gs, bs, count = 0, 0, 0, 0
+        px, py = int(img_pos.x()), int(img_pos.y())
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                x, y = px + dx, py + dy
+                if 0 <= x < img.width() and 0 <= y < img.height():
+                    c = QColor(img.pixel(x, y))
+                    rs += c.red()
+                    gs += c.green()
+                    bs += c.blue()
+                    count += 1
+        if count == 0:
+            return (0, 0, 0)
+        return (rs // count, gs // count, bs // count)
 
     def _widget_to_image(self, widget_pos: QPoint) -> QPointF:
         """Convert widget-space coordinates to image-space coordinates."""

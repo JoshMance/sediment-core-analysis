@@ -99,6 +99,15 @@ class ImagePanel(QWidget):
         self._cancel_action = tb.addWidget(self._cancel_btn)
         self._cancel_action.setVisible(False)
 
+        tb.addSeparator()
+
+        self._calibrate_btn = QPushButton("Calibrate Munsell")
+        self._calibrate_btn.setToolTip("Toggle Munsell colour calibrator")
+        self._calibrate_btn.setCheckable(True)
+        self._calibrate_btn.setFixedHeight(28)
+        self._calibrate_btn.clicked.connect(self._on_calibrate_toggled)
+        tb.addWidget(self._calibrate_btn)
+
         return tb
 
     # ── Slots ─────────────────────────────────────────────────
@@ -123,6 +132,9 @@ class ImagePanel(QWidget):
 
     def _on_cancel_clicked(self) -> None:
         self._deactivate_selection()
+
+    def _on_calibrate_toggled(self) -> None:
+        self.canvas.set_calibrator_visible(self._calibrate_btn.isChecked())
 
     def _deactivate_selection(self) -> None:
         self._select_btn.setChecked(False)

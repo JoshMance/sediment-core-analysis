@@ -122,7 +122,16 @@ class RibbonPresenter(QObject):
             self._controller.create_image_entity(paths[0])
 
     def _load_data(self) -> None:
-        logger.info("Load Data -- not implemented yet")
+        dlg = QFileDialog(self._view)
+        dlg.setWindowTitle("Load CSV Data")
+        dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
+        dlg.setFileMode(QFileDialog.FileMode.ExistingFile)
+        dlg.setNameFilter("CSV files (*.csv)")
+        if dlg.exec() != QFileDialog.DialogCode.Accepted:
+            return
+        paths = dlg.selectedFiles()
+        if paths:
+            self._controller.create_csv_entity(paths[0])
 
     def _load_map(self) -> None:
         logger.info("Load Map -- not implemented yet")
