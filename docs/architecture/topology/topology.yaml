@@ -1,0 +1,124 @@
+# Component topology for sediment-core-analysis
+# See guide.md for structure, rules, and purpose.
+
+domain:
+  entities:
+    - name: ImageEntity
+      fields: [id, name, file_path, data]
+
+    - name: DatasetEntity
+      fields: [id, name, file_path, data, columns, column_types, asset_ref]
+
+    - name: CoreEntity
+      fields: [id, name, data, source_image_id, asset_ref]
+
+  components:
+    - name: Store
+      lifetime: long-lived
+      signals:
+        - entityAdded(entity_id, entity_type)
+        - entityRemoved(entity_id, entity_type)
+        - entityUpdated(entity_id, entity_type)
+        - storeReset()
+      actions:
+        - add(entity)
+        - get(entity_id)
+        - get_many(entity_ids)
+        - get_field(entity_id, field_name)
+        - list_entities(entity_type?, include_ids?)
+        - update_field(entity_id, field_name, value)
+        - remove(entity_id)
+        - count(entity_type?)
+        - summary()
+        - clear()
+
+  services: []
+
+application:
+  components:
+    - name: AppController
+      lifetime: long-lived
+      writes_to: [Store, WorkspaceState]
+      actions:
+        - create_image_entity(file_path)
+        - create_dataset_entity(file_path)
+        - create_core_entity(name, data, source_image_id?)
+        - delete_entity(entity_id)
+        - rename_entity(entity_id, new_name)
+        - rename_dataset_column(entity_id, old_name, new_name)
+        - change_dataset_column_type(entity_id, col_name, new_type)
+        - update_dataset_cell(entity_id, row, col, value)
+        - open_in_workspace(entity_id)
+        - new_session()
+        - save_session(path)
+        - load_session(path)
+
+    - name: WorkspaceState
+      lifetime: long-lived
+      signals:
+        - panelAdded(entry)
+        - panelRemoved(entity_id)
+        - panelFocusRequested(entity_id)
+      actions:
+        - open(entry)
+        - close(entity_id)
+        - clear()
+
+  services:
+    - name: load_image
+    - name: load_csv
+    - name: session_archive
+      actions: [save, load]
+    - name: workspace_service
+      actions: [open_entity]
+
+ui:
+  presenters:
+    - name: FilePresenter
+      view: FileBrowser
+      subscribes_to: []
+      calls: [AppController]
+
+    - name: VariablesPresenter
+      view: VariablesList
+      subscribes_to:
+        [Store.entityAdded, Store.entityRemoved, Store.entityUpdated]
+      calls: [AppController]
+
+    - name: RibbonPresenter
+      view: Ribbon
+      subscribes_to: []
+      calls: [AppController]
+
+    - name: StatusBarPresenter
+      view: StatusBar
+      subscribes_to:
+        [
+          Store.entityAdded,
+          Store.entityRemoved,
+          Store.entityUpdated,
+          Store.storeReset,
+        ]
+      calls: []
+
+    - name: WorkspacePresenter
+      view: WorkspaceView
+      subscribes_to:
+        - WorkspaceState.panelAdded
+        - WorkspaceState.panelRemoved
+        - WorkspaceState.panelFocusRequested
+        - Store.entityUpdated
+      calls: [WorkspaceState]
+      manages: [ImagePanelPresenter, DatasetPanelPresenter]
+
+    - name: ImagePanelPresenter
+      view: ImagePanel
+      lifetime: per-panel
+      subscribes_to: []
+      calls: [AppController]
+
+    - name: DatasetPanelPresenter
+      view: DatasetPanel
+      lifetime: per-panel
+      subscribes_to: [Store.entityUpdated]
+      calls: [AppController]

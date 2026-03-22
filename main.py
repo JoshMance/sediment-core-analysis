@@ -16,6 +16,7 @@ from src.application.workspace_state import WorkspaceState
 # UI layer - views
 from src.ui.views.shell.file_browser import FileBrowser
 from src.ui.views.shell.variables_list import VariablesList
+from src.ui.views.shell.preview import PreviewPanel
 from src.ui.views.shell.ribbon.ribbon import Ribbon
 from src.ui.views.shell.workspace import WorkspaceView
 from src.ui.views.shell.status_bar import StatusBar
@@ -66,6 +67,7 @@ def main() -> None:
     watch("FileBrowser", file_browser)
     variables_list = VariablesList()
     watch("VariablesList", variables_list)
+    preview_panel = PreviewPanel()
     workspace_view = WorkspaceView()
     watch("WorkspaceView", workspace_view)
 
@@ -79,16 +81,25 @@ def main() -> None:
         dev_log.show()
 
     # -- Layout ---------------------------------------------------
+    right_column = QWidget()
+    right_layout = QVBoxLayout(right_column)
+    right_layout.setContentsMargins(0, 0, 0, 0)
+    right_layout.setSpacing(4)
+    right_layout.addWidget(variables_list, 1)
+    right_layout.addWidget(preview_panel)
+
     bottom_row = QWidget()
     bottom_layout = QHBoxLayout(bottom_row)
-    bottom_layout.setContentsMargins(0, 0, 0, 0)
+    bottom_layout.setContentsMargins(4, 4, 4, 4)
+    bottom_layout.setSpacing(4)
     bottom_layout.addWidget(file_browser, 1)
     bottom_layout.addWidget(workspace_view, 3)
-    bottom_layout.addWidget(variables_list, 1)
+    bottom_layout.addWidget(right_column, 1)
 
     central = QWidget()
     central_layout = QVBoxLayout(central)
     central_layout.setContentsMargins(0, 0, 0, 0)
+    central_layout.setSpacing(0)
     central_layout.addWidget(ribbon)
     central_layout.addWidget(bottom_row, 1)
 

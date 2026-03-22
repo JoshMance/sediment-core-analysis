@@ -1,34 +1,13 @@
-# Notes
+# To Do
 
-Check munsell data is correct
-Add documention about science section
-Signal logger is redundent bc the dev_log exists?
+- [ ] Check Munsell data is correct
+- [ ] Add documentation about the science section
+- [ ] Decide: delete `tests/helpers/signal_logger.py` (redundant now that dev_log exists)
+- [ ] Controller commands � the controller should interact with the store through commands that compose atomic CRUD operations and encapsulate business logic
+- [ ] OS file association � register `.sedivis` with the OS as part of the app installer; associate with the executable and assign `sedivis_file_icon.svg` (converted to `.ico`) so `.sedivis` files show the correct icon in Windows Explorer and Open/Save dialogs
 
-## To Do
+## Stage 2 Goals
 
-1. Finish building the store
-2. The controller should interact with the store through commands. Commands compose the store’s atomic CRUD operations and encapsulate business logic.
-3. As part of the app installer, register the `.sedivis` file extension with the OS — associate it with the app executable and assign `sedivis_file_icon.svg` (converted to `.ico`) so `.sedivis` files show the correct icon in Windows Explorer and the native Open/Save dialogs.
+Getting back to Nov 2025 functionality: length calibration, core segmentation, colour data (RGB, LAB, etc.) export, and charts.
 
-## Things to Avoid
-
-Generic store signals
-Avoid vague signals like stateChanged(). Emit specific events that describe what changed and where.
-
-Presenter becoming a mini-controller
-Presenters should interpret UI events and update views, not accumulate domain or workflow logic.
-
-Controller becoming a god object
-Keep business actions in small command/use-case files. The controller (file) should orchestrate, not implement everything.
-
-Store doing I/O or parsing
-The store holds runtime state only. File formats, serialization, and decoding belong in a persistence module.
-
-Presenters tightly coupling to store internals
-Provide small, stable read methods on the store instead of letting presenters perform deep queries.
-
-Over-emitting signals during bulk operations
-Batch updates or emit a single reset/bulk event to avoid UI thrashing.
-
-Signals that instruct instead of inform
-Store events should announce facts (entityUpdated) rather than UI intentions (refreshSidebar).
+Google MUI?

@@ -38,6 +38,7 @@ class WorkspacePresenter(QObject):
         workspace_state.panelRemoved.connect(self._on_panel_removed)
         workspace_state.panelFocusRequested.connect(self._view.focus_tab)
         view.tabClosed.connect(self._on_tab_closed)
+        store.entityUpdated.connect(self._on_entity_updated)
 
     # ── WorkspaceState → View ─────────────────────────────────
 
@@ -54,6 +55,14 @@ class WorkspacePresenter(QObject):
         self._view.remove_tab(entity_id)
 
     # ── View → WorkspaceState ─────────────────────────────────
+
+    def _on_entity_updated(self, entity_id: str, _entity_type: str) -> None:
+        """Store says an entity was updated — refresh the tab title if open."""
+        if entity_id not in self._panels:
+            return
+        entity = self._store.get(entity_id)
+        if entity is not None:
+            self._view.rename_tab(entity_id, getattr(entity, "name", entity_id))
 
     def _on_tab_closed(self, entity_id: str) -> None:
         self._panels.pop(entity_id, None)
@@ -85,20 +94,20 @@ def _make_image_panel(
     return view, presenter
 
 
-def _make_csv_panel(
+def _make_dataset_panel(
     entry: WorkspaceEntry,
     store: Store,
     controller: AppController,
 ) -> tuple[QWidget, QObject]:
-    from src.ui.views.panels.csv_panel.csv_panel import CsvPanel
-    from src.ui.presenters.csv_panel_presenter import CsvPanelPresenter
+    from src.ui.views.panels.dataset_panel.dataset_panel import DatasetPanel
+    from src.ui.presenters.dataset_panel_presenter import DatasetPanelPresenter
 
-    view = CsvPanel()
-    presenter = CsvPanelPresenter(view, store, controller, entry.entity_id)
+    view = DatasetPanel()
+    presenter = DatasetPanelPresenter(view, store, controller, entry.entity_id)
     return view, presenter
 
 
 _PANEL_FACTORIES: dict[str, object] = {
     "ImagePanel": _make_image_panel,
-    "CsvPanel": _make_csv_panel,
+    "DatasetPanel": _make_dataset_panel,
 }

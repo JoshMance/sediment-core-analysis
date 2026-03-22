@@ -4,20 +4,22 @@ Pure view component. Knows nothing about Store, AppController, or entity
 internals. Displays rows of (name, type) and emits raw UI signals.
 The Presenter tells it what to show via add_row / remove_row.
 """
+from pathlib import Path
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem,
-    QHeaderView, QPushButton, QHBoxLayout,
+    QHeaderView, QMenu, QInputDialog, QLabel,
 )
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 
 
 class VariablesList(QWidget):
     """Displays loaded entities and lets the user delete them."""
 
     # ── Signals (raw UI events only) ────────────────────────
-    deleteRequested = Signal(str)     # entity_id when user clicks Delete
-    entitySelected = Signal(str)      # entity_id when user single-clicks a row
-    entityOpenRequested = Signal(str) # entity_id when user double-clicks a row
+    deleteRequested = Signal(str)        # entity_id
+    renameRequested = Signal(str, str)   # entity_id, new_name
+    entitySelected = Signal(str)         # entity_id when user single-clicks a row
+    entityOpenRequested = Signal(str)    # entity_id when user double-clicks a row
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -37,66 +39,76 @@ class VariablesList(QWidget):
 
         self._tree.currentItemChanged.connect(self._on_selection_changed)
         self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
-
-        # ── Delete button ───────────────────────────────────
-        self._delete_btn = QPushButton("Delete")
-        self._delete_btn.setEnabled(False)
-        self._delete_btn.clicked.connect(self._on_delete_clicked)
+        self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._tree.customContextMenuRequested.connect(self._on_context_menu_requested)
 
         # ── Layout ──────────────────────────────────────────
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
-        btn_layout.addWidget(self._delete_btn)
+        panel_header = QLabel("Variables")
+        panel_header.setObjectName("panelHeader")
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(panel_header)
         layout.addWidget(self._tree)
-        layout.addLayout(btn_layout)
 
     # ── Public interface (called by Presenter) ──────────────
 
     def add_row(self, entity_id: str, name: str, entity_type: str) -> None:
-        """Add a row to the list."""
         item = QTreeWidgetItem([name, entity_type, entity_id])
         self._tree.addTopLevelItem(item)
 
+    def update_row_name(self, entity_id: str, new_name: str) -> None:
+        for i in range(self._tree.topLevelItemCount()):
+            item = self._tree.topLevelItem(i)
+            if item and item.text(2) == entity_id:
+                item.setText(0, new_name)
+                break
+
     def remove_row(self, entity_id: str) -> None:
-        """Remove the row with the given entity id."""
         for i in range(self._tree.topLevelItemCount()):
             item = self._tree.topLevelItem(i)
             if item and item.text(2) == entity_id:
                 self._tree.takeTopLevelItem(i)
                 break
-        # Disable delete if nothing left selected
-        if self._tree.currentItem() is None:
-            self._delete_btn.setEnabled(False)
 
     def clear_rows(self) -> None:
-        """Remove all rows."""
         self._tree.clear()
-        self._delete_btn.setEnabled(False)
 
     def row_count(self) -> int:
-        """Return the number of rows."""
         return self._tree.topLevelItemCount()
 
     # ── Internal slots ──────────────────────────────────────
 
     def _on_selection_changed(self, current: QTreeWidgetItem | None, _previous):
-        """Enable/disable delete button based on selection."""
-        has_selection = current is not None
-        self._delete_btn.setEnabled(has_selection)
-        if has_selection:
-            entity_id = current.text(2)
-            self.entitySelected.emit(entity_id)
+        if current is not None:
+            self.entitySelected.emit(current.text(2))
 
     def _on_item_double_clicked(self, item, _column) -> None:
-        """Emit entityOpenRequested when the user double-clicks a row."""
         self.entityOpenRequested.emit(item.text(2))
 
-    def _on_delete_clicked(self):
-        """Emit deleteRequested with the selected entity's id."""
-        current = self._tree.currentItem()
-        if current:
-            entity_id = current.text(2)
+    def _on_context_menu_requested(self, pos) -> None:
+        item = self._tree.itemAt(pos)
+        if item is None:
+            return
+        entity_id = item.text(2)
+        current_name = item.text(0)
+
+        menu = QMenu(self)
+
+        rename_action = menu.addAction("Rename")
+        delete_action = menu.addAction("Delete")
+
+        action = menu.exec(self._tree.viewport().mapToGlobal(pos))
+
+        if action == rename_action:
+            p = Path(current_name)
+            stem, suffix = p.stem, p.suffix
+            new_stem, ok = QInputDialog.getText(
+                self, "Rename", "New name:", text=stem
+            )
+            if ok and new_stem.strip():
+                self.renameRequested.emit(entity_id, new_stem.strip() + suffix)
+
+        elif action == delete_action:
             self.deleteRequested.emit(entity_id)

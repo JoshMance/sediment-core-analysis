@@ -2,6 +2,15 @@
    Sedivis — Dark Theme
    ============================================================ */
 
+/* -- Panel headers ------------------------------------------ */
+QLabel#panelHeader {
+    background-color: @bg_raised;
+    color: @fg_muted;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-bottom: 1px solid @border_inner;
+}
+
 /* -- Base --------------------------------------------------- */
 QWidget {
     background-color: @bg;
@@ -179,6 +188,48 @@ QTreeView::branch {
     background-color: @bg_panel;
 }
 
+QTreeView QHeaderView::section,
+QTreeWidget QHeaderView::section {
+    background-color: @bg_panel;
+    color: @fg_muted;
+    border: none;
+    border-right: 1px solid @border_inner;
+    border-bottom: 1px solid @border_inner;
+    padding: 3px 6px;
+    font-size: 12px;
+}
+
+QTreeView QHeaderView::section:last,
+QTreeWidget QHeaderView::section:last {
+    border-right: none;
+}
+
+/* -- Table views -------------------------------------------- */
+QTableView {
+    background-color: @bg_panel;
+    alternate-background-color: @bg_alt;
+    color: @fg;
+    border: 1px solid @border;
+    gridline-color: @border_inner;
+    selection-background-color: @selection;
+    selection-color: @fg;
+    outline: none;
+}
+
+QTableView QHeaderView::section {
+    background-color: @bg_raised;
+    color: @fg;
+    border: none;
+    border-right: 1px solid @border_inner;
+    border-bottom: 1px solid @border_inner;
+    padding: 3px 6px;
+    font-size: 12px;
+}
+
+QTableView QHeaderView::section:last {
+    border-right: none;
+}
+
 /* -- Header views ------------------------------------------- */
 QHeaderView {
     background-color: @bg_panel;
@@ -187,7 +238,7 @@ QHeaderView {
 
 QHeaderView::section {
     background-color: @bg_raised;
-    color: @fg_muted;
+    color: @fg;
     border: none;
     border-right: 1px solid @border_inner;
     padding: 3px 6px;
@@ -257,4 +308,31 @@ QToolTip {
     color: @fg;
     border: 1px solid @border;
     padding: 4px;
+}
+
+/* -- Context menus ------------------------------------------ */
+QMenu {
+    background-color: @bg_raised;
+    color: @fg;
+    border: 1px solid @border;
+    padding: 4px 0;
+}
+
+QMenu::item {
+    padding: 5px 20px 5px 12px;
+}
+
+QMenu::item:selected {
+    background-color: @bg_button_hover;
+    color: @fg;
+}
+
+QMenu::item:disabled {
+    color: @fg_disabled;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: @border_inner;
+    margin: 3px 8px;
 }

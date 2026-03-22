@@ -28,7 +28,11 @@ class VariablesPresenter(QObject):
 
         # ── Listen to View signals ──────────────────────────
         self.view.deleteRequested.connect(self._on_delete_requested)
+        self.view.renameRequested.connect(self._on_rename_requested)
         self.view.entityOpenRequested.connect(self._on_entity_open_requested)
+
+        # ── Listen to Store signals ─────────────────────────
+        self.store.entityUpdated.connect(self._on_entity_updated)
 
     # ── Store → View ────────────────────────────────────────
 
@@ -45,9 +49,19 @@ class VariablesPresenter(QObject):
 
     # ── View → AppController ──────────────────────────────
 
+    def _on_entity_updated(self, entity_id: str, _entity_type: str):
+        """Store says an entity was updated — refresh the row name."""
+        entity = self.store.get(entity_id)
+        if entity is not None:
+            self.view.update_row_name(entity_id, getattr(entity, "name", str(entity_id)))
+
     def _on_delete_requested(self, entity_id: str):
         """User clicked Delete — route to AppController."""
         self.controller.delete_entity(entity_id)
+
+    def _on_rename_requested(self, entity_id: str, new_name: str):
+        """User confirmed a rename — route to AppController."""
+        self.controller.rename_entity(entity_id, new_name)
 
     def _on_entity_open_requested(self, entity_id: str):
         """User double-clicked a row — open the entity in the workspace."""

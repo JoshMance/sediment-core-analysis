@@ -6,7 +6,7 @@ from src.application.workspace_state import WorkspaceEntry, WorkspaceState
 
 _PANEL_TYPE_MAP: dict[str, str] = {
     "ImageEntity": "ImagePanel",
-    "CsvEntity": "CsvPanel",
+    "DatasetEntity": "DatasetPanel",
 }
 
 

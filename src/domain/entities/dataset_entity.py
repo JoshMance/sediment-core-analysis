@@ -1,4 +1,4 @@
-"""CsvEntity — a tabular data set imported from a CSV file."""
+"""DatasetEntity — a tabular data set imported from a CSV file."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class CsvEntity:
+class DatasetEntity:
     """A tabular data set.
 
     Owns a pandas DataFrame plus metadata about column names and types.
@@ -21,7 +21,7 @@ class CsvEntity:
         name: Display name.
         data: The tabular data as a pandas DataFrame.
         columns: Ordered list of column names (mirrors df.columns).
-        column_types: Mapping of column name → dtype string (e.g. "float64").
+        column_types: Mapping of column name → user-facing type label ("Text", "Number", "Date").
         file_path: Original source path (provenance only).
         id: Assigned by the Store on add().
         asset_ref: Archive-relative path to the bundled CSV (e.g. 'assets/<id>_data.csv').
@@ -51,7 +51,7 @@ class CsvEntity:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "CsvEntity":
+    def from_dict(cls, data: dict) -> "DatasetEntity":
         """Reconstruct from a plain dict. DataFrame is not restored here —
         the AppController loads it from the resolved asset path."""
         file_path = Path(data["file_path"]) if data.get("file_path") else None

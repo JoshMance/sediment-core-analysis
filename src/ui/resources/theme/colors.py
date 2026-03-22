@@ -38,29 +38,29 @@ DARK: dict[str, str] = {
 
 LIGHT: dict[str, str] = {
     # Backgrounds
-    "bg":              "#f3f3f3",
-    "bg_panel":        "#ffffff",   # trees, tooltips
-    "bg_raised":       "#eaeaea",   # tab selected, toolbar, header sections, disabled button
-    "bg_alt":          "#f7f7f7",   # alternating tree rows (subtle stripe)
-    "bg_hover":        "#e0e0e0",   # tab hover
-    "bg_hover_tint":   "#e8f3fc",   # accent-tinted hover (tree items)
-    "bg_button":       "#e1e1e1",
-    "bg_button_hover": "#d0d0d0",
+    "bg":              "#f0f0f0",   # window chrome / splitter areas
+    "bg_panel":        "#ffffff",   # content panels, trees, editors
+    "bg_raised":       "#efefef",   # toolbars, header sections, dock titles
+    "bg_alt":          "#f5f8fc",   # alternating tree rows (very subtle blue tint)
+    "bg_hover":        "#e3eef8",   # generic hover
+    "bg_hover_tint":   "#e3eef8",   # tree item hover
+    "bg_button":       "#f0f0f0",   # button fill
+    "bg_button_hover": "#dce8f5",   # button hover (light blue tint)
     # Foregrounds
     "fg":              "#1a1a1a",
-    "fg_muted":        "#666666",
-    "fg_disabled":     "#aaaaaa",
+    "fg_muted":        "#555555",
+    "fg_disabled":     "#b0b0b0",
     # Borders
-    "border":          "#cccccc",
-    "border_inner":    "#dddddd",
-    "border_hover":    "#aaaaaa",
+    "border":          "#c0c0c0",   # standard panel/button border
+    "border_inner":    "#d8d8d8",   # subtle inner dividers
+    "border_hover":    "#8A4C57",   # focus / active border (brand colour)
     # Interactive
-    "selection":       "#cce4f7",
-    "btn_hover":       "#dce9f8",   # icon / tool button hover fill
-    "scrollbar":       "#cccccc",
-    "scrollbar_hover": "#aaaaaa",
+    "selection":       "#f0e0e3",   # selected row background (brand tint)
+    "btn_hover":       "#f0e0e3",   # icon / tool button hover
+    "scrollbar":       "#c0c0c0",
+    "scrollbar_hover": "#909090",
     # Accent
-    "accent":          "#8A4C57",
+    "accent":          "#8A4C57",   # brand colour
     "accent_hover":    "#7a3f4a",
     "on_accent":       "#ffffff",
 }

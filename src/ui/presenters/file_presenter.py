@@ -29,8 +29,11 @@ class FilePresenter(QObject):
     def _on_file_selected(self, file_path: str):
         _, ext = os.path.splitext(file_path.lower())
         if ext in (".png", ".jpg", ".jpeg"):
-            self.controller.create_image_entity(file_path)
-        elif ext == '.csv':
-            print(f"Data file: {file_path}")
+            entity_id = self.controller.create_image_entity(file_path)
+        elif ext == ".csv":
+            entity_id = self.controller.create_dataset_entity(file_path)
         else:
-            print(f"Unknown file type: {file_path}")
+            return
+
+        if entity_id is not None:
+            self.controller.open_in_workspace(entity_id)

@@ -1,6 +1,15 @@
 /* ============================================================
-   Sedivis — Light Theme
+   Sedivis — Light Theme (MATLAB-style)
    ============================================================ */
+
+/* -- Panel headers ------------------------------------------ */
+QLabel#panelHeader {
+    background-color: @bg_raised;
+    color: @fg_muted;
+    font-size: 13px;
+    padding: 4px 8px;
+    border: 1px solid @border;
+}
 
 /* -- Base --------------------------------------------------- */
 QWidget {
@@ -14,6 +23,53 @@ QMainWindow {
     background-color: @bg;
 }
 
+QMainWindow::separator {
+    background-color: @border;
+    width: 1px;
+    height: 1px;
+}
+
+/* -- Splitters ----------------------------------------------- */
+QSplitter::handle {
+    background-color: @border;
+}
+
+QSplitter::handle:horizontal {
+    width: 1px;
+}
+
+QSplitter::handle:vertical {
+    height: 1px;
+}
+
+/* -- Dock widgets -------------------------------------------- */
+QDockWidget {
+    titlebar-close-icon: none;
+    titlebar-normal-icon: none;
+}
+
+QDockWidget::title {
+    background-color: @bg_raised;
+    color: @fg_muted;
+    padding: 4px 6px;
+    border-bottom: 1px solid @border;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+QDockWidget::close-button,
+QDockWidget::float-button {
+    border: none;
+    background: transparent;
+    padding: 2px;
+}
+
+QDockWidget::close-button:hover,
+QDockWidget::float-button:hover {
+    background-color: @bg_hover;
+}
+
 /* -- Ribbon tab widget -------------------------------------- */
 QWidget#ribbon {
     background-color: @accent;
@@ -25,6 +81,7 @@ QWidget#ribbon QTabWidget {
 
 QWidget#ribbon QTabWidget::pane {
     border: none;
+    border-bottom: 1px solid @border_inner;
     background-color: @bg_panel;
 }
 
@@ -51,10 +108,63 @@ QWidget#ribbon QTabBar::tab:hover:!selected {
     background-color: @accent_hover;
 }
 
+/* -- Workspace tab widget ----------------------------------- */
+QWidget#workspacePlaceholder,
+QWidget#previewContent {
+    border: 1px solid @border;
+    border-top: none;
+    background-color: @bg_panel;
+}
+
+QStackedWidget#panelContent {
+    background-color: @bg_panel;
+}
+
+QTabWidget::pane {
+    border: 1px solid @border;
+    border-top: none;
+    background-color: @bg_panel;
+}
+
+QTabBar {
+    background-color: @bg_raised;
+}
+
+QTabBar::tab {
+    background-color: transparent;
+    color: @fg_muted;
+    border: none;
+    border-right: 1px solid @border_inner;
+    padding: 4px 16px;
+    font-size: 13px;
+}
+
+QTabBar::tab:first {
+    border-left: 1px solid @border_inner;
+}
+
+QTabBar::tab:selected {
+    background-color: @bg_panel;
+    color: @fg;
+    border-top: 2px solid @accent;
+    border-right: 1px solid @border;
+    border-left: 1px solid @border;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: @bg_hover_tint;
+    color: @fg;
+}
+
 /* Tab content widgets and ribbon groups */
 QTabWidget > QWidget,
 QTabWidget QWidget {
     background-color: @bg_panel;
+}
+
+/* Tab bar override — must follow QTabWidget QWidget to win cascade */
+QTabWidget QTabBar {
+    background-color: @bg_raised;
 }
 
 QFrame {
@@ -70,7 +180,7 @@ QFrame[frameShape="5"] {  /* QFrame::VLine */
 
 /* -- Status bar --------------------------------------------- */
 QStatusBar {
-    background-color: @bg_panel;
+    background-color: @bg_raised;
     color: @fg_muted;
     border-top: 1px solid @border;
     padding: 0 6px;
@@ -86,17 +196,19 @@ QToolButton {
     background-color: transparent;
     color: @fg;
     border: none;
-    border-radius: 3px;
+    border-radius: 0px;
     padding: 4px 6px;
 }
 
 QToolButton:hover {
     background-color: @btn_hover;
+    border: 1px solid @border_hover;
 }
 
 QToolButton:pressed {
     background-color: @accent;
     color: @on_accent;
+    border: 1px solid @accent_hover;
 }
 
 QToolButton:disabled {
@@ -107,18 +219,21 @@ QToolButton:disabled {
 QToolBar {
     background-color: @bg_raised;
     border: none;
+    border-bottom: 1px solid @border;
     spacing: 2px;
     padding: 2px;
 }
 
 QToolBar QToolButton {
     background-color: transparent;
-    border-radius: 3px;
+    border: none;
+    border-radius: 0px;
     padding: 3px 5px;
 }
 
 QToolBar QToolButton:hover {
     background-color: @btn_hover;
+    border: 1px solid @border;
 }
 
 /* -- Push buttons ------------------------------------------- */
@@ -126,7 +241,7 @@ QPushButton {
     background-color: @bg_button;
     color: @fg;
     border: 1px solid @border;
-    border-radius: 3px;
+    border-radius: 0px;
     padding: 4px 12px;
     min-width: 60px;
 }
@@ -154,7 +269,8 @@ QTreeWidget {
     background-color: @bg_panel;
     alternate-background-color: @bg_alt;
     color: @fg;
-    border: none;
+    border: 1px solid @border;
+    border-top: none;
     selection-background-color: @selection;
     selection-color: @fg;
     outline: none;
@@ -179,9 +295,51 @@ QTreeView::branch {
     background-color: @bg_panel;
 }
 
+QTreeView QHeaderView::section,
+QTreeWidget QHeaderView::section {
+    background-color: @bg_panel;
+    color: @fg_muted;
+    border: none;
+    border-right: 1px solid @border_inner;
+    border-bottom: 1px solid @border;
+    padding: 3px 6px;
+    font-size: 12px;
+}
+
+QTreeView QHeaderView::section:last,
+QTreeWidget QHeaderView::section:last {
+    border-right: none;
+}
+
+/* -- Table views -------------------------------------------- */
+QTableView {
+    background-color: @bg_panel;
+    alternate-background-color: @bg_alt;
+    color: @fg;
+    border: 1px solid @border;
+    gridline-color: @border_inner;
+    selection-background-color: @selection;
+    selection-color: @fg;
+    outline: none;
+}
+
+QTableView QHeaderView::section {
+    background-color: @bg_panel;
+    color: @fg;
+    border: none;
+    border-right: 1px solid @border;
+    border-bottom: 1px solid @border;
+    padding: 3px 6px;
+    font-size: 12px;
+}
+
+QTableView QHeaderView::section:last {
+    border-right: none;
+}
+
 /* -- Header views ------------------------------------------- */
 QHeaderView {
-    background-color: @bg_panel;
+    background-color: @bg_raised;
     border: none;
 }
 
@@ -189,7 +347,8 @@ QHeaderView::section {
     background-color: @bg_raised;
     color: @fg_muted;
     border: none;
-    border-right: 1px solid @border_inner;
+    border-right: 1px solid @border;
+    border-bottom: 1px solid @border;
     padding: 3px 6px;
     font-size: 12px;
 }
@@ -207,7 +366,7 @@ QScrollBar:vertical {
 
 QScrollBar::handle:vertical {
     background-color: @scrollbar;
-    border-radius: 5px;
+    border-radius: 0px;
     min-height: 20px;
 }
 
@@ -228,7 +387,7 @@ QScrollBar:horizontal {
 
 QScrollBar::handle:horizontal {
     background-color: @scrollbar;
-    border-radius: 5px;
+    border-radius: 0px;
     min-width: 20px;
 }
 
@@ -258,3 +417,31 @@ QToolTip {
     border: 1px solid @border;
     padding: 4px;
 }
+
+/* -- Context menus ------------------------------------------ */
+QMenu {
+    background-color: @bg_panel;
+    color: @fg;
+    border: 1px solid @border;
+    padding: 4px 0;
+}
+
+QMenu::item {
+    padding: 5px 20px 5px 12px;
+}
+
+QMenu::item:selected {
+    background-color: @selection;
+    color: @fg;
+}
+
+QMenu::item:disabled {
+    color: @fg_disabled;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: @border;
+    margin: 3px 8px;
+}
+

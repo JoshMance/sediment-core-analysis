@@ -14,6 +14,9 @@ _ICONS_DIR = Path(__file__).parents[3] / "resources" / "icons"
 
 # Maps button label → icon filename (add entries as icons are provided)
 _ICON_MAP: dict[str, str] = {
+    "New": "new-session.svg",
+    "Open": "open.svg",
+    "Save": "save-session.svg",
     "Load Image": "load-image.svg",
     "Load Data": "load-data.svg",
     "Load Map": "load-map.svg",
@@ -61,20 +64,28 @@ class Ribbon(QWidget):
 
         # -- Home tab
         home = self._make_tab()
-        self._add_group(home, "File", ["New", "Open", "Save", "Save As"])
-        self._add_group(home, "Image", ["Load Image", "Load Data", "Load Map"])
+        self._add_group(home, "File", ["New", "Open", "Save"])
+        self._add_group(home, "Import", ["Load Image", "Load Data", "Load Map"])
         self._add_group(home, "Edit", ["Undo", "Redo"])
         self._tabs.addTab(home, "Home")
 
         # -- View tab
         view = self._make_tab()
-        self._add_group(view, "Zoom", ["Zoom In", "Zoom Out", "Fit"])
+        self._add_group(view, "Calibrate", ["Calibrate"])
         self._tabs.addTab(view, "View")
 
         # -- Analysis tab
         analysis = self._make_tab()
-        self._add_group(analysis, "Core", ["Calibrate", "Analyse"])
+        self._add_group(analysis, "Core", ["Analyse"])
         self._tabs.addTab(analysis, "Analysis")
+
+        # -- Map tab
+        map_tab = self._make_tab()
+        self._tabs.addTab(map_tab, "Map")
+
+        # -- Export tab
+        export_tab = self._make_tab()
+        self._tabs.addTab(export_tab, "Export")
 
     def _make_tab(self) -> QWidget:
         """Create an empty tab with a left-aligned horizontal layout."""

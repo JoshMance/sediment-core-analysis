@@ -27,6 +27,20 @@ uv run python -m tests.file_browser_test
 uv run python -m tests.file_browser_presenter_test
 ```
 
+## Dataset Panel (end-to-end)
+
+Manual — run the app, load a CSV via the file browser, and verify:
+
+- Table renders with correct columns and values
+- Column type menu shows Text / Number / Date
+- Changing a type updates the display without altering raw data
+- Cell edits round-trip (invalid values for the declared type are rejected)
+- Rename column updates header
+
+```bash
+uv run python main.py
+```
+
 ## Image Loading (end-to-end)
 
 ```bash

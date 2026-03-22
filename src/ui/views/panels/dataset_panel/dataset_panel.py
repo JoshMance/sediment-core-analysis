@@ -1,4 +1,4 @@
-"""CsvPanel — view for displaying and editing a CsvEntity's tabular data.
+"""DatasetPanel — view for displaying and editing a DatasetEntity's tabular data.
 
 Two classes are defined here:
 
@@ -6,7 +6,7 @@ Two classes are defined here:
                            Bridges a pandas DataFrame to a QTableView.
                            Never imported outside this module.
 
-    CsvPanel             — the public QWidget view.
+    DatasetPanel         — the public QWidget view.
                            Emits signals for all user edits; contains
                            no domain or application logic.
 """
@@ -32,6 +32,36 @@ from PySide6.QtWidgets import (
 )
 
 
+# ── Cell value validation ────────────────────────────────────────────────────
+
+class _InvalidType:
+    """Sentinel returned by _parse_cell_value when input is rejected."""
+
+_INVALID = _InvalidType()
+
+
+def _parse_cell_value(value: Any, col_type: str) -> Any:
+    """Validate and coerce a raw edit value against the declared column type.
+
+    Returns the parsed value on success, or _INVALID if the input is
+    not representable as that type (which causes the edit to be rejected).
+    Empty string is always treated as NaN / None.
+    """
+    if value is None or (isinstance(value, str) and value.strip() == ""):
+        return None
+    if col_type == "Text":
+        return str(value)
+    if col_type == "Number":
+        try:
+            return float(str(value))
+        except (ValueError, TypeError):
+            return _INVALID
+    if col_type == "Date":
+        parsed = pd.to_datetime(value, errors="coerce")
+        return None if pd.isna(parsed) else parsed
+    return value
+
+
 # ── Private Qt model ──────────────────────────────────────────────────────────
 
 class _DataFrameTableModel(QAbstractTableModel):
@@ -41,9 +71,15 @@ class _DataFrameTableModel(QAbstractTableModel):
     are handled externally by the presenter — they trigger a full model reset.
     """
 
-    def __init__(self, df: pd.DataFrame, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        column_types: dict[str, str] | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
         self._df = df
+        self._column_types: dict[str, str] = column_types or {}
 
     # ── Qt overrides ─────────────────────────────────────────────
 
@@ -89,26 +125,39 @@ class _DataFrameTableModel(QAbstractTableModel):
     ) -> bool:
         if not index.isValid() or role != Qt.ItemDataRole.EditRole:
             return False
-        self._df.iloc[index.row(), index.column()] = value
+        col_name = str(self._df.columns[index.column()])
+        col_type = self._column_types.get(col_name, "Text")
+        parsed = _parse_cell_value(value, col_type)
+        if parsed is _INVALID:
+            return False  # reject the edit; Qt restores the old value
+        existing = self._df.iloc[index.row(), index.column()]
+        both_null = (parsed is None) and pd.isna(existing)
+        if both_null or (parsed == existing):
+            return True  # nothing changed — don't propagate
+        self._df.iloc[index.row(), index.column()] = parsed
         self.dataChanged.emit(index, index, [role])
         return True
 
-    # ── Public helpers called by CsvPanel ─────────────────────────
+    # ── Public helpers called by DatasetPanel ─────────────────────
 
-    def replace_dataframe(self, df: pd.DataFrame) -> None:
+    def replace_dataframe(
+        self, df: pd.DataFrame, column_types: dict[str, str] | None = None
+    ) -> None:
         """Swap in a new DataFrame and reset the view."""
         self.beginResetModel()
         self._df = df
+        if column_types is not None:
+            self._column_types = column_types
         self.endResetModel()
 
 
 # ── Public view ───────────────────────────────────────────────────────────────
 
-_TYPE_OPTIONS: list[str] = ["object", "int64", "float64", "bool"]
+_TYPE_OPTIONS: list[str] = ["Text", "Number", "Date"]
 
 
-class CsvPanel(QWidget):
-    """View for a CsvEntity. Displays the DataFrame in an editable table.
+class DatasetPanel(QWidget):
+    """View for a DatasetEntity. Displays the DataFrame in an editable table.
 
     Signals:
         cellEdited(row, col, value): User changed a cell value.
@@ -159,7 +208,7 @@ class CsvPanel(QWidget):
     ) -> None:
         """Replace the displayed DataFrame. Called by presenter on init / refresh."""
         self._model.dataChanged.disconnect(self._on_model_data_changed)
-        self._model.replace_dataframe(df)
+        self._model.replace_dataframe(df, column_types)
         self._model.dataChanged.connect(self._on_model_data_changed)
 
     # ── Internal signal handlers ──────────────────────────────────

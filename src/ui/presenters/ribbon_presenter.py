@@ -131,7 +131,7 @@ class RibbonPresenter(QObject):
             return
         paths = dlg.selectedFiles()
         if paths:
-            self._controller.create_csv_entity(paths[0])
+            self._controller.create_dataset_entity(paths[0])
 
     def _load_map(self) -> None:
         logger.info("Load Map -- not implemented yet")

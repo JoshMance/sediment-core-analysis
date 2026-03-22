@@ -35,7 +35,7 @@ import pandas as pd
 from src.domain.entities.registry import ENTITY_TYPES
 from src.domain.entities.image_entity import ImageEntity
 from src.domain.entities.core_entity import CoreEntity
-from src.domain.entities.csv_entity import CsvEntity
+from src.domain.entities.dataset_entity import DatasetEntity
 from src.application.workspace_state import WorkspaceEntry
 
 FORMAT_NAME = "sedivis"
@@ -81,8 +81,8 @@ def save(
                 record = _save_image_entity(entity, zf)
             elif isinstance(entity, CoreEntity):
                 record = _save_core_entity(entity, zf)
-            elif isinstance(entity, CsvEntity):
-                record = _save_csv_entity(entity, zf)
+            elif isinstance(entity, DatasetEntity):
+                record = _save_dataset_entity(entity, zf)
             else:
                 # Future entity types: save via to_dict(), no asset bundling
                 record = {
@@ -130,14 +130,14 @@ def _save_core_entity(entity: CoreEntity, zf: zipfile.ZipFile) -> dict:
     d["asset_ref"] = asset_name if entity.data is not None else None
     return {"type": "CoreEntity", "data": d}
 
-def _save_csv_entity(entity: CsvEntity, zf: zipfile.ZipFile) -> dict:
+def _save_dataset_entity(entity: DatasetEntity, zf: zipfile.ZipFile) -> dict:
     """Write DataFrame as CSV text, return session.json record."""
     asset_name = f"assets/{entity.id}_data.csv"
     if entity.data is not None:
         zf.writestr(asset_name, entity.data.to_csv(index=False))
     d = entity.to_dict()
     d["asset_ref"] = asset_name if entity.data is not None else None
-    return {"type": "CsvEntity", "data": d}
+    return {"type": "DatasetEntity", "data": d}
 
 
 
@@ -222,8 +222,8 @@ def _reconstruct_entities(records: list[dict], extract_dir: Path) -> list[object
             entity = _load_image_entity(data, extract_dir)
         elif type_name == "CoreEntity":
             entity = _load_core_entity(data, extract_dir)
-        elif type_name == "CsvEntity":
-            entity = _load_csv_entity(data, extract_dir)
+        elif type_name == "DatasetEntity":
+            entity = _load_dataset_entity(data, extract_dir)
         else:
             entity = ENTITY_TYPES[type_name].from_dict(data)
 
@@ -253,7 +253,7 @@ def _load_core_entity(data: dict, extract_dir: Path) -> CoreEntity:
     return CoreEntity.from_dict(data)
 
 
-def _load_csv_entity(data: dict, extract_dir: Path) -> CsvEntity:
+def _load_dataset_entity(data: dict, extract_dir: Path) -> DatasetEntity:
     """Resolve the sidecar CSV path; DataFrame loaded later by AppController."""
     asset_ref = data.get("asset_ref")
     if asset_ref:
@@ -261,7 +261,7 @@ def _load_csv_entity(data: dict, extract_dir: Path) -> CsvEntity:
         if not resolved.exists():
             raise ArchiveError(f"Bundled asset missing after extraction: {asset_ref}")
         data = {**data, "asset_ref": str(resolved)}
-    return CsvEntity.from_dict(data)
+    return DatasetEntity.from_dict(data)
 
 
 def _reconstruct_workspace(records: list[dict]) -> list[WorkspaceEntry]:

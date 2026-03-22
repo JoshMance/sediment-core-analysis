@@ -51,6 +51,7 @@ class _EmptyWorkspacePlaceholder(QWidget):
         outer.addStretch()
         outer.addLayout(inner)
         outer.addStretch()
+        self.setObjectName("workspacePlaceholder")
 
 
 class WorkspaceView(QWidget):
@@ -77,12 +78,18 @@ class WorkspaceView(QWidget):
         self._entity_widgets: dict[str, QWidget] = {}
 
         self._stack = QStackedWidget()
+        self._stack.setObjectName("panelContent")
         self._stack.addWidget(_EmptyWorkspacePlaceholder())
         self._stack.addWidget(self._tabs)
         self._stack.setCurrentIndex(self._PAGE_EMPTY)
 
+        self._header = QLabel("Workspace")
+        self._header.setObjectName("panelHeader")
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self._header)
         layout.addWidget(self._stack)
 
     # ── Public API ────────────────────────────────────────────
@@ -93,6 +100,7 @@ class WorkspaceView(QWidget):
         index = self._tabs.addTab(widget, title)
         self._tabs.setCurrentIndex(index)
         self._stack.setCurrentIndex(self._PAGE_TABS)
+        self._header.setVisible(False)
 
     def remove_tab(self, entity_id: str) -> None:
         """Remove the tab for this entity (called programmatically)."""
@@ -104,6 +112,7 @@ class WorkspaceView(QWidget):
             self._tabs.removeTab(index)
         if not self._entity_widgets:
             self._stack.setCurrentIndex(self._PAGE_EMPTY)
+            self._header.setVisible(True)
 
     def focus_tab(self, entity_id: str) -> None:
         """Bring the tab for this entity to the front."""
@@ -113,6 +122,15 @@ class WorkspaceView(QWidget):
         index = self._tabs.indexOf(widget)
         if index != -1:
             self._tabs.setCurrentIndex(index)
+
+    def rename_tab(self, entity_id: str, new_name: str) -> None:
+        """Update the tab title for the given entity."""
+        widget = self._entity_widgets.get(entity_id)
+        if widget is None:
+            return
+        index = self._tabs.indexOf(widget)
+        if index != -1:
+            self._tabs.setTabText(index, new_name)
 
     # ── Internal slots ────────────────────────────────────────
 
@@ -129,4 +147,5 @@ class WorkspaceView(QWidget):
         self._entity_widgets.pop(entity_id)
         if not self._entity_widgets:
             self._stack.setCurrentIndex(self._PAGE_EMPTY)
+            self._header.setVisible(True)
         self.tabClosed.emit(entity_id)

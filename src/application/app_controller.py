@@ -15,7 +15,7 @@ import imageio.v3 as iio
 
 from src.domain.entities.image_entity import ImageEntity
 from src.domain.entities.core_entity import CoreEntity
-from src.domain.entities.csv_entity import CsvEntity
+from src.domain.entities.dataset_entity import DatasetEntity
 from src.domain.store import Store
 from src.application.services.load_image import load_image
 from src.application.services.load_csv import load_csv
@@ -25,6 +25,16 @@ from src.application.services.session_archive import ArchiveError
 from src.application.workspace_state import WorkspaceState
 
 logger = logging.getLogger(__name__)
+
+# ── Column-type label helpers ─────────────────────────────────────────────────
+
+def _dtype_to_label(dtype_str: str) -> str:
+    """Map a pandas dtype string to a user-facing column type label."""
+    if dtype_str.startswith("int") or dtype_str.startswith("float"):
+        return "Number"
+    if dtype_str.startswith("datetime"):
+        return "Date"
+    return "Text"
 
 
 class AppController:
@@ -100,8 +110,17 @@ class AppController:
         """
         return self._store.remove(entity_id)
 
-    def create_csv_entity(self, file_path: str) -> str | None:
-        """Load a CSV from disk and add it to the Store.
+    def rename_entity(self, entity_id: str, new_name: str) -> None:
+        """Rename an entity in the Store.
+
+        Args:
+            entity_id: The id of the entity to rename.
+            new_name: The new display name.
+        """
+        self._store.update_field(entity_id, "name", new_name)
+
+    def create_dataset_entity(self, file_path: str) -> str | None:
+        """Load a CSV from disk and add it to the Store as a DatasetEntity.
 
         Args:
             file_path: Absolute path to a CSV file.
@@ -116,20 +135,20 @@ class AppController:
             logger.error("Failed to load CSV: %s", e)
             return None
 
-        entity = CsvEntity(
+        entity = DatasetEntity(
             name=path.name,
             file_path=path,
             data=df,
             columns=list(df.columns),
-            column_types={col: str(df[col].dtype) for col in df.columns},
+            column_types={col: _dtype_to_label(str(df[col].dtype)) for col in df.columns},
         )
         return self._store.add(entity)
 
-    def rename_csv_column(self, entity_id: str, old_name: str, new_name: str) -> None:
-        """Rename a column on a CsvEntity in the Store.
+    def rename_dataset_column(self, entity_id: str, old_name: str, new_name: str) -> None:
+        """Rename a column on a DatasetEntity in the Store.
 
         Args:
-            entity_id: ID of the CsvEntity.
+            entity_id: ID of the DatasetEntity.
             old_name: Current column name.
             new_name: New column name.
         """
@@ -139,38 +158,34 @@ class AppController:
         entity.data = entity.data.rename(columns={old_name: new_name})
         entity.columns = list(entity.data.columns)
         entity.column_types = {
-            col: str(entity.data[col].dtype) for col in entity.data.columns
+            (new_name if col == old_name else col): label
+            for col, label in entity.column_types.items()
         }
         self._store.update_field(entity_id, "data", entity.data)
 
-    def change_csv_column_type(
+    def change_dataset_column_type(
         self, entity_id: str, col_name: str, new_type: str
     ) -> None:
-        """Coerce a column to a new dtype on a CsvEntity in the Store.
+        """Update the display type label for a column. Does not mutate the DataFrame.
 
         Args:
-            entity_id: ID of the CsvEntity.
-            col_name: Column to coerce.
-            new_type: Target dtype string e.g. 'float64', 'int64', 'object', 'bool'.
+            entity_id: ID of the DatasetEntity.
+            col_name: Column to re-label.
+            new_type: One of 'Text', 'Number', 'Date'.
         """
         entity = self._store.get(entity_id)
-        if entity is None or entity.data is None:
-            return
-        try:
-            entity.data[col_name] = entity.data[col_name].astype(new_type)
-        except Exception as e:
-            logger.warning("Type coercion failed for column '%s': %s", col_name, e)
+        if entity is None:
             return
         entity.column_types[col_name] = new_type
-        self._store.update_field(entity_id, "data", entity.data)
+        self._store.update_field(entity_id, "column_types", entity.column_types)
 
-    def update_csv_cell(
+    def update_dataset_cell(
         self, entity_id: str, row: int, col: int, value: object
     ) -> None:
-        """Update a single cell value on a CsvEntity in the Store.
+        """Update a single cell value on a DatasetEntity in the Store.
 
         Args:
-            entity_id: ID of the CsvEntity.
+            entity_id: ID of the DatasetEntity.
             row: Row index.
             col: Column index.
             value: New cell value.
@@ -267,13 +282,13 @@ class AppController:
                     entity.data = iio.imread(entity.asset_ref)
                 except Exception as e:
                     logger.warning("Could not load core pixels for %s: %s", entity.id, e)
-            elif isinstance(entity, CsvEntity) and entity.asset_ref:
+            elif isinstance(entity, DatasetEntity) and entity.asset_ref:
                 try:
                     import pandas as pd
                     entity.data = pd.read_csv(entity.asset_ref)
                     entity.columns = list(entity.data.columns)
                     entity.column_types = {
-                        col: str(entity.data[col].dtype)
+                        col: _dtype_to_label(str(entity.data[col].dtype))
                         for col in entity.data.columns
                     }
                 except Exception as e:
