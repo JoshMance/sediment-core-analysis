@@ -29,6 +29,10 @@ class ImageCanvas(QWidget):
     # Emitted after the calibration colour flash completes.
     # Payload: list of (rgb_tuple, MunsellChip) pairs.
     calibrationComplete = Signal(list)
+    # Emitted on mouse-move when the cursor is over a valid image pixel.
+    pixelHovered = Signal(int, int)  # image-space x, y
+    # Emitted when the cursor leaves the image area or the canvas widget.
+    pixelLeft = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -252,6 +256,18 @@ class ImageCanvas(QWidget):
             self._sync_calibrator()
             return
 
+        # Normal hover — emit image coordinates if cursor is over the image.
+        img_pos = self._widget_to_image(event.position().toPoint())
+        ix, iy = int(img_pos.x()), int(img_pos.y())
+        if (
+            self._pixmap
+            and 0 <= ix < self._pixmap.width()
+            and 0 <= iy < self._pixmap.height()
+        ):
+            self.pixelHovered.emit(ix, iy)
+        else:
+            self.pixelLeft.emit()
+
         self._update_cursor(event.position().toPoint())
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
@@ -259,6 +275,10 @@ class ImageCanvas(QWidget):
             self._is_panning = False
             self._dragging_selection = None
             self.setCursor(Qt.CursorShape.ArrowCursor)
+
+    def leaveEvent(self, event) -> None:  # noqa: ANN001
+        super().leaveEvent(event)
+        self.pixelLeft.emit()
 
     # ── Internal helpers ──────────────────────────────────────
 

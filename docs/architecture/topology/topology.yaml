@@ -89,10 +89,17 @@ ui:
       calls: [AppController]
 
     - name: VariablesPresenter
-      view: VariablesList
+      views: [VariablesList, PreviewPanel]
       subscribes_to:
         [Store.entityAdded, Store.entityRemoved, Store.entityUpdated]
       calls: [AppController]
+      view_signals:
+        - VariablesList.entitySelected(entity_id) # selection → preview.show_entity()
+        - VariablesList.deleteRequested(entity_id)
+        - VariablesList.renameRequested(entity_id, new_name)
+        - VariablesList.entityOpenRequested(entity_id)
+      note: PreviewPanel is driven by VariablesPresenter (not its own presenter)
+        because its content is entirely determined by VariablesList selection.
 
     - name: RibbonPresenter
       view: Ribbon
@@ -126,6 +133,9 @@ ui:
       lifetime: per-panel
       subscribes_to: []
       calls: [AppController]
+      view_signals:
+        - ImageCanvas.pixelHovered(x, y) # mouse over image → set_view_context([X: N, Y: N, RGB: (R, G, B)])
+        - ImageCanvas.pixelLeft()        # cursor leaves image → set_view_context([])
 
     - name: DatasetPanelPresenter
       view: DatasetPanel
@@ -133,5 +143,5 @@ ui:
       subscribes_to: [Store.entityUpdated]
       calls: [AppController]
       view_signals:
-        - selectionChanged(row, col)   # cell hover/click → set_view_context([Col: N, Row: N])
-        - columnSelected(col)          # header click → set_view_context([Col: N, Row: N, Count: N, ...])
+        - selectionChanged(row, col) # cell hover/click → set_view_context([Col: N, Row: N])
+        - columnSelected(col) # header click → set_view_context([Col: N, Row: N, Count: N, ...])

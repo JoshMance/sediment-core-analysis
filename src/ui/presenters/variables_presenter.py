@@ -11,14 +11,22 @@ from __future__ import annotations
 from PySide6.QtCore import QObject
 
 from src.ui.views.shell.variables_list import VariablesList
+from src.ui.views.shell.preview import PreviewPanel
 from src.domain.store import Store
 from src.application import AppController
 
 
 class VariablesPresenter(QObject):
-    def __init__(self, view: VariablesList, store: Store, controller: AppController):
+    def __init__(
+        self,
+        view: VariablesList,
+        preview: PreviewPanel,
+        store: Store,
+        controller: AppController,
+    ):
         super().__init__()
         self.view = view
+        self._preview = preview
         self.store = store
         self.controller = controller
 
@@ -30,6 +38,7 @@ class VariablesPresenter(QObject):
         self.view.deleteRequested.connect(self._on_delete_requested)
         self.view.renameRequested.connect(self._on_rename_requested)
         self.view.entityOpenRequested.connect(self._on_entity_open_requested)
+        self.view.entitySelected.connect(self._on_entity_selected)
 
         # ── Listen to Store signals ─────────────────────────
         self.store.entityUpdated.connect(self._on_entity_updated)
@@ -46,6 +55,17 @@ class VariablesPresenter(QObject):
     def _on_entity_removed(self, entity_id: str, entity_type: str):
         """Store says an entity was removed — tell the view."""
         self.view.remove_row(entity_id)
+        self._preview.clear()
+
+    # ── View → PreviewPanel ───────────────────────────────
+
+    def _on_entity_selected(self, entity_id: str) -> None:
+        """User clicked a row — push metadata to the preview panel."""
+        entity = self.store.get(entity_id)
+        if entity is None:
+            self._preview.clear()
+            return
+        self._preview.show_entity(_build_preview_rows(entity))
 
     # ── View → AppController ──────────────────────────────
 
@@ -66,3 +86,28 @@ class VariablesPresenter(QObject):
     def _on_entity_open_requested(self, entity_id: str):
         """User double-clicked a row — open the entity in the workspace."""
         self.controller.open_in_workspace(entity_id)
+
+
+# ── Preview metadata builders ─────────────────────────────────────────────────
+
+def _build_preview_rows(entity) -> list[tuple[str, str]]:
+    """Return (label, value) pairs for any entity type."""
+    entity_type = type(entity).__name__.removesuffix("Entity")
+    rows: list[tuple[str, str]] = [
+        ("Name", getattr(entity, "name", "—")),
+        ("Type", entity_type),
+    ]
+    # Type-specific rows
+    data = getattr(entity, "data", None)
+    if entity_type == "Dataset" and data is not None:
+        rows.append(("Rows", str(len(data))))
+        rows.append(("Columns", str(len(data.columns))))
+    elif entity_type == "Image" and data is not None:
+        h, w = data.shape[:2]
+        rows.append(("Width", str(w)))
+        rows.append(("Height", str(h)))
+    file_path = getattr(entity, "file_path", None)
+    if file_path:
+        from pathlib import Path
+        rows.append(("File", Path(file_path).name))
+    return rows

@@ -29,9 +29,12 @@ class ImagePanelPresenter(QObject):
         self._store = store
         self._controller = controller
         self._entity_id = entity_id
+        self._data: np.ndarray | None = None
 
         self._load_image()
         view.selectionConfirmed.connect(self._on_selection_confirmed)
+        view.canvas.pixelHovered.connect(self._on_pixel_hovered)
+        view.canvas.pixelLeft.connect(self._on_pixel_left)
 
     # ── Store → View ──────────────────────────────────────────
 
@@ -40,10 +43,22 @@ class ImagePanelPresenter(QObject):
         entity = self._store.get(self._entity_id)
         if entity is None or entity.data is None:
             return
+        self._data = entity.data
         pixmap = self._ndarray_to_pixmap(entity.data)
         self._view.set_pixmap(pixmap)
 
     # ── View → AppController ──────────────────────────────────
+
+    def _on_pixel_hovered(self, x: int, y: int) -> None:
+        if self._data is None:
+            return
+        r, g, b = int(self._data[y, x, 0]), int(self._data[y, x, 1]), int(self._data[y, x, 2])
+        self._controller.set_view_context(
+            [f"X: {x}", f"Y: {y}", f"RGB: ({r}, {g}, {b})"]
+        )
+
+    def _on_pixel_left(self) -> None:
+        self._controller.set_view_context([])
 
     def _on_selection_confirmed(self, pixmap: QPixmap) -> None:
         """User confirmed a selection — create a CoreEntity in the Store."""

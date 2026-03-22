@@ -74,7 +74,7 @@ def main() -> None:
     # -- UI - presenters ------------------------------------------
     ribbon_presenter = RibbonPresenter(ribbon, controller)
     file_presenter = FilePresenter(file_browser, store, controller)
-    variables_presenter = VariablesPresenter(variables_list, store, controller)
+    variables_presenter = VariablesPresenter(variables_list, preview_panel, store, controller)
     workspace_presenter = WorkspacePresenter(workspace_view, workspace_state, store, controller)
 
     if dev_log:
