@@ -23,6 +23,7 @@ from src.application.services.session_archive import save as archive_save
 from src.application.services.session_archive import load as archive_load
 from src.application.services.session_archive import ArchiveError
 from src.application.workspace_state import WorkspaceState
+from src.application.status_context import StatusContext
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,15 @@ class AppController:
         self._workspace_state = workspace_state
         self._component_watcher = component_watcher
         self._session_temp_dir: tempfile.TemporaryDirectory | None = None
+        self.status_context = StatusContext()
+
+    def set_view_context(self, parts: list[str]) -> None:
+        """Post context strings to the status bar right side.
+
+        Called by presenters to report view-local state such as cursor
+        coordinates or row/column position. Last call wins — no queuing.
+        """
+        self.status_context.set(parts)
 
     def _watch(self, name: str, obj: object) -> None:
         """Register a runtime-created component with the dev logger (if any)."""

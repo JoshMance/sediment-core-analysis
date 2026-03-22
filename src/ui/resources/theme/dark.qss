@@ -230,6 +230,10 @@ QTableView QHeaderView::section:last {
     border-right: none;
 }
 
+QTableView QHeaderView::section:hover {
+    background-color: @bg_hover;
+}
+
 /* -- Header views ------------------------------------------- */
 QHeaderView {
     background-color: @bg_panel;

@@ -95,8 +95,8 @@ class _DataFrameTableModel(QAbstractTableModel):
         value = self._df.iloc[index.row(), index.column()]
         if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
             if pd.isna(value):
-                return "" if role == Qt.ItemDataRole.DisplayRole else None
-            return str(value) if role == Qt.ItemDataRole.DisplayRole else value
+                return ""
+            return str(value)
         return None
 
     def headerData(
@@ -168,6 +168,8 @@ class DatasetPanel(QWidget):
     cellEdited = Signal(int, int, object)
     columnRenamed = Signal(str, str)
     columnTypeChangeRequested = Signal(str, str)
+    selectionChanged = Signal(int, int)  # row, col (0-based)
+    columnSelected = Signal(int)           # col (0-based), entire column clicked
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -198,6 +200,12 @@ class DatasetPanel(QWidget):
         # Cell edits
         self._model.dataChanged.connect(self._on_model_data_changed)
 
+        # Selection / hover
+        self._table.viewport().setMouseTracking(True)
+        self._table.selectionModel().currentChanged.connect(self._on_current_changed)
+        self._table.entered.connect(self._on_item_entered)
+        self._table.horizontalHeader().sectionClicked.connect(self._on_header_section_clicked)
+
     # ── Public API called by presenter ────────────────────────────
 
     def load_dataframe(
@@ -212,6 +220,20 @@ class DatasetPanel(QWidget):
         self._model.dataChanged.connect(self._on_model_data_changed)
 
     # ── Internal signal handlers ──────────────────────────────────
+
+    def _on_current_changed(self, current: QModelIndex, _previous: QModelIndex) -> None:
+        """Emit selectionChanged whenever the active cell moves (click / keyboard)."""
+        if current.isValid():
+            self.selectionChanged.emit(current.row(), current.column())
+
+    def _on_item_entered(self, index: QModelIndex) -> None:
+        """Emit selectionChanged when the mouse hovers over a cell."""
+        if index.isValid():
+            self.selectionChanged.emit(index.row(), index.column())
+
+    def _on_header_section_clicked(self, col: int) -> None:
+        """Emit columnSelected when a column header is clicked."""
+        self.columnSelected.emit(col)
 
     def _on_model_data_changed(
         self,

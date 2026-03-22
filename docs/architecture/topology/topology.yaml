@@ -52,6 +52,15 @@ application:
         - new_session()
         - save_session(path)
         - load_session(path)
+        - set_view_context(parts)
+
+    - name: StatusContext
+      lifetime: long-lived
+      owned_by: AppController
+      signals:
+        - contextChanged(parts)
+      actions:
+        - set(parts)
 
     - name: WorkspaceState
       lifetime: long-lived
@@ -98,6 +107,7 @@ ui:
           Store.entityRemoved,
           Store.entityUpdated,
           Store.storeReset,
+          StatusContext.contextChanged,
         ]
       calls: []
 
@@ -122,3 +132,6 @@ ui:
       lifetime: per-panel
       subscribes_to: [Store.entityUpdated]
       calls: [AppController]
+      view_signals:
+        - selectionChanged(row, col)   # cell hover/click → set_view_context([Col: N, Row: N])
+        - columnSelected(col)          # header click → set_view_context([Col: N, Row: N, Count: N, ...])

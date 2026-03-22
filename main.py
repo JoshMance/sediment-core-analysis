@@ -110,7 +110,7 @@ def main() -> None:
     window.resize(1200, 800)
     status_bar = StatusBar()
     window.setStatusBar(status_bar)
-    status_bar_presenter = StatusBarPresenter(status_bar, store)
+    status_bar_presenter = StatusBarPresenter(status_bar, store, controller.status_context)
     status_bar.show_message("Ready")
     window.showMaximized()
 

@@ -31,10 +31,15 @@ class DatasetPanelPresenter(QObject):
 
         self._load_data()
 
+        self._current_row: int = -1
+        self._current_col: int = -1
+
         # View → AppController
         view.cellEdited.connect(self._on_cell_edited)
         view.columnRenamed.connect(self._on_column_renamed)
         view.columnTypeChangeRequested.connect(self._on_column_type_change_requested)
+        view.selectionChanged.connect(self._on_selection_changed)
+        view.columnSelected.connect(self._on_column_selected)
 
         # Store → View  (refresh on any mutation to this entity)
         store.entityUpdated.connect(self._on_entity_updated)
@@ -65,8 +70,48 @@ class DatasetPanelPresenter(QObject):
     def _on_column_type_change_requested(self, col_name: str, new_type: str) -> None:
         self._controller.change_dataset_column_type(self._entity_id, col_name, new_type)
 
+    def _on_selection_changed(self, row: int, col: int) -> None:
+        self._current_row = row
+        self._current_col = col
+        self._controller.set_view_context([f"Col: {col + 1}", f"Row: {row + 1}"])
+
+    def _on_column_selected(self, col: int) -> None:
+        entity = self._store.get(self._entity_id)
+        if entity is None or entity.data is None or col >= len(entity.columns):
+            return
+        col_name = entity.columns[col]
+        series = entity.data.iloc[:, col]
+        count = int(series.notna().sum())
+
+        # Keep current row/col in slots 0 and 1 so they don't disappear
+        col_text = f"Col: {self._current_col + 1}" if self._current_col >= 0 else ""
+        row_text = f"Row: {self._current_row + 1}" if self._current_row >= 0 else ""
+
+        col_type = entity.column_types.get(col_name, "Text")
+        if col_type == "Number":
+            numeric = pd.to_numeric(series, errors="coerce")
+            parts = [
+                col_text,
+                row_text,
+                f"Count: {count}",
+                f"Sum: {_fmt_number(numeric.sum())}",
+                f"Average: {_fmt_number(numeric.mean())}",
+            ]
+        else:
+            parts = [col_text, row_text, f"Count: {count}"]
+        self._controller.set_view_context(parts)
+
 
 # ── Display helpers ───────────────────────────────────────────────────────────
+
+def _fmt_number(value: float) -> str:
+    """Format a number for status bar display — integers without decimals."""
+    if value != value:  # NaN
+        return "—"
+    if value == int(value):
+        return f"{int(value)}"
+    return f"{value:.2f}"
+
 
 def _apply_display_types(
     df: pd.DataFrame,
