@@ -346,18 +346,18 @@ added as the application grows beyond initial development.
 
 ## Self-Designed
 
-| What                    | Kind      | Size               | Notes                                                              |
-| ----------------------- | --------- | ------------------ | ------------------------------------------------------------------ |
-| Entity classes          | Entity    | ~20-50 lines each  | `dataclasses`, with `to_dict()`/`from_dict()`                      |
-| Store                   | Component | ~100-150 lines     | `QObject` + dict. Emits signals on change.                         |
-| AppController           | Component | ~40-200 lines      | Plain class. Calls Services, constructs Entities, writes to Store. |
-| Application Services    | Service   | ~50 lines          | Stateless. Internal to `application/`. E.g. image loading.         |
-| QUndoCommand subclasses | —         | ~20-40 lines each  | One per mutation type (planned).                                   |
-| Presenters              | Component | ~50-100 lines each | One per panel. Wires Store ↔ View.                                 |
-| Views                   | Component | Various            | PySide6 widgets. Display only.                                     |
-| Session serializer      | Service   | ~50 lines          | `json.dump`/`json.load` with Entity `to_dict()`/`from_dict()`.     |
-| Science functions       | —         | Various            | Domain-specific calculations in `src_legacy/science/functions/`    |
-| Reference data          | —         | Static files       | Scientific reference data in `src_legacy/science/data/`            |
+| What                    | Kind      | Notes                                                              |
+| ----------------------- | --------- | ------------------------------------------------------------------ |
+| Entity classes          | Entity    | `dataclasses`, with `to_dict()`/`from_dict()`                      |
+| Store                   | Component | `QObject` + dict. Emits signals on change.                         |
+| AppController           | Component | Plain class. Calls Services, constructs Entities, writes to Store. |
+| Application Services    | Service   | Stateless. Internal to `application/`. E.g. image loading.         |
+| QUndoCommand subclasses | —         | One per mutation type (planned).                                   |
+| Presenters              | Component | One per panel. Wires Store ↔ View.                                 |
+| Views                   | Component | PySide6 widgets. Display only.                                     |
+| Session serializer      | Service   | `json.dump`/`json.load` with Entity `to_dict()`/`from_dict()`.     |
+| Science scripts         | —         | Single-file modules in `src/science/` (e.g. `munsell.py`)          |
+| Science reference data  | —         | Static JSON files in `src/science/data/`                           |
 
 ## Third-Party Libraries
 

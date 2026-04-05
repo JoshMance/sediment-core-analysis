@@ -64,6 +64,9 @@ application:
 
     - name: WorkspaceState
       lifetime: long-lived
+      subscribes_to:
+        - Store.entityRemoved
+        - Store.storeReset
       signals:
         - panelAdded(entry)
         - panelRemoved(entity_id)
@@ -135,7 +138,7 @@ ui:
       calls: [AppController]
       view_signals:
         - ImageCanvas.pixelHovered(x, y) # mouse over image → set_view_context([X: N, Y: N, RGB: (R, G, B)])
-        - ImageCanvas.pixelLeft()        # cursor leaves image → set_view_context([])
+        - ImageCanvas.pixelLeft() # cursor leaves image → set_view_context([])
 
     - name: DatasetPanelPresenter
       view: DatasetPanel
