@@ -1,3 +1,7 @@
+# NOTE: FileBrowser is currently unused in the shell layout.
+# Retained for potential future use (e.g. workspace/project browser).
+# See docs/architecture/overview.md for details.
+
 from PySide6.QtWidgets import (QWidget, QVBoxLayout,
                                 QTreeView, QHeaderView, QFileSystemModel,
                                 QLabel)

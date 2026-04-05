@@ -38,6 +38,7 @@ class WorkspacePresenter(QObject):
         workspace_state.panelRemoved.connect(self._on_panel_removed)
         workspace_state.panelFocusRequested.connect(self._view.focus_tab)
         view.tabClosed.connect(self._on_tab_closed)
+        view.entityDropped.connect(self._on_entity_dropped)
         store.entityUpdated.connect(self._on_entity_updated)
 
     # ── WorkspaceState → View ─────────────────────────────────
@@ -67,6 +68,10 @@ class WorkspacePresenter(QObject):
     def _on_tab_closed(self, entity_id: str) -> None:
         self._panels.pop(entity_id, None)
         self._workspace_state.close(entity_id)
+
+    def _on_entity_dropped(self, entity_id: str) -> None:
+        """User dropped an entity onto the workspace — open it like a double-click."""
+        self._controller.open_in_workspace(entity_id)
 
     # ── Panel factory ─────────────────────────────────────────
 

@@ -15,13 +15,13 @@ Tabs contain groups; groups contain buttons. Each button has a string label that
 Ribbon (QTabWidget)
 └── Tab  e.g. "Home"
     └── RibbonGroup  e.g. "File"
-        └── RibbonButton  e.g. "Save As"
+        └── RibbonButton  e.g. "Save"
 ```
 
 Current tabs and their groups:
 
 - **Home** — session management and asset loading. File (`New`, `Open`, `Save`), Import (`Load Image`, `Load Data`, `Load Map`), Edit (`Undo`, `Redo`)
-- **View** — viewing, editing, and preparing loaded entities. Calibrate (`Calibrate`), Core (`Core Studio`)
+- **Core** — core creation and preparation. Core (`Core Studio`)
 - **Analysis** — discrete analysis actions on entities. Core (`Analyse`)
 - **Map** — 3D simulation and spatial visualisation. _(no buttons yet)_
 - **Export** — format and download results for use outside the software. _(no buttons yet)_

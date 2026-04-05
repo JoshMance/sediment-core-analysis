@@ -281,6 +281,16 @@ QTreeWidget::item {
     padding: 2px 0;
 }
 
+QTreeView::branch:has-children:closed,
+QTreeWidget::branch:has-children:closed {
+    image: url(@icons_dir/branch-closed.svg);
+}
+
+QTreeView::branch:has-children:open,
+QTreeWidget::branch:has-children:open {
+    image: url(@icons_dir/branch-open.svg);
+}
+
 QTreeView::item:hover,
 QTreeWidget::item:hover {
     background-color: @bg_hover_tint;
@@ -289,10 +299,6 @@ QTreeWidget::item:hover {
 QTreeView::item:selected,
 QTreeWidget::item:selected {
     background-color: @selection;
-}
-
-QTreeView::branch {
-    background-color: @bg_panel;
 }
 
 QTreeView QHeaderView::section,

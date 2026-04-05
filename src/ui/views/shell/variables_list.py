@@ -6,10 +6,13 @@ The Presenter tells it what to show via add_row / remove_row.
 """
 from pathlib import Path
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem,
-    QHeaderView, QMenu, QInputDialog, QLabel,
+    QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QTreeWidgetItemIterator,
+    QHeaderView, QMenu, QInputDialog, QLabel, QFileIconProvider,
 )
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal, Qt, QFileInfo, QMimeData
+from PySide6.QtGui import QDrag, QPixmap, QPainter
+
+ENTITY_MIME_TYPE = "application/x-entity-id"
 
 
 class VariablesList(QWidget):
@@ -25,22 +28,24 @@ class VariablesList(QWidget):
         super().__init__(parent)
 
         # ── Tree widget ─────────────────────────────────────
+        self._icon_provider = QFileIconProvider()
+
         self._tree = QTreeWidget()
-        self._tree.setHeaderLabels(["Name", "Type"])
-        self._tree.setColumnCount(3)
-        self._tree.setColumnHidden(2, True)
-        self._tree.setRootIsDecorated(False)
+        self._tree.setHeaderHidden(True)
+        self._tree.setColumnCount(2)
+        self._tree.setColumnHidden(1, True)
+        self._tree.setRootIsDecorated(True)
         self._tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
+        self._tree.setDragEnabled(True)
 
         header = self._tree.header()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
         self._tree.currentItemChanged.connect(self._on_selection_changed)
         self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
         self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._tree.customContextMenuRequested.connect(self._on_context_menu_requested)
+        self._tree.startDrag = self._start_drag
 
         # ── Layout ──────────────────────────────────────────
         panel_header = QLabel("Variables")
@@ -54,44 +59,114 @@ class VariablesList(QWidget):
 
     # ── Public interface (called by Presenter) ──────────────
 
-    def add_row(self, entity_id: str, name: str, entity_type: str) -> None:
-        item = QTreeWidgetItem([name, entity_type, entity_id])
-        self._tree.addTopLevelItem(item)
+    def add_row(
+        self,
+        entity_id: str,
+        name: str,
+        entity_type: str,
+        parent_id: str | None = None,
+        file_path: str | None = None,
+    ) -> None:
+        item = QTreeWidgetItem([name, entity_id])
+        if file_path:
+            item.setIcon(0, self._icon_provider.icon(QFileInfo(file_path)))
+        else:
+            item.setIcon(0, self._icon_provider.icon(QFileIconProvider.IconType.File))
+        parent_item = self._find_item(parent_id) if parent_id else None
+        if parent_item is not None:
+            parent_item.addChild(item)
+            parent_item.setExpanded(True)
+        else:
+            self._tree.addTopLevelItem(item)
 
     def update_row_name(self, entity_id: str, new_name: str) -> None:
-        for i in range(self._tree.topLevelItemCount()):
-            item = self._tree.topLevelItem(i)
-            if item and item.text(2) == entity_id:
-                item.setText(0, new_name)
-                break
+        item = self._find_item(entity_id)
+        if item is not None:
+            item.setText(0, new_name)
 
     def remove_row(self, entity_id: str) -> None:
-        for i in range(self._tree.topLevelItemCount()):
-            item = self._tree.topLevelItem(i)
-            if item and item.text(2) == entity_id:
-                self._tree.takeTopLevelItem(i)
-                break
+        item = self._find_item(entity_id)
+        if item is None:
+            return
+        # Re-parent children to the tree root before removing
+        while item.childCount():
+            child = item.takeChild(0)
+            self._tree.addTopLevelItem(child)
+        parent = item.parent()
+        if parent is not None:
+            parent.removeChild(item)
+        else:
+            idx = self._tree.indexOfTopLevelItem(item)
+            if idx >= 0:
+                self._tree.takeTopLevelItem(idx)
 
     def clear_rows(self) -> None:
         self._tree.clear()
 
     def row_count(self) -> int:
-        return self._tree.topLevelItemCount()
+        """Total number of items in the tree (all levels)."""
+        count = 0
+        iterator = QTreeWidgetItemIterator(self._tree)
+        while iterator.value():
+            count += 1
+            iterator += 1
+        return count
+
+    # ── Tree search ─────────────────────────────────────────
+
+    def _find_item(self, entity_id: str | None) -> QTreeWidgetItem | None:
+        """Find an item anywhere in the tree by entity_id (column 1, hidden)."""
+        if entity_id is None:
+            return None
+        iterator = QTreeWidgetItemIterator(self._tree)
+        while iterator.value():
+            item = iterator.value()
+            if item.text(1) == entity_id:
+                return item
+            iterator += 1
+        return None
+
+    # ── Drag support ────────────────────────────────────────
+
+    def _start_drag(self, supported_actions) -> None:
+        """Initiate a drag carrying the selected entity_id as mime data."""
+        item = self._tree.currentItem()
+        if item is None:
+            return
+        entity_id = item.text(1)
+        mime = QMimeData()
+        mime.setData(ENTITY_MIME_TYPE, entity_id.encode("utf-8"))
+
+        # Semi-opaque snapshot of the row as the drag pixmap.
+        rect = self._tree.visualItemRect(item)
+        pixmap = self._tree.viewport().grab(rect)
+        faded = QPixmap(pixmap.size())
+        faded.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(faded)
+        painter.setOpacity(0.6)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.end()
+
+        drag = QDrag(self._tree)
+        drag.setMimeData(mime)
+        drag.setPixmap(faded)
+        drag.setHotSpot(rect.center() - rect.topLeft())
+        drag.exec(Qt.DropAction.CopyAction)
 
     # ── Internal slots ──────────────────────────────────────
 
     def _on_selection_changed(self, current: QTreeWidgetItem | None, _previous):
         if current is not None:
-            self.entitySelected.emit(current.text(2))
+            self.entitySelected.emit(current.text(1))
 
     def _on_item_double_clicked(self, item, _column) -> None:
-        self.entityOpenRequested.emit(item.text(2))
+        self.entityOpenRequested.emit(item.text(1))
 
     def _on_context_menu_requested(self, pos) -> None:
         item = self._tree.itemAt(pos)
         if item is None:
             return
-        entity_id = item.text(2)
+        entity_id = item.text(1)
         current_name = item.text(0)
 
         menu = QMenu(self)

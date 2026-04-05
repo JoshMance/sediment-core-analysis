@@ -25,6 +25,7 @@ from src.application.services.session_archive import load as archive_load
 from src.application.services.session_archive import ArchiveError
 from src.application.workspace_state import WorkspaceState
 from src.application.status_context import StatusContext
+from src.application.recent_dirs import RecentDirs
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ class AppController:
         self._component_watcher = component_watcher
         self._session_temp_dir: tempfile.TemporaryDirectory | None = None
         self.status_context = StatusContext()
+        self.recent_dirs = RecentDirs()
 
     def set_view_context(self, parts: list[str]) -> None:
         """Post context strings to the status bar right side.

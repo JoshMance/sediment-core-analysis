@@ -33,6 +33,7 @@ class VariablesPresenter(QObject):
         # ── Listen to Store signals ─────────────────────────
         self.store.entityAdded.connect(self._on_entity_added)
         self.store.entityRemoved.connect(self._on_entity_removed)
+        self.store.storeReset.connect(self._on_store_reset)
 
         # ── Listen to View signals ──────────────────────────
         self.view.deleteRequested.connect(self._on_delete_requested)
@@ -50,11 +51,29 @@ class VariablesPresenter(QObject):
         entity = self.store.get(entity_id)
         name = getattr(entity, "name", str(entity_id))
         display_type = entity_type.removesuffix("Entity")
-        self.view.add_row(entity_id, name, display_type)
+
+        # Determine parent for tree nesting.
+        parent_id = getattr(entity, "parent_id", None) or getattr(
+            entity, "source_image_id", None
+        )
+
+        # File path for OS-native icon.
+        file_path = getattr(entity, "file_path", None)
+        file_path_str = str(file_path) if file_path else None
+
+        self.view.add_row(
+            entity_id, name, display_type,
+            parent_id=parent_id, file_path=file_path_str,
+        )
 
     def _on_entity_removed(self, entity_id: str, entity_type: str):
         """Store says an entity was removed — tell the view."""
         self.view.remove_row(entity_id)
+        self._preview.clear()
+
+    def _on_store_reset(self) -> None:
+        """Store was cleared (new/load session) — wipe the tree."""
+        self.view.clear_rows()
         self._preview.clear()
 
     # ── View → PreviewPanel ───────────────────────────────

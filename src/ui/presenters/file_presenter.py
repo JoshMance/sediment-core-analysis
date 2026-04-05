@@ -1,6 +1,7 @@
 """
 FilePresenter - connects FileBrowser view to AppController
-
+NOTE: Currently unused — FileBrowser is not wired into the shell layout.
+Retained for potential future use.
 Follows MVP pattern where Presenter:
 - Handles View events -> calls AppController methods
 - Handles Store events -> updates the View's state

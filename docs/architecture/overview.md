@@ -139,9 +139,12 @@ without building a custom one.
 
 ```python
 class AppController:
-    def __init__(self, store: Store, workspace_state: WorkspaceState | None = None):
+    def __init__(self, store, workspace_state=None, component_watcher=None):
         self._store = store
         self._workspace_state = workspace_state
+        self._component_watcher = component_watcher
+        self.status_context = StatusContext()
+        self.recent_dirs = RecentDirs()
 
     def create_image_entity(self, file_path: str) -> str:
         data = load_image(file_path)          # services/load_image.py
@@ -212,8 +215,8 @@ class EntityListPresenter(QObject):
         self.controller = controller
 
         # Listen to Store changes
-        self.store.entity_added.connect(self._on_entity_added)
-        self.store.entity_removed.connect(self._on_entity_removed)
+        self.store.entityAdded.connect(self._on_entity_added)
+        self.store.entityRemoved.connect(self._on_entity_removed)
 
         # Listen to View events
         self.view.delete_requested.connect(self._on_delete_requested)
@@ -237,7 +240,7 @@ and react independently.
 
 | What           | Implementation                                                                                        |
 | -------------- | ----------------------------------------------------------------------------------------------------- |
-| Main window    | `QMainWindow` with `QDockWidget` for each panel/sidebar.                                              |
+| Main window    | `QMainWindow` with nested `QVBoxLayout` / `QHBoxLayout` for fixed layout.                             |
 | Shell views    | Custom `QWidget` subclasses in `shell/`.                                                              |
 | Runtime panels | Custom `QWidget` subclasses in `panels/`.                                                             |
 | Lists/trees    | `QListWidget`, `QTreeWidget` (simple), or `QListView`/`QTreeView` + `QAbstractItemModel` (if needed). |
@@ -245,10 +248,10 @@ and react independently.
 
 **`shell/` vs `panels/` — the key structural rule:**
 
-| Folder    | Rule                                                                                           | Examples                                                  |
-| --------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `shell/`  | Views that are **created at startup and persist** for the lifetime of the application.         | `Ribbon`, `FileBrowser`, `VariablesList`, `WorkspaceView` |
-| `panels/` | Views that are **created at runtime** on demand (e.g. when the user opens or creates a thing). | `ImagePanel`, `CoreStudioPanel`, entity editors           |
+| Folder    | Rule                                                                                           | Examples                                                                |
+| --------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `shell/`  | Views that are **created at startup and persist** for the lifetime of the application.         | `Ribbon`, `VariablesList`, `PreviewPanel`, `StatusBar`, `WorkspaceView` |
+| `panels/` | Views that are **created at runtime** on demand (e.g. when the user opens or creates a thing). | `ImagePanel`, `CoreStudioPanel`, entity editors                         |
 
 Nothing in `shell/` is created or destroyed while the app is running. Nothing in `panels/` exists at startup.
 
@@ -330,37 +333,36 @@ added as the application grows beyond initial development.
 
 ## PySide6 Classes Used
 
-| PySide6 Class                 | Where                                  | Purpose                    |
-| ----------------------------- | -------------------------------------- | -------------------------- |
-| `QApplication`                | App entry point                        | Event loop                 |
-| `QMainWindow`                 | Root View                              | Dock areas, menus, toolbar |
-| `QDockWidget`                 | Panel/Sidebar Views                    | 5 panels + 2-3 sidebars    |
-| `QWidget`                     | Panel contents                         | Custom panel interiors     |
-| `QListWidget` / `QTreeWidget` | Views                                  | Simple list/tree display   |
-| `QUndoStack`                  | AppController                          | Undo/redo management       |
-| `QUndoCommand`                | AppController                          | Each undoable action       |
-| `QTabWidget`                  | WorkspaceView                          | Tabbed panel host          |
-| `QObject`                     | Store, Presenters, WorkspaceState      | Signals/slots              |
-| `Signal` / `Slot`             | Store → Presenters, Views → Presenters | Communication              |
-| `QAction`                     | Views                                  | Menu/toolbar items         |
-| `QFileDialog`                 | App                                    | Open/save dialogs          |
+| PySide6 Class                 | Where                                  | Purpose                  |
+| ----------------------------- | -------------------------------------- | ------------------------ |
+| `QApplication`                | App entry point                        | Event loop               |
+| `QMainWindow`                 | Root View                              | Central widget, menus    |
+| `QWidget`                     | Panel contents                         | Custom panel interiors   |
+| `QListWidget` / `QTreeWidget` | Views                                  | Simple list/tree display |
+| `QUndoStack`                  | AppController                          | Undo/redo management     |
+| `QUndoCommand`                | AppController                          | Each undoable action     |
+| `QTabWidget`                  | WorkspaceView                          | Tabbed panel host        |
+| `QObject`                     | Store, Presenters, WorkspaceState      | Signals/slots            |
+| `Signal` / `Slot`             | Store → Presenters, Views → Presenters | Communication            |
+| `QAction`                     | Views                                  | Menu/toolbar items       |
+| `QFileDialog`                 | App                                    | Open/save dialogs        |
 
 ## Self-Designed
 
-| What                    | Kind      | Notes                                                              |
-| ----------------------- | --------- | ------------------------------------------------------------------ |
-| CalibrationEntity       | Entity    | `dataclasses`, spatial calibration (`mm_per_px`)                   |
-| Entity classes          | Entity    | `dataclasses`, with `to_dict()`/`from_dict()`                      |
-| Store                   | Component | `QObject` + dict. Emits signals on change.                         |
-| AppController           | Component | Plain class. Calls Services, constructs Entities, writes to Store. |
-| Application Services    | Service   | Stateless. Internal to `application/`. E.g. image loading.         |
-| QUndoCommand subclasses | —         | One per mutation type (planned).                                   |
-| Presenters              | Component | One per panel. Wires Store ↔ View.                                 |
-| Views                   | Component | PySide6 widgets. Display only.                                     |
-| Session serializer      | Service   | `json.dump`/`json.load` with Entity `to_dict()`/`from_dict()`.     |
-| Core Studio panel       | Component | Placeholder panel for future image→core workflow                   |
-| Science scripts         | —         | Single-file modules in `src/science/` (e.g. `munsell.py`)          |
-| Science reference data  | —         | Static JSON files in `src/science/data/`                           |
+| What                    | Kind      | Notes                                                                             |
+| ----------------------- | --------- | --------------------------------------------------------------------------------- |
+| CalibrationEntity       | Entity    | `dataclasses`, spatial calibration (`mm_per_px`)                                  |
+| Entity classes          | Entity    | `dataclasses`, with `to_dict()`/`from_dict()`                                     |
+| Store                   | Component | `QObject` + dict. Emits signals on change.                                        |
+| AppController           | Component | Plain class. Calls Services, constructs Entities, writes to Store.                |
+| Application Services    | Service   | Stateless. Internal to `application/`. E.g. image loading.                        |
+| QUndoCommand subclasses | —         | One per mutation type (planned).                                                  |
+| Presenters              | Component | One per panel. Wires Store ↔ View.                                                |
+| Views                   | Component | PySide6 widgets. Display only.                                                    |
+| Session serializer      | Service   | `json.dump`/`json.load` with Entity `to_dict()`/`from_dict()`.                    |
+| Core Studio panel       | Component | Column-based panel (depth, image, layers, RGB, CIELab) with toolbar and drag-drop |
+| Science scripts         | —         | Single-file modules in `src/science/` (e.g. `munsell.py`)                         |
+| Science reference data  | —         | Static JSON files in `src/science/data/`                                          |
 
 ## Third-Party Libraries
 
@@ -379,10 +381,11 @@ added as the application grows beyond initial development.
 ## Data Flow
 
 ```
-User double-clicks an image file
-  → FileBrowser emits fileDoubleClicked(path)
-  → FilePresenter receives signal, checks extension
-  → FilePresenter calls controller.create_image_entity(path)
+User clicks "Load Image" in the Ribbon
+  → Ribbon emits buttonClicked("Load Image")
+  → RibbonPresenter opens a QFileDialog (starting in recent_dirs "image" directory)
+  → User selects a file; RibbonPresenter records the directory via recent_dirs
+  → RibbonPresenter calls controller.create_image_entity(path)
   → AppController calls load_image(path) → pixel data
   → AppController constructs ImageEntity(name, file_path, data)
   → AppController calls store.add(entity)

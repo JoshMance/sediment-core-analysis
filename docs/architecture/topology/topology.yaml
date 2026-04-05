@@ -66,6 +66,14 @@ application:
       actions:
         - set(parts)
 
+    - name: RecentDirs
+      lifetime: long-lived
+      owned_by: AppController
+      actions:
+        - get(category)
+        - set(category, directory)
+        - clear()
+
     - name: WorkspaceState
       lifetime: long-lived
       subscribes_to:
@@ -91,6 +99,7 @@ application:
 ui:
   presenters:
     - name: FilePresenter
+      status: unused # retained for potential future use
       view: FileBrowser
       subscribes_to: []
       calls: [AppController]
@@ -98,20 +107,34 @@ ui:
     - name: VariablesPresenter
       views: [VariablesList, PreviewPanel]
       subscribes_to:
-        [Store.entityAdded, Store.entityRemoved, Store.entityUpdated]
+        [
+          Store.entityAdded,
+          Store.entityRemoved,
+          Store.entityUpdated,
+          Store.storeReset,
+        ]
       calls: [AppController]
       view_signals:
         - VariablesList.entitySelected(entity_id) # selection → preview.show_entity()
         - VariablesList.deleteRequested(entity_id)
         - VariablesList.renameRequested(entity_id, new_name)
         - VariablesList.entityOpenRequested(entity_id)
-      note: PreviewPanel is driven by VariablesPresenter (not its own presenter)
+      note: >
+        PreviewPanel is driven by VariablesPresenter (not its own presenter)
         because its content is entirely determined by VariablesList selection.
+        VariablesList uses a hierarchical QTreeWidget — child entities
+        (cropped images, cores) are nested under their parent image.
+        Supports drag (entity_id via application/x-entity-id mime type)
+        to enable drop targets like CoreStudioPanel.
 
     - name: RibbonPresenter
       view: Ribbon
       subscribes_to: []
       calls: [AppController]
+      notes: >
+        Uses AppController.recent_dirs (RecentDirs) to remember the
+        last-used directory per file category ("session", "image",
+        "data", "map"). Categories are plain strings — no enum needed.
 
     - name: StatusBarPresenter
       view: StatusBar
@@ -132,8 +155,10 @@ ui:
         - WorkspaceState.panelRemoved
         - WorkspaceState.panelFocusRequested
         - Store.entityUpdated
-      calls: [WorkspaceState]
+      calls: [WorkspaceState, AppController]
       manages: [ImagePanelPresenter, DatasetPanelPresenter, CoreStudioPresenter]
+      view_signals:
+        - WorkspaceView.entityDropped(entity_id) # entity dropped onto workspace → open_in_workspace()
 
     - name: ImagePanelPresenter
       view: ImagePanel
@@ -160,4 +185,5 @@ ui:
       lifetime: per-panel (singleton)
       subscribes_to: []
       calls: [AppController]
-      view_signals: []
+      view_signals:
+        - CoreStudioPanel.imageDropped(entity_id) # entity dropped onto empty panel

@@ -14,7 +14,6 @@ from src.application import AppController
 from src.application.workspace_state import WorkspaceState
 
 # UI layer - views
-from src.ui.views.shell.file_browser import FileBrowser
 from src.ui.views.shell.variables_list import VariablesList
 from src.ui.views.shell.preview import PreviewPanel
 from src.ui.views.shell.ribbon.ribbon import Ribbon
@@ -22,7 +21,6 @@ from src.ui.views.shell.workspace import WorkspaceView
 from src.ui.views.shell.status_bar import StatusBar
 
 # UI layer - presenters
-from src.ui.presenters.file_presenter import FilePresenter
 from src.ui.presenters.variables_presenter import VariablesPresenter
 from src.ui.presenters.ribbon_presenter import RibbonPresenter
 from src.ui.presenters.workspace_presenter import WorkspacePresenter
@@ -63,8 +61,6 @@ def main() -> None:
     # -- UI - views -----------------------------------------------
     ribbon = Ribbon()
     watch("Ribbon", ribbon)
-    file_browser = FileBrowser()
-    watch("FileBrowser", file_browser)
     variables_list = VariablesList()
     watch("VariablesList", variables_list)
     preview_panel = PreviewPanel()
@@ -73,7 +69,6 @@ def main() -> None:
 
     # -- UI - presenters ------------------------------------------
     ribbon_presenter = RibbonPresenter(ribbon, controller)
-    file_presenter = FilePresenter(file_browser, store, controller)
     variables_presenter = VariablesPresenter(variables_list, preview_panel, store, controller)
     workspace_presenter = WorkspacePresenter(workspace_view, workspace_state, store, controller)
 
@@ -81,20 +76,20 @@ def main() -> None:
         dev_log.show()
 
     # -- Layout ---------------------------------------------------
-    right_column = QWidget()
-    right_layout = QVBoxLayout(right_column)
-    right_layout.setContentsMargins(0, 0, 0, 0)
-    right_layout.setSpacing(4)
-    right_layout.addWidget(variables_list, 1)
-    right_layout.addWidget(preview_panel)
+    left_column = QWidget()
+    left_layout = QVBoxLayout(left_column)
+    left_layout.setContentsMargins(0, 0, 0, 0)
+    left_layout.setSpacing(4)
+    left_layout.addWidget(variables_list, 1)
+    left_layout.addWidget(preview_panel)
 
     bottom_row = QWidget()
     bottom_layout = QHBoxLayout(bottom_row)
     bottom_layout.setContentsMargins(4, 4, 4, 4)
     bottom_layout.setSpacing(4)
-    bottom_layout.addWidget(file_browser, 1)
-    bottom_layout.addWidget(workspace_view, 3)
-    bottom_layout.addWidget(right_column, 1)
+    left_column.setMaximumWidth(280)
+    bottom_layout.addWidget(left_column, 1)
+    bottom_layout.addWidget(workspace_view, 4)
 
     central = QWidget()
     central_layout = QVBoxLayout(central)

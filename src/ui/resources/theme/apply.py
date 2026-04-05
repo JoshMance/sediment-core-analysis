@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication
 from src.ui.resources.theme.colors import DARK, LIGHT
 
 _HERE = Path(__file__).parent
+_ICONS_DIR = (_HERE.parent / "icons").as_posix()
 
 
 def apply_theme(app: QApplication, *, dark: bool | None = None) -> None:
@@ -23,5 +24,6 @@ def apply_theme(app: QApplication, *, dark: bool | None = None) -> None:
     # Replace longer names first so e.g. @bg_hover_tint isn't clobbered by @bg_hover.
     for name, value in sorted(tokens.items(), key=lambda kv: -len(kv[0])):
         qss = qss.replace(f"@{name}", value)
+    qss = qss.replace("@icons_dir", _ICONS_DIR)
     app.setStyleSheet("")
     app.setStyleSheet(qss)

@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -13,6 +14,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from src.ui.views.shell.variables_list import ENTITY_MIME_TYPE
 
 _LOGO_GREY = Path(__file__).parent.parent.parent / "resources" / "logo" / "logo_grey.svg"
 
@@ -62,12 +65,14 @@ class WorkspaceView(QWidget):
     """
 
     tabClosed = Signal(str)  # entity_id
+    entityDropped = Signal(str)  # entity_id — user dropped an entity onto workspace
 
     _PAGE_EMPTY = 0
     _PAGE_TABS = 1
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setAcceptDrops(True)
 
         self._tabs = QTabWidget()
         self._tabs.setTabsClosable(True)
@@ -149,3 +154,19 @@ class WorkspaceView(QWidget):
             self._stack.setCurrentIndex(self._PAGE_EMPTY)
             self._header.setVisible(True)
         self.tabClosed.emit(entity_id)
+
+    # ── Drag and drop ─────────────────────────────────────────
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:  # noqa: N802
+        if event.mimeData().hasFormat(ENTITY_MIME_TYPE):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event: QDropEvent) -> None:  # noqa: N802
+        data = event.mimeData().data(ENTITY_MIME_TYPE)
+        if data.isEmpty():
+            return
+        entity_id = bytes(data).decode("utf-8")
+        event.acceptProposedAction()
+        self.entityDropped.emit(entity_id)
