@@ -77,6 +77,7 @@ class WorkspaceView(QWidget):
         self._tabs = QTabWidget()
         self._tabs.setTabsClosable(True)
         self._tabs.setDocumentMode(True)
+        self._tabs.setElideMode(Qt.TextElideMode.ElideRight)
         self._tabs.tabCloseRequested.connect(self._on_tab_close_requested)
 
         # entity_id → panel widget (stable reference independent of tab index)

@@ -35,6 +35,7 @@ class VariablesList(QWidget):
         self._tree.setColumnCount(2)
         self._tree.setColumnHidden(1, True)
         self._tree.setRootIsDecorated(True)
+        self._tree.setIndentation(12)
         self._tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
         self._tree.setDragEnabled(True)
 

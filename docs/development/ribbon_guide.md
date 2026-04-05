@@ -21,7 +21,7 @@ Ribbon (QTabWidget)
 Current tabs and their groups:
 
 - **Home** — session management and asset loading. File (`New`, `Open`, `Save`), Import (`Load Image`, `Load Data`, `Load Map`), Edit (`Undo`, `Redo`)
-- **Core** — core creation and preparation. Core (`Core Studio`)
+- **Prepare** — build and configure cores before analysis. Core (`Core Studio`)
 - **Analysis** — discrete analysis actions on entities. Core (`Analyse`)
 - **Map** — 3D simulation and spatial visualisation. _(no buttons yet)_
 - **Export** — format and download results for use outside the software. _(no buttons yet)_

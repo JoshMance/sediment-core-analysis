@@ -69,10 +69,10 @@ class Ribbon(QWidget):
         self._add_group(home, "Edit", ["Undo", "Redo"])
         self._tabs.addTab(home, "Home")
 
-        # -- Core tab
-        core = self._make_tab()
-        self._add_group(core, "Core", ["Core Studio"])
-        self._tabs.addTab(core, "Core")
+        # -- Prepare tab
+        prepare = self._make_tab()
+        self._add_group(prepare, "Core", ["Core Studio"])
+        self._tabs.addTab(prepare, "Prepare")
 
         # -- Analysis tab
         analysis = self._make_tab()
