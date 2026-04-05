@@ -107,7 +107,21 @@ def _make_dataset_panel(
     return view, presenter
 
 
+def _make_core_studio_panel(
+    entry: WorkspaceEntry,
+    store: Store,
+    controller: AppController,
+) -> tuple[QWidget, QObject]:
+    from src.ui.views.panels.core_studio_panel import CoreStudioPanel
+    from src.ui.presenters.core_studio_presenter import CoreStudioPresenter
+
+    view = CoreStudioPanel()
+    presenter = CoreStudioPresenter(view, store, controller)
+    return view, presenter
+
+
 _PANEL_FACTORIES: dict[str, object] = {
     "ImagePanel": _make_image_panel,
     "DatasetPanel": _make_dataset_panel,
+    "CoreStudioPanel": _make_core_studio_panel,
 }

@@ -1,4 +1,4 @@
-"""ImageCanvas — pan, zoom, rotate, and selection overlay."""
+"""ImageCanvas — pan, zoom, rotate, and crop overlay."""
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QPoint, QPointF, QRectF, Signal
@@ -21,11 +21,11 @@ class ImageCanvas(QWidget):
     """Canvas widget for displaying and interacting with images.
 
     Supports pan (left-drag or middle-drag), scroll-wheel zoom anchored at
-    cursor, rotation, and a resizable selection rectangle overlay.
+    cursor, rotation, and a resizable crop rectangle overlay.
     Pure view — emits signals, does no domain logic.
     """
 
-    selectionChanged = Signal(object)  # QRectF in image coordinates
+    cropChanged = Signal(object)  # QRectF in image coordinates
     # Emitted after the calibration colour flash completes.
     # Payload: list of (rgb_tuple, MunsellChip) pairs.
     calibrationComplete = Signal(list)
@@ -45,10 +45,10 @@ class ImageCanvas(QWidget):
         self._pan_y = 0.0
         self._rotation = 0.0
 
-        # Selection state (stored in image coordinates, pre-rotation)
-        self._selection_rect: QRectF | None = None
-        self._selection_visible = False
-        self._dragging_selection: str | None = None
+        # Crop state (stored in image coordinates, pre-rotation)
+        self._crop_rect: QRectF | None = None
+        self._crop_visible = False
+        self._dragging_crop: str | None = None
         self._drag_start_pos = QPoint()
         self._drag_start_rect = QRectF()
 
@@ -74,8 +74,8 @@ class ImageCanvas(QWidget):
         self._pan_x = 0.0
         self._pan_y = 0.0
         self._rotation = 0.0
-        self._selection_rect = None
-        self._selection_visible = False
+        self._crop_rect = None
+        self._crop_visible = False
         self.update()
         self._sync_calibrator()
         self._chip_grid.hide()
@@ -106,25 +106,25 @@ class ImageCanvas(QWidget):
     def get_rotation(self) -> float:
         return self._rotation
 
-    def set_selection_visible(self, visible: bool) -> None:
-        """Show or hide the selection rectangle overlay."""
-        self._selection_visible = visible
-        if visible and self._selection_rect is None and self._pixmap:
+    def set_crop_visible(self, visible: bool) -> None:
+        """Show or hide the crop rectangle overlay."""
+        self._crop_visible = visible
+        if visible and self._crop_rect is None and self._pixmap:
             img_w = self._pixmap.width()
             img_h = self._pixmap.height()
-            self._selection_rect = QRectF(
+            self._crop_rect = QRectF(
                 img_w * 0.25, img_h * 0.25, img_w * 0.5, img_h * 0.5
             )
         self.update()
 
-    def get_selection_rect(self) -> QRectF | None:
-        return self._selection_rect
+    def get_crop_rect(self) -> QRectF | None:
+        return self._crop_rect
 
-    def get_selection_pixmap(self) -> QPixmap | None:
+    def get_crop_pixmap(self) -> QPixmap | None:
         """Crop and return the selected region from the source pixmap."""
-        if not self._pixmap or not self._selection_rect:
+        if not self._pixmap or not self._crop_rect:
             return None
-        rect = self._selection_rect.toRect().intersected(self._pixmap.rect())
+        rect = self._crop_rect.toRect().intersected(self._pixmap.rect())
         if rect.isEmpty():
             return None
         return self._pixmap.copy(rect)
@@ -163,13 +163,13 @@ class ImageCanvas(QWidget):
         painter.drawPixmap(int(img_x), int(img_y), self._pixmap)
         painter.restore()
 
-        # Draw selection in unrotated image space (after restore)
-        if self._selection_visible and self._selection_rect:
+        # Draw crop in unrotated image space (after restore)
+        if self._crop_visible and self._crop_rect:
             painter.translate(img_x, img_y)
-            self._draw_selection(painter)
+            self._draw_crop(painter)
 
-    def _draw_selection(self, painter: QPainter) -> None:
-        # Dimmed overlay outside the selection
+    def _draw_crop(self, painter: QPainter) -> None:
+        # Dimmed overlay outside the crop
         if self._pixmap:
             painter.save()
             painter.setPen(Qt.PenStyle.NoPen)
@@ -177,19 +177,19 @@ class ImageCanvas(QWidget):
             full_path = QPainterPath()
             full_path.addRect(QRectF(0, 0, self._pixmap.width(), self._pixmap.height()))
             sel_path = QPainterPath()
-            sel_path.addRect(self._selection_rect)
+            sel_path.addRect(self._crop_rect)
             painter.drawPath(full_path.subtracted(sel_path))
             painter.restore()
 
-        # Selection border
+        # Crop border
         painter.setPen(QPen(QColor(0, 120, 215), 2 / self._zoom))
         painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRect(self._selection_rect)
+        painter.drawRect(self._crop_rect)
 
         # Resize handles
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(0, 120, 215))
-        for handle_rect in self._get_selection_handles().values():
+        for handle_rect in self._get_crop_handles().values():
             painter.drawRect(handle_rect)
 
     # ── Mouse interaction ─────────────────────────────────────
@@ -209,18 +209,18 @@ class ImageCanvas(QWidget):
         if event.button() != Qt.MouseButton.LeftButton:
             return
 
-        if self._selection_visible and self._selection_rect:
+        if self._crop_visible and self._crop_rect:
             img_pos = self._widget_to_image(event.position().toPoint())
-            for handle_name, handle_rect in self._get_selection_handles().items():
+            for handle_name, handle_rect in self._get_crop_handles().items():
                 if handle_rect.contains(img_pos):
-                    self._dragging_selection = f"resize_{handle_name}"
+                    self._dragging_crop = f"resize_{handle_name}"
                     self._drag_start_pos = event.position().toPoint()
-                    self._drag_start_rect = QRectF(self._selection_rect)
+                    self._drag_start_rect = QRectF(self._crop_rect)
                     return
-            if self._selection_rect.contains(img_pos):
-                self._dragging_selection = "move"
+            if self._crop_rect.contains(img_pos):
+                self._dragging_crop = "move"
                 self._drag_start_pos = event.position().toPoint()
-                self._drag_start_rect = QRectF(self._selection_rect)
+                self._drag_start_rect = QRectF(self._crop_rect)
                 return
 
         self._is_panning = True
@@ -228,22 +228,22 @@ class ImageCanvas(QWidget):
         self.setCursor(Qt.CursorShape.ClosedHandCursor)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        if self._dragging_selection and self._selection_rect:
+        if self._dragging_crop and self._crop_rect:
             img_pos = self._widget_to_image(event.position().toPoint())
             delta_widget = event.position().toPoint() - self._drag_start_pos
             delta_img = QPointF(delta_widget.x() / self._zoom, delta_widget.y() / self._zoom)
 
-            if self._dragging_selection == "move":
-                self._selection_rect.moveTo(
+            if self._dragging_crop == "move":
+                self._crop_rect.moveTo(
                     self._drag_start_rect.x() + delta_img.x(),
                     self._drag_start_rect.y() + delta_img.y(),
                 )
             else:
-                self._resize_selection(
-                    self._dragging_selection, img_pos, self._drag_start_rect
+                self._resize_crop(
+                    self._dragging_crop, img_pos, self._drag_start_rect
                 )
 
-            self.selectionChanged.emit(self._selection_rect)
+            self.cropChanged.emit(self._crop_rect)
             self.update()
             return
 
@@ -273,7 +273,7 @@ class ImageCanvas(QWidget):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() in (Qt.MouseButton.LeftButton, Qt.MouseButton.MiddleButton):
             self._is_panning = False
-            self._dragging_selection = None
+            self._dragging_crop = None
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def leaveEvent(self, event) -> None:  # noqa: ANN001
@@ -419,11 +419,11 @@ class ImageCanvas(QWidget):
         scene_y = (widget_pos.y() - self._pan_y) / self._zoom
         return QPointF(scene_x - img_offset_x, scene_y - img_offset_y)
 
-    def _get_selection_handles(self) -> dict[str, QRectF]:
-        if not self._selection_rect:
+    def _get_crop_handles(self) -> dict[str, QRectF]:
+        if not self._crop_rect:
             return {}
         hs = HANDLE_SIZE / self._zoom
-        r = self._selection_rect
+        r = self._crop_rect
         return {
             "tl": QRectF(r.left() - hs / 2, r.top() - hs / 2, hs, hs),
             "tr": QRectF(r.right() - hs / 2, r.top() - hs / 2, hs, hs),
@@ -435,7 +435,7 @@ class ImageCanvas(QWidget):
             "r":  QRectF(r.right() - hs / 2, r.center().y() - hs / 2, hs, hs),
         }
 
-    def _resize_selection(
+    def _resize_crop(
         self, handle: str, img_pos: QPointF, start_rect: QRectF
     ) -> None:
         min_size = 10
@@ -464,12 +464,12 @@ class ImageCanvas(QWidget):
             bottom = max(img_pos.y(), top + min_size)
             right = max(img_pos.x(), left + min_size)
 
-        self._selection_rect.setCoords(left, top, right, bottom)
+        self._crop_rect.setCoords(left, top, right, bottom)
 
     def _update_cursor(self, widget_pos: QPoint) -> None:
-        if self._selection_visible and self._selection_rect:
+        if self._crop_visible and self._crop_rect:
             img_pos = self._widget_to_image(widget_pos)
-            for handle_name, handle_rect in self._get_selection_handles().items():
+            for handle_name, handle_rect in self._get_crop_handles().items():
                 if handle_rect.contains(img_pos):
                     if handle_name in ("tl", "br"):
                         self.setCursor(Qt.CursorShape.SizeFDiagCursor)
@@ -480,7 +480,7 @@ class ImageCanvas(QWidget):
                     else:
                         self.setCursor(Qt.CursorShape.SizeHorCursor)
                     return
-            if self._selection_rect.contains(img_pos):
+            if self._crop_rect.contains(img_pos):
                 self.setCursor(Qt.CursorShape.SizeAllCursor)
                 return
         self.setCursor(Qt.CursorShape.ArrowCursor)

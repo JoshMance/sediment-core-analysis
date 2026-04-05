@@ -58,3 +58,20 @@ uv run python -m tests.variables_list_test
 # Load images, delete them, watch every signal and method call in the log
 uv run python -m tests.variables_test
 ```
+
+## Core Studio (manual)
+
+1. Run the app: `uv run python main.py`
+2. Click the **Core Studio** button in the **View** ribbon tab
+3. Verify: a blank panel opens in the workspace with placeholder text
+4. Click the button again — verify it **focuses** the existing tab (no duplicate)
+5. Close the tab and reopen — verify it opens fresh
+
+## Image Crop (manual)
+
+1. Load an image via the file browser
+2. Open it in the workspace (double-click in VariablesList)
+3. Click the **Crop** button in the image toolbar
+4. Adjust the crop rectangle, click **✓** to confirm
+5. Verify: a new **ImageEntity** (not CoreEntity) appears in VariablesList with name `<original>_crop`
+6. Open the cropped image — verify it shows the cropped region

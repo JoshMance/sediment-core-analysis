@@ -1,5 +1,7 @@
 Summary
 
+> **Status:** This document was the original implementation plan for the Workspace system. The workspace system is now built. Key change from the original plan: cropping in ImagePanel now creates a child **ImageEntity** (not a CoreEntity). CoreEntity creation will be handled by the dedicated **Core Studio** panel in future work.
+
 The workspace feature should be implemented using four components split across the application layer and the UI layer:
 
 Application layer
@@ -138,7 +140,7 @@ And most importantly, it stays small and understandable, which matches your goal
 
 ## TL;DR
 
-Add the full Workspace system (WorkspaceState + WorkspaceService in application layer, WorkspaceView in shell/, WorkspacePresenter in ui/presenters/) and the first runtime panel (ImagePanel in panels/) that displays an image, allows pan/zoom/rotate/select, and creates a CoreEntity on confirm. Double-clicking an entity in VariablesList triggers the flow.
+Add the full Workspace system (WorkspaceState + WorkspaceService in application layer, WorkspaceView in shell/, WorkspacePresenter in ui/presenters/) and the first runtime panel (ImagePanel in panels/) that displays an image, allows pan/zoom/rotate/crop, and creates a child ImageEntity on confirm. Double-clicking an entity in VariablesList triggers the flow.
 
 ---
 
@@ -181,16 +183,16 @@ Add the full Workspace system (WorkspaceState + WorkspaceService in application 
 
 - Port from `src_legacy/views/panels/image_panel/canvas.py`
 - REMOVE: all calibration state/mode/drawing (`_calib_*`, `MODE_CALIBRATE`, `_draw_calibration`, `_widget_to_rotated_image`)
-- KEEP: pan, zoom (wheel + zoom_in/zoom_out methods), rotation, selection rectangle with resize handles
-- KEEP: `selection_changed = Signal(object)` (QRectF in image coords)
+- KEEP: pan, zoom (wheel + zoom_in/zoom_out methods), rotation, crop rectangle with resize handles
+- KEEP: `crop_changed = Signal(object)` (QRectF in image coords)
 - No inline styles (`setStyleSheet` calls)
 
 **New: `src/ui/views/panels/image_panel/image_panel.py`** — `ImagePanel(QWidget)`
 
 - Port from `src_legacy/views/panels/image_panel/widget.py`
 - REMOVE: calibration toolbar buttons, calib_input_widget, on_selection_confirmed/on_calibration_confirmed callbacks, preview_label with inline style
-- ADD: `selectionConfirmed = Signal(object)` emitted with `QPixmap` of selection when user clicks Confirm
-- Toolbar: zoom in, zoom out, rotation slider + label, separator, Select (checkable), separator, Confirm + Cancel (hidden until Select active)
+- ADD: `cropConfirmed = Signal(object)` emitted with `QPixmap` of crop when user clicks Confirm
+- Toolbar: zoom in, zoom out, rotation slider + label, separator, Crop (checkable), separator, Confirm + Cancel (hidden until Crop active)
 - Public: `set_pixmap(pixmap: QPixmap | None)`, `get_selection_pixmap() -> QPixmap | None`
 - No inline `setStyleSheet` calls anywhere; button sizing (`setFixedSize`) is acceptable
 
@@ -202,8 +204,8 @@ Add the full Workspace system (WorkspaceState + WorkspaceService in application 
 
 - `__init__(self, view: ImagePanel, store: Store, controller: AppController, entity_id: str)`
 - On init: fetches `ImageEntity` from store, converts `entity.data` (NDArray uint8 RGB) to `QPixmap`, calls `view.set_pixmap(pixmap)`
-- Connects `view.selectionConfirmed` → `_on_selection_confirmed(pixmap)`
-- `_on_selection_confirmed`: converts QPixmap → numpy array (via QImage.Format_RGB888), calls `controller.create_core_entity(name=f"{entity_name}_core", data=arr, source_image_id=entity_id)`
+- Connects `view.cropConfirmed` → `_on_crop_confirmed(pixmap)`
+- `_on_crop_confirmed`: converts QPixmap → numpy array (via QImage.Format_RGB888), calls `controller.create_cropped_image(name=f"{entity_name}_crop", data=arr, parent_id=entity_id)`
 
 ---
 
@@ -241,7 +243,7 @@ Add the full Workspace system (WorkspaceState + WorkspaceService in application 
 
 ## Phase 8 — Manual test
 
-**New: `tests/workspace_test.py`** — end-to-end test: load image, double-click in VariablesList, check workspace opens tab, draw selection, confirm, check CoreEntity appears in VariablesList
+**New: `tests/workspace_test.py`** — end-to-end test: load image, double-click in VariablesList, check workspace opens tab, draw crop, confirm, check child ImageEntity appears in VariablesList
 
 ---
 
@@ -264,7 +266,7 @@ Add the full Workspace system (WorkspaceState + WorkspaceService in application 
 
 1. `uv run python -m tests.workspace_test` — visual end-to-end
 2. `uv run python -m tests.container_test` — regression (no regressions)
-3. `uv run python main.py --light` — run app, double-click loaded image, confirm selection, check VariablesList shows new CoreEntity
+3. `uv run python main.py --light` — run app, double-click loaded image, confirm crop, check VariablesList shows new child ImageEntity
 
 ## Decisions
 

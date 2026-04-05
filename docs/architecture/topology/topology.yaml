@@ -4,13 +4,16 @@
 domain:
   entities:
     - name: ImageEntity
-      fields: [id, name, file_path, data]
+      fields: [id, name, file_path, data, parent_id, child_ids, calibration_id]
 
     - name: DatasetEntity
       fields: [id, name, file_path, data, columns, column_types, asset_ref]
 
     - name: CoreEntity
       fields: [id, name, data, source_image_id, asset_ref]
+
+    - name: CalibrationEntity
+      fields: [id, mm_per_px]
 
   components:
     - name: Store
@@ -43,6 +46,7 @@ application:
         - create_image_entity(file_path)
         - create_dataset_entity(file_path)
         - create_core_entity(name, data, source_image_id?)
+        - create_cropped_image(name, data, parent_id)
         - delete_entity(entity_id)
         - rename_entity(entity_id, new_name)
         - rename_dataset_column(entity_id, old_name, new_name)
@@ -129,7 +133,7 @@ ui:
         - WorkspaceState.panelFocusRequested
         - Store.entityUpdated
       calls: [WorkspaceState]
-      manages: [ImagePanelPresenter, DatasetPanelPresenter]
+      manages: [ImagePanelPresenter, DatasetPanelPresenter, CoreStudioPresenter]
 
     - name: ImagePanelPresenter
       view: ImagePanel
@@ -137,6 +141,8 @@ ui:
       subscribes_to: []
       calls: [AppController]
       view_signals:
+        - ImagePanel.cropConfirmed(pixmap) # crop confirmed → create_cropped_image()
+        - ImageCanvas.cropChanged(rect) # crop rectangle resized/moved
         - ImageCanvas.pixelHovered(x, y) # mouse over image → set_view_context([X: N, Y: N, RGB: (R, G, B)])
         - ImageCanvas.pixelLeft() # cursor leaves image → set_view_context([])
 
@@ -148,3 +154,10 @@ ui:
       view_signals:
         - selectionChanged(row, col) # cell hover/click → set_view_context([Col: N, Row: N])
         - columnSelected(col) # header click → set_view_context([Col: N, Row: N, Count: N, ...])
+
+    - name: CoreStudioPresenter
+      view: CoreStudioPanel
+      lifetime: per-panel (singleton)
+      subscribes_to: []
+      calls: [AppController]
+      view_signals: []

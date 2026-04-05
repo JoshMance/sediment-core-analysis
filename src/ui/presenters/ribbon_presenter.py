@@ -106,6 +106,15 @@ class RibbonPresenter(QObject):
     def _calibrate(self) -> None:
         logger.info("Calibrate -- not implemented yet")
 
+    def _core_studio(self) -> None:
+        from src.application.workspace_state import WorkspaceState, WorkspaceEntry
+        ws: WorkspaceState | None = getattr(self._controller, "_workspace_state", None)
+        if ws is None:
+            logger.warning("Core Studio: no WorkspaceState available")
+            return
+        entry = WorkspaceEntry(entity_id="core_studio", panel_type="CoreStudioPanel")
+        ws.open(entry)
+
     def _analyse(self) -> None:
         logger.info("Analyse -- not implemented yet")
 
@@ -149,6 +158,7 @@ class RibbonPresenter(QObject):
             "Zoom Out": self._zoom_out,
             "Fit": self._fit,
             "Calibrate": self._calibrate,
+            "Core Studio": self._core_studio,
             "Analyse": self._analyse,
             "Load Image": self._load_image,
             "Load Data": self._load_data,

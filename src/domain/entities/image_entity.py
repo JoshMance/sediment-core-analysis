@@ -17,11 +17,17 @@ class ImageEntity:
         name: Display name of the image
         file_path: Path to the image file (or None if not saved)
         data: The image data as an (h, w, 3) numpy array (RGB)
+        parent_id: ID of the parent ImageEntity this was cropped from, if any.
+        child_ids: IDs of child ImageEntities cropped from this image.
+        calibration_id: ID of the associated CalibrationEntity, if any.
     """
     name: str
     id: str | None = None
     file_path: Path | None = None
     data: NDArray[np.uint8] | None = field(default=None, repr=False)
+    parent_id: str | None = None
+    child_ids: list[str] = field(default_factory=list)
+    calibration_id: str | None = None
 
     @property
     def shape(self) -> tuple[int, int, int] | None:
@@ -40,6 +46,9 @@ class ImageEntity:
             "id": self.id,
             "name": self.name,
             "file_path": str(self.file_path) if self.file_path is not None else None,
+            "parent_id": self.parent_id,
+            "child_ids": self.child_ids,
+            "calibration_id": self.calibration_id,
         }
 
     @classmethod
@@ -51,4 +60,7 @@ class ImageEntity:
             id=data["id"],
             name=data["name"],
             file_path=file_path,
+            parent_id=data.get("parent_id"),
+            child_ids=data.get("child_ids", []),
+            calibration_id=data.get("calibration_id"),
         )

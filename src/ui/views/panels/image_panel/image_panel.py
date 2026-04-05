@@ -1,4 +1,4 @@
-"""ImagePanel — displays an image with pan/zoom/rotate and selection tools."""
+"""ImagePanel — displays an image with pan/zoom/rotate and crop tools."""
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QSize, Signal
@@ -17,8 +17,8 @@ class ImagePanel(QWidget):
     Created at runtime by WorkspacePresenter when an image entity is opened.
     """
 
-    # Emitted when the user confirms a selection; carries the cropped QPixmap.
-    selectionConfirmed = Signal(object)  # QPixmap
+    # Emitted when the user confirms a crop; carries the cropped QPixmap.
+    cropConfirmed = Signal(object)  # QPixmap
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -35,9 +35,9 @@ class ImagePanel(QWidget):
     # ── Public API ────────────────────────────────────────────
 
     def set_pixmap(self, pixmap: QPixmap | None) -> None:
-        """Set the image to display and reset selection state."""
+        """Set the image to display and reset crop state."""
         self.canvas.set_pixmap(pixmap)
-        self._deactivate_selection()
+        self._deactivate_crop()
 
     # ── Toolbar ───────────────────────────────────────────────
 
@@ -76,24 +76,24 @@ class ImagePanel(QWidget):
 
         tb.addSeparator()
 
-        self._select_btn = QPushButton("Select")
-        self._select_btn.setToolTip("Select a region to create a core")
-        self._select_btn.setCheckable(True)
-        self._select_btn.setFixedSize(60, 28)
-        self._select_btn.clicked.connect(self._on_select_toggled)
-        tb.addWidget(self._select_btn)
+        self._crop_btn = QPushButton("Crop")
+        self._crop_btn.setToolTip("Crop a region of this image")
+        self._crop_btn.setCheckable(True)
+        self._crop_btn.setFixedSize(60, 28)
+        self._crop_btn.clicked.connect(self._on_crop_toggled)
+        tb.addWidget(self._crop_btn)
 
         tb.addSeparator()
 
         self._confirm_btn = QPushButton("✓")
-        self._confirm_btn.setToolTip("Confirm selection — creates a CoreEntity")
+        self._confirm_btn.setToolTip("Confirm crop")
         self._confirm_btn.setFixedSize(32, 28)
         self._confirm_btn.clicked.connect(self._on_confirm_clicked)
         self._confirm_action = tb.addWidget(self._confirm_btn)
         self._confirm_action.setVisible(False)
 
         self._cancel_btn = QPushButton("✗")
-        self._cancel_btn.setToolTip("Cancel selection")
+        self._cancel_btn.setToolTip("Cancel crop")
         self._cancel_btn.setFixedSize(32, 28)
         self._cancel_btn.clicked.connect(self._on_cancel_clicked)
         self._cancel_action = tb.addWidget(self._cancel_btn)
@@ -116,28 +116,28 @@ class ImagePanel(QWidget):
         self.canvas.set_rotation(angle)
         self._rotation_label.setText(f"{angle}°")
 
-    def _on_select_toggled(self) -> None:
-        if self._select_btn.isChecked():
-            self.canvas.set_selection_visible(True)
+    def _on_crop_toggled(self) -> None:
+        if self._crop_btn.isChecked():
+            self.canvas.set_crop_visible(True)
             self._confirm_action.setVisible(True)
             self._cancel_action.setVisible(True)
         else:
-            self._deactivate_selection()
+            self._deactivate_crop()
 
     def _on_confirm_clicked(self) -> None:
-        pixmap = self.canvas.get_selection_pixmap()
+        pixmap = self.canvas.get_crop_pixmap()
         if pixmap:
-            self.selectionConfirmed.emit(pixmap)
-        self._deactivate_selection()
+            self.cropConfirmed.emit(pixmap)
+        self._deactivate_crop()
 
     def _on_cancel_clicked(self) -> None:
-        self._deactivate_selection()
+        self._deactivate_crop()
 
     def _on_calibrate_toggled(self) -> None:
         self.canvas.set_calibrator_visible(self._calibrate_btn.isChecked())
 
-    def _deactivate_selection(self) -> None:
-        self._select_btn.setChecked(False)
-        self.canvas.set_selection_visible(False)
+    def _deactivate_crop(self) -> None:
+        self._crop_btn.setChecked(False)
+        self.canvas.set_crop_visible(False)
         self._confirm_action.setVisible(False)
         self._cancel_action.setVisible(False)

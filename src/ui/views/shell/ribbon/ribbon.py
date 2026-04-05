@@ -72,6 +72,7 @@ class Ribbon(QWidget):
         # -- View tab
         view = self._make_tab()
         self._add_group(view, "Calibrate", ["Calibrate"])
+        self._add_group(view, "Core", ["Core Studio"])
         self._tabs.addTab(view, "View")
 
         # -- Analysis tab

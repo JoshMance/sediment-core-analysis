@@ -167,6 +167,7 @@ Currently contains:
 
 - `load_image.py` — reads image files via `imageio.v3`.
 - `workspace_service.py` — maps entity types to panel types and calls `WorkspaceState.open`. Silently does nothing for entity types with no registered panel yet (e.g. `CoreEntity`).
+- `session_archive.py` — reads/writes `.sedivis` ZIP archives containing entities, workspace state, and bundled assets.
 
 ### WorkspaceState (Component) — `src/application/workspace_state.py`
 
@@ -247,7 +248,7 @@ and react independently.
 | Folder    | Rule                                                                                           | Examples                                                  |
 | --------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | `shell/`  | Views that are **created at startup and persist** for the lifetime of the application.         | `Ribbon`, `FileBrowser`, `VariablesList`, `WorkspaceView` |
-| `panels/` | Views that are **created at runtime** on demand (e.g. when the user opens or creates a thing). | `ImagePanel`, entity editors                              |
+| `panels/` | Views that are **created at runtime** on demand (e.g. when the user opens or creates a thing). | `ImagePanel`, `CoreStudioPanel`, entity editors           |
 
 Nothing in `shell/` is created or destroyed while the app is running. Nothing in `panels/` exists at startup.
 
@@ -348,6 +349,7 @@ added as the application grows beyond initial development.
 
 | What                    | Kind      | Notes                                                              |
 | ----------------------- | --------- | ------------------------------------------------------------------ |
+| CalibrationEntity       | Entity    | `dataclasses`, spatial calibration (`mm_per_px`)                   |
 | Entity classes          | Entity    | `dataclasses`, with `to_dict()`/`from_dict()`                      |
 | Store                   | Component | `QObject` + dict. Emits signals on change.                         |
 | AppController           | Component | Plain class. Calls Services, constructs Entities, writes to Store. |
@@ -356,6 +358,7 @@ added as the application grows beyond initial development.
 | Presenters              | Component | One per panel. Wires Store ↔ View.                                 |
 | Views                   | Component | PySide6 widgets. Display only.                                     |
 | Session serializer      | Service   | `json.dump`/`json.load` with Entity `to_dict()`/`from_dict()`.     |
+| Core Studio panel       | Component | Placeholder panel for future image→core workflow                   |
 | Science scripts         | —         | Single-file modules in `src/science/` (e.g. `munsell.py`)          |
 | Science reference data  | —         | Static JSON files in `src/science/data/`                           |
 
@@ -408,6 +411,26 @@ User double-clicks an entity in VariablesList
   → WorkspacePresenter receives panelAdded, calls factory, creates (ImagePanel, ImagePanelPresenter)
   → WorkspacePresenter calls workspace_view.add_tab(panel, title, entity_id)
   → ImagePanelPresenter loads entity from Store, converts to QPixmap, calls panel.set_pixmap()
+```
+
+```
+User crops a region in ImagePanel
+  → ImagePanel emits cropConfirmed(pixmap)
+  → ImagePanelPresenter converts QPixmap → numpy array
+  → ImagePanelPresenter calls controller.create_cropped_image(name, data, parent_id)
+  → AppController creates ImageEntity with parent_id, inherits calibration_id from parent
+  → AppController appends child_id to parent’s child_ids via store.update_field
+  → Store emits entityAdded (new child) + entityUpdated (parent)
+  → VariablesList reacts, shows new cropped image in the entity list
+```
+
+```
+User clicks Core Studio in ribbon
+  → Ribbon emits buttonClicked("Core Studio")
+  → RibbonPresenter opens WorkspaceEntry(entity_id="core_studio", panel_type="CoreStudioPanel")
+  → WorkspaceState emits panelAdded (or panelFocusRequested if already open)
+  → WorkspacePresenter creates CoreStudioPanel + CoreStudioPresenter
+  → Blank panel opens in workspace tab (singleton — only one at a time)
 ```
 
 ## Key Rules

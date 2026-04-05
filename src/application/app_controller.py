@@ -16,6 +16,7 @@ import imageio.v3 as iio
 from src.domain.entities.image_entity import ImageEntity
 from src.domain.entities.core_entity import CoreEntity
 from src.domain.entities.dataset_entity import DatasetEntity
+from src.domain.entities.calibration_entity import CalibrationEntity
 from src.domain.store import Store
 from src.application.services.load_image import load_image
 from src.application.services.load_csv import load_csv
@@ -108,6 +109,45 @@ class AppController:
         """
         entity = CoreEntity(name=name, data=data, source_image_id=source_image_id)
         return self._store.add(entity)
+
+    def create_cropped_image(
+        self,
+        name: str,
+        data: object,
+        parent_id: str,
+    ) -> str | None:
+        """Create a cropped ImageEntity as a child of a parent image.
+
+        The child inherits the parent's calibration_id. The parent's
+        child_ids list is updated to include the new entity.
+
+        Args:
+            name: Display name for the cropped image.
+            data: Cropped image array (H, W, 3) uint8.
+            parent_id: ID of the parent ImageEntity.
+
+        Returns:
+            The entity id assigned by the Store, or None if the parent
+            was not found.
+        """
+        parent = self._store.get(parent_id)
+        if not isinstance(parent, ImageEntity):
+            logger.error("create_cropped_image: parent '%s' not found or not an ImageEntity", parent_id)
+            return None
+
+        entity = ImageEntity(
+            name=name,
+            data=data,
+            parent_id=parent_id,
+            calibration_id=parent.calibration_id,
+        )
+        child_id = self._store.add(entity)
+
+        # Update parent's child_ids
+        updated_children = list(parent.child_ids) + [child_id]
+        self._store.update_field(parent_id, "child_ids", updated_children)
+
+        return child_id
 
     def delete_entity(self, entity_id: str) -> object:
         """Remove an entity from the Store.

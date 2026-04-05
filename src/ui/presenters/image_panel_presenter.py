@@ -32,7 +32,7 @@ class ImagePanelPresenter(QObject):
         self._data: np.ndarray | None = None
 
         self._load_image()
-        view.selectionConfirmed.connect(self._on_selection_confirmed)
+        view.cropConfirmed.connect(self._on_crop_confirmed)
         view.canvas.pixelHovered.connect(self._on_pixel_hovered)
         view.canvas.pixelLeft.connect(self._on_pixel_left)
 
@@ -60,18 +60,18 @@ class ImagePanelPresenter(QObject):
     def _on_pixel_left(self) -> None:
         self._controller.set_view_context([])
 
-    def _on_selection_confirmed(self, pixmap: QPixmap) -> None:
-        """User confirmed a selection — create a CoreEntity in the Store."""
+    def _on_crop_confirmed(self, pixmap: QPixmap) -> None:
+        """User confirmed a crop — create a cropped ImageEntity in the Store."""
         entity = self._store.get(self._entity_id)
         base_name = getattr(entity, "name", self._entity_id)
         stem = base_name.rsplit(".", 1)[0] if "." in base_name else base_name
-        core_name = f"{stem}_core"
+        crop_name = f"{stem}_crop"
 
         arr = self._pixmap_to_ndarray(pixmap)
-        self._controller.create_core_entity(
-            name=core_name,
+        self._controller.create_cropped_image(
+            name=crop_name,
             data=arr,
-            source_image_id=self._entity_id,
+            parent_id=self._entity_id,
         )
 
     # ── Conversion helpers ────────────────────────────────────

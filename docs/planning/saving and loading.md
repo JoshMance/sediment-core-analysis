@@ -38,8 +38,9 @@ project.sedivis  (ZIP)
 
 Every entity type gets `to_dict()` / `from_dict()` methods. These write to / read from `session.json`.
 
-- **`ImageEntity`** — `file_path` is saved as provenance only. The archive service copies the image into `assets/` and the saved record points at the bundled asset path (`assets/<id>_source.tif`).
+- **`ImageEntity`** — `file_path` is saved as provenance only. The archive service copies the image into `assets/` and the saved record points at the bundled asset path (`assets/<id>_source.tif`). New fields `parent_id`, `child_ids`, and `calibration_id` are serialized in the JSON record. For cropped images (no `file_path`), pixel data is encoded as a sidecar PNG (`assets/<id>_image.png`).
 - **`CoreEntity`** — has no file path; holds raw pixel data. Saved as a sidecar PNG in `assets/` (`assets/<id>_core.png`). `to_dict()` omits `data` and stores `asset_ref` instead. The archive service writes/reads the PNG.
+- **`CalibrationEntity`** — pure JSON, no sidecar assets. `to_dict()` / `from_dict()` serialize `id` and `mm_per_px` directly into `session.json`.
 
 ### Workspace State
 
