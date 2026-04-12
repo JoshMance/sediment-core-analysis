@@ -33,11 +33,13 @@ class WorkspacePresenter(QObject):
 
         # entity_id → (panel_widget, panel_presenter) — keeps both alive
         self._panels: dict[str, tuple[QWidget, QObject]] = {}
+        self._panel_types: dict[str, str] = {}  # entity_id → panel_type
 
         workspace_state.panelAdded.connect(self._on_panel_added)
         workspace_state.panelRemoved.connect(self._on_panel_removed)
         workspace_state.panelFocusRequested.connect(self._view.focus_tab)
         view.tabClosed.connect(self._on_tab_closed)
+        view.tabChanged.connect(self._on_tab_changed)
         view.entityDropped.connect(self._on_entity_dropped)
         store.entityUpdated.connect(self._on_entity_updated)
 
@@ -46,6 +48,7 @@ class WorkspacePresenter(QObject):
     def _on_panel_added(self, entry: WorkspaceEntry) -> None:
         panel_view, panel_presenter = self._create_panel(entry)
         self._panels[entry.entity_id] = (panel_view, panel_presenter)
+        self._panel_types[entry.entity_id] = entry.panel_type
 
         entity = self._store.get(entry.entity_id)
         title = getattr(entity, "name", entry.entity_id)
@@ -53,6 +56,7 @@ class WorkspacePresenter(QObject):
 
     def _on_panel_removed(self, entity_id: str) -> None:
         self._panels.pop(entity_id, None)
+        self._panel_types.pop(entity_id, None)
         self._view.remove_tab(entity_id)
 
     # ── View → WorkspaceState ─────────────────────────────────
@@ -65,8 +69,18 @@ class WorkspacePresenter(QObject):
         if entity is not None:
             self._view.rename_tab(entity_id, getattr(entity, "name", entity_id))
 
+    def _on_tab_changed(self, entity_id: str) -> None:
+        """Active workspace tab changed — sync the ribbon to match."""
+        if not entity_id:
+            self._controller.set_ribbon_tab("Home")
+            return
+        panel_type = self._panel_types.get(entity_id, "")
+        tab_name = _RIBBON_TAB_MAP.get(panel_type, "Home")
+        self._controller.set_ribbon_tab(tab_name)
+
     def _on_tab_closed(self, entity_id: str) -> None:
         self._panels.pop(entity_id, None)
+        self._panel_types.pop(entity_id, None)
         self._workspace_state.close(entity_id)
 
     def _on_entity_dropped(self, entity_id: str) -> None:
@@ -129,4 +143,9 @@ _PANEL_FACTORIES: dict[str, object] = {
     "ImagePanel": _make_image_panel,
     "DatasetPanel": _make_dataset_panel,
     "CoreStudioPanel": _make_core_studio_panel,
+}
+
+# Maps panel type → ribbon tab name. Panels not listed default to "Home".
+_RIBBON_TAB_MAP: dict[str, str] = {
+    "CoreStudioPanel": "Prepare",
 }

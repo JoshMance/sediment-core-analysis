@@ -56,6 +56,13 @@ class Ribbon(QWidget):
         if btn:
             btn.setEnabled(enabled)
 
+    def set_active_tab(self, tab_name: str) -> None:
+        """Switch the ribbon to the tab with this label."""
+        for i in range(self._tabs.count()):
+            if self._tabs.tabText(i) == tab_name:
+                self._tabs.setCurrentIndex(i)
+                return
+
     # -- internals ------------------------------------------------
 
     def _build_tabs(self) -> None:
@@ -66,7 +73,6 @@ class Ribbon(QWidget):
         home = self._make_tab()
         self._add_group(home, "File", ["New", "Open", "Save"])
         self._add_group(home, "Import", ["Load Image", "Load Data", "Load Map"])
-        self._add_group(home, "Edit", ["Undo", "Redo"])
         self._tabs.addTab(home, "Home")
 
         # -- Prepare tab

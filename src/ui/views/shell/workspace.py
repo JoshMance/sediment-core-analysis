@@ -64,7 +64,8 @@ class WorkspaceView(QWidget):
     with the entity_id so the WorkspacePresenter can clean up.
     """
 
-    tabClosed = Signal(str)  # entity_id
+    tabClosed = Signal(str)     # entity_id
+    tabChanged = Signal(str)     # entity_id of newly active tab ("" when none)
     entityDropped = Signal(str)  # entity_id — user dropped an entity onto workspace
 
     _PAGE_EMPTY = 0
@@ -79,6 +80,7 @@ class WorkspaceView(QWidget):
         self._tabs.setDocumentMode(True)
         self._tabs.setElideMode(Qt.TextElideMode.ElideRight)
         self._tabs.tabCloseRequested.connect(self._on_tab_close_requested)
+        self._tabs.currentChanged.connect(self._on_current_changed)
 
         # entity_id → panel widget (stable reference independent of tab index)
         self._entity_widgets: dict[str, QWidget] = {}
@@ -139,6 +141,18 @@ class WorkspaceView(QWidget):
             self._tabs.setTabText(index, new_name)
 
     # ── Internal slots ────────────────────────────────────────
+
+    def _on_current_changed(self, index: int) -> None:
+        """QTabWidget current tab changed — emit the entity_id."""
+        if index < 0:
+            self.tabChanged.emit("")
+            return
+        widget = self._tabs.widget(index)
+        entity_id = next(
+            (eid for eid, w in self._entity_widgets.items() if w is widget),
+            "",
+        )
+        self.tabChanged.emit(entity_id)
 
     def _on_tab_close_requested(self, index: int) -> None:
         """User clicked the tab close button — remove tab and notify."""

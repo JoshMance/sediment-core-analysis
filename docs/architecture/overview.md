@@ -144,6 +144,7 @@ class AppController:
         self._workspace_state = workspace_state
         self._component_watcher = component_watcher
         self.status_context = StatusContext()
+        self.ribbon_context = RibbonContext()
         self.recent_dirs = RecentDirs()
 
     def create_image_entity(self, file_path: str) -> str:

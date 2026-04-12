@@ -26,6 +26,7 @@ class RibbonPresenter(QObject):
         self._controller = controller
 
         self._view.buttonClicked.connect(self._on_button_clicked)
+        self._controller.ribbon_context.tabRequested.connect(self._view.set_active_tab)
 
     def _on_button_clicked(self, name: str) -> None:
         handler = self._handlers.get(name)

@@ -25,6 +25,7 @@ from src.application.services.session_archive import load as archive_load
 from src.application.services.session_archive import ArchiveError
 from src.application.workspace_state import WorkspaceState
 from src.application.status_context import StatusContext
+from src.application.ribbon_context import RibbonContext
 from src.application.recent_dirs import RecentDirs
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ class AppController:
         self._component_watcher = component_watcher
         self._session_temp_dir: tempfile.TemporaryDirectory | None = None
         self.status_context = StatusContext()
+        self.ribbon_context = RibbonContext()
         self.recent_dirs = RecentDirs()
 
     def set_view_context(self, parts: list[str]) -> None:
@@ -63,6 +65,14 @@ class AppController:
         coordinates or row/column position. Last call wins — no queuing.
         """
         self.status_context.set(parts)
+
+    def set_ribbon_tab(self, tab_name: str) -> None:
+        """Request that the ribbon switch to the given tab.
+
+        Called by presenters to synchronise the ribbon with the current
+        context (e.g. a panel gaining focus). Last call wins.
+        """
+        self.ribbon_context.set_tab(tab_name)
 
     def _watch(self, name: str, obj: object) -> None:
         """Register a runtime-created component with the dev logger (if any)."""

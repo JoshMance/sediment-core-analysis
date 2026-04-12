@@ -57,6 +57,7 @@ application:
         - save_session(path)
         - load_session(path)
         - set_view_context(parts)
+        - set_ribbon_tab(tab_name)
 
     - name: StatusContext
       lifetime: long-lived
@@ -65,6 +66,14 @@ application:
         - contextChanged(parts)
       actions:
         - set(parts)
+
+    - name: RibbonContext
+      lifetime: long-lived
+      owned_by: AppController
+      signals:
+        - tabRequested(tab_name)
+      actions:
+        - set_tab(tab_name)
 
     - name: RecentDirs
       lifetime: long-lived
@@ -129,7 +138,8 @@ ui:
 
     - name: RibbonPresenter
       view: Ribbon
-      subscribes_to: []
+      subscribes_to:
+        - RibbonContext.tabRequested
       calls: [AppController]
       notes: >
         Uses AppController.recent_dirs (RecentDirs) to remember the
@@ -159,6 +169,7 @@ ui:
       manages: [ImagePanelPresenter, DatasetPanelPresenter, CoreStudioPresenter]
       view_signals:
         - WorkspaceView.entityDropped(entity_id) # entity dropped onto workspace → open_in_workspace()
+        - WorkspaceView.tabChanged(entity_id) # active tab changed → set_ribbon_tab()
 
     - name: ImagePanelPresenter
       view: ImagePanel
