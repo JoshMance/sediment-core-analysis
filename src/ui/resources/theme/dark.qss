@@ -77,6 +77,11 @@ QFrame[frameShape="5"] {  /* QFrame::VLine */
     margin: 4px 2px;
 }
 
+/* -- Core Studio column separators -------------------------- */
+QWidget#coreStudioCanvas {
+    background-color: @border_inner;
+}
+
 /* -- Status bar --------------------------------------------- */
 QStatusBar {
     background-color: @bg_panel;

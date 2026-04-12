@@ -34,6 +34,8 @@ class CoreStudioCanvas(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setObjectName("coreStudioCanvas")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self._columns: list[tuple[QWidget, float]] = []  # (widget, width_ratio)
 
