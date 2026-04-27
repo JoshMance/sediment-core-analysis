@@ -2,6 +2,18 @@
 
 - [x] Ribbon auto-switching (RibbonContext) + column separator lines
 
+- [ ] Check Munsell data is correct
+- [ ] Add documentation about the science section
+- [ ] Decide: delete `tests/helpers/signal_logger.py` (redundant now that dev_log exists)
+- [ ] Controller commands � the controller should interact with the store through commands that compose atomic CRUD operations and encapsulate business logic
+- [ ] OS file association � register `.sedivis` with the OS as part of the app installer; associate with the executable and assign `sedivis_file_icon.svg` (converted to `.ico`) so `.sedivis` files show the correct icon in Windows Explorer and Open/Save dialogs
+
+## Stage 2 Goals
+
+Getting back to Nov 2025 functionality: length calibration, core segmentation, colour data (RGB, LAB, etc.) export, and charts.
+
+Google MUI?
+
 ## Core Studio Reset Plan (Post-Revert)
 
 ### 1) Source Of Truth: Image -> RGB -> CIELAB
