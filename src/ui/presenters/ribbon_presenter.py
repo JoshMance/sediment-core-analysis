@@ -109,13 +109,18 @@ class RibbonPresenter(QObject):
         logger.info("Fit -- not implemented yet")
 
     def _core_studio(self) -> None:
-        from src.application.workspace_state import WorkspaceState, WorkspaceEntry
-        ws: WorkspaceState | None = getattr(self._controller, "_workspace_state", None)
-        if ws is None:
-            logger.warning("Core Studio: no WorkspaceState available")
+        store = getattr(self._controller, "_store", None)
+        if store is None:
+            logger.warning("Core Studio: no Store available")
             return
-        entry = WorkspaceEntry(entity_id="core_studio", panel_type="CoreStudioPanel")
-        ws.open(entry)
+
+        cores = store.list_entities(entity_type="CoreEntity", include_ids=True)
+        if cores:
+            latest_core_id = cores[-1][0]
+            self._controller.open_core_in_studio(latest_core_id)
+            return
+
+        self._controller.open_blank_core_studio()
 
     def _analyse(self) -> None:
         logger.info("Analyse -- not implemented yet")

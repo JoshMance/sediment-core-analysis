@@ -39,6 +39,7 @@ class VariablesPresenter(QObject):
         self.view.deleteRequested.connect(self._on_delete_requested)
         self.view.renameRequested.connect(self._on_rename_requested)
         self.view.entityOpenRequested.connect(self._on_entity_open_requested)
+        self.view.openInCoreStudioRequested.connect(self._on_open_in_core_studio_requested)
         self.view.entitySelected.connect(self._on_entity_selected)
 
         # ── Listen to Store signals ─────────────────────────
@@ -49,7 +50,7 @@ class VariablesPresenter(QObject):
     def _on_entity_added(self, entity_id: str, entity_type: str):
         """Store says an entity was added - read it and tell the view."""
         entity = self.store.get(entity_id)
-        name = getattr(entity, "name", str(entity_id))
+        name = _display_name(entity, fallback=str(entity_id))
         display_type = entity_type.removesuffix("Entity")
 
         # Determine parent for tree nesting.
@@ -92,7 +93,7 @@ class VariablesPresenter(QObject):
         """Store says an entity was updated — refresh the row name."""
         entity = self.store.get(entity_id)
         if entity is not None:
-            self.view.update_row_name(entity_id, getattr(entity, "name", str(entity_id)))
+            self.view.update_row_name(entity_id, _display_name(entity, fallback=str(entity_id)))
 
     def _on_delete_requested(self, entity_id: str):
         """User clicked Delete — route to AppController."""
@@ -105,6 +106,12 @@ class VariablesPresenter(QObject):
     def _on_entity_open_requested(self, entity_id: str):
         """User double-clicked a row — open the entity in the workspace."""
         self.controller.open_in_workspace(entity_id)
+
+    def _on_open_in_core_studio_requested(self, image_id: str) -> None:
+        """User requested opening an image in Core Studio via context menu."""
+        core_id = self.controller.create_draft_core_from_image(image_id)
+        if core_id is not None:
+            self.controller.open_core_in_studio(core_id)
 
 
 # ── Preview metadata builders ─────────────────────────────────────────────────
@@ -125,8 +132,18 @@ def _build_preview_rows(entity) -> list[tuple[str, str]]:
         h, w = data.shape[:2]
         rows.append(("Width", str(w)))
         rows.append(("Height", str(h)))
+    elif entity_type == "Core":
+        rows.append(("Draft", "Yes" if bool(getattr(entity, "is_draft", False)) else "No"))
     file_path = getattr(entity, "file_path", None)
     if file_path:
         from pathlib import Path
         rows.append(("File", Path(file_path).name))
     return rows
+
+
+def _display_name(entity: object, fallback: str) -> str:
+    """Return the VariablesList label for an entity."""
+    base = getattr(entity, "name", fallback)
+    if bool(getattr(entity, "is_draft", False)):
+        return f"{base} (draft)"
+    return base

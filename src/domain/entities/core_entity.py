@@ -19,6 +19,7 @@ class CoreEntity:
         name: Display name.
         data: Cropped core image as an (H, W, 3) uint8 RGB array.
         source_image_id: ID of the ImageEntity this was cropped from, if any.
+        is_draft: True while the core is still being prepared for analysis.
         id: Assigned by the Store on add().
         asset_ref: Archive-relative path to the sidecar PNG (e.g. 'assets/<id>_core.png').
                    Populated by the archive service on load; not set during normal runtime.
@@ -26,6 +27,7 @@ class CoreEntity:
     name: str
     data: NDArray[np.uint8] | None = field(default=None, repr=False)
     source_image_id: str | None = None
+    is_draft: bool = False
     id: str | None = None
     asset_ref: str | None = None
 
@@ -39,6 +41,7 @@ class CoreEntity:
             "id": self.id,
             "name": self.name,
             "source_image_id": self.source_image_id,
+            "is_draft": self.is_draft,
             "asset_ref": self.asset_ref,
         }
 
@@ -50,5 +53,6 @@ class CoreEntity:
             id=data["id"],
             name=data["name"],
             source_image_id=data.get("source_image_id"),
+            is_draft=bool(data.get("is_draft", False)),
             asset_ref=data.get("asset_ref"),
         )

@@ -429,12 +429,13 @@ User crops a region in ImagePanel
 ```
 
 ```
-User clicks Core Studio in ribbon
-  → Ribbon emits buttonClicked("Core Studio")
-  → RibbonPresenter opens WorkspaceEntry(entity_id="core_studio", panel_type="CoreStudioPanel")
-  → WorkspaceState emits panelAdded (or panelFocusRequested if already open)
-  → WorkspacePresenter creates CoreStudioPanel + CoreStudioPresenter
-  → Blank panel opens in workspace tab (singleton — only one at a time)
+User right-clicks an image in VariablesList and chooses "Open In Core Studio"
+  → VariablesList emits openInCoreStudioRequested(image_id)
+  → VariablesPresenter calls controller.create_draft_core_from_image(image_id)
+  → VariablesPresenter calls controller.open_core_in_studio(core_id)
+  → WorkspaceState emits panelAdded (or panelFocusRequested if this core tab is already open)
+  → WorkspacePresenter creates CoreStudioPanel + CoreStudioPresenter bound to core_id
+  → Core Studio opens for that core (at most one panel per CoreEntity)
 ```
 
 ## Key Rules

@@ -23,6 +23,7 @@ class VariablesList(QWidget):
     renameRequested = Signal(str, str)   # entity_id, new_name
     entitySelected = Signal(str)         # entity_id when user single-clicks a row
     entityOpenRequested = Signal(str)    # entity_id when user double-clicks a row
+    openInCoreStudioRequested = Signal(str)  # image entity_id
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -69,6 +70,8 @@ class VariablesList(QWidget):
         file_path: str | None = None,
     ) -> None:
         item = QTreeWidgetItem([name, entity_id])
+        item.setData(0, Qt.ItemDataRole.UserRole, entity_type)
+        item.setData(0, Qt.ItemDataRole.UserRole + 1, name)
         if file_path:
             item.setIcon(0, self._icon_provider.icon(QFileInfo(file_path)))
         else:
@@ -84,6 +87,7 @@ class VariablesList(QWidget):
         item = self._find_item(entity_id)
         if item is not None:
             item.setText(0, new_name)
+            item.setData(0, Qt.ItemDataRole.UserRole + 1, new_name)
 
     def remove_row(self, entity_id: str) -> None:
         item = self._find_item(entity_id)
@@ -168,16 +172,25 @@ class VariablesList(QWidget):
         if item is None:
             return
         entity_id = item.text(1)
-        current_name = item.text(0)
+        entity_type = item.data(0, Qt.ItemDataRole.UserRole)
+        current_name = item.data(0, Qt.ItemDataRole.UserRole + 1) or item.text(0)
 
         menu = QMenu(self)
+
+        open_in_core_studio_action = None
+        if entity_type == "Image":
+            open_in_core_studio_action = menu.addAction("Open In Core Studio")
+            menu.addSeparator()
 
         rename_action = menu.addAction("Rename")
         delete_action = menu.addAction("Delete")
 
         action = menu.exec(self._tree.viewport().mapToGlobal(pos))
 
-        if action == rename_action:
+        if open_in_core_studio_action is not None and action == open_in_core_studio_action:
+            self.openInCoreStudioRequested.emit(entity_id)
+
+        elif action == rename_action:
             p = Path(current_name)
             stem, suffix = p.stem, p.suffix
             new_stem, ok = QInputDialog.getText(

@@ -23,7 +23,7 @@ from src.application.services.load_csv import load_csv
 from src.application.services.session_archive import save as archive_save
 from src.application.services.session_archive import load as archive_load
 from src.application.services.session_archive import ArchiveError
-from src.application.workspace_state import WorkspaceState
+from src.application.workspace_state import WorkspaceState, WorkspaceEntry
 from src.application.status_context import StatusContext
 from src.application.ribbon_context import RibbonContext
 from src.application.recent_dirs import RecentDirs
@@ -108,6 +108,7 @@ class AppController:
         name: str,
         data: object,
         source_image_id: str | None = None,
+        is_draft: bool = False,
     ) -> str:
         """Construct a CoreEntity and add it to the Store.
 
@@ -115,12 +116,63 @@ class AppController:
             name: Display name for the core.
             data: Cropped image array (H, W, 3) uint8.
             source_image_id: ID of the source ImageEntity, if any.
+            is_draft: True if this core is still being prepared.
 
         Returns:
             The entity id assigned by the Store.
         """
-        entity = CoreEntity(name=name, data=data, source_image_id=source_image_id)
+        entity = CoreEntity(
+            name=name,
+            data=data,
+            source_image_id=source_image_id,
+            is_draft=is_draft,
+        )
         return self._store.add(entity)
+
+    def create_draft_core_from_image(self, image_id: str) -> str | None:
+        """Create a draft CoreEntity from an existing ImageEntity.
+
+        Args:
+            image_id: ID of the source ImageEntity.
+
+        Returns:
+            The created core id, or None if the source image is missing/invalid.
+        """
+        source = self._store.get(image_id)
+        if not isinstance(source, ImageEntity) or source.data is None:
+            logger.warning("create_draft_core_from_image: invalid source '%s'", image_id)
+            return None
+
+        source_name = source.name.rsplit(".", 1)[0] if "." in source.name else source.name
+        core_name = f"{source_name}_core"
+        core_data = source.data.copy()
+
+        return self.create_core_entity(
+            name=core_name,
+            data=core_data,
+            source_image_id=image_id,
+            is_draft=True,
+        )
+
+    def open_core_in_studio(self, core_id: str) -> None:
+        """Open a CoreEntity in a CoreStudioPanel workspace tab."""
+        if self._workspace_state is None:
+            return
+        self._workspace_state.open(
+            WorkspaceEntry(entity_id=core_id, panel_type="CoreStudioPanel")
+        )
+
+    def open_blank_core_studio(self) -> None:
+        """Open a single blank CoreStudioPanel tab.
+
+        The blank panel is a workspace-level utility surface where users can
+        drop/select an image to begin a new draft core workflow.
+        """
+        if self._workspace_state is None:
+            return
+        self._workspace_state.open(
+            WorkspaceEntry(entity_id="core_studio_blank", panel_type="CoreStudioPanel")
+        )
 
     def create_cropped_image(
         self,

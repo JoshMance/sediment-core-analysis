@@ -59,7 +59,7 @@ uv run ruff check src/ --fix
 uv run pytest
 ```
 
-See [docs/architecture/overview.md](docs/architecture/overview.md) for architecture, and [docs/dev_cycle_checklist.md](docs/dev_cycle_checklist.md) before committing.
+See [docs/architecture/overview.md](docs/architecture/overview.md) for architecture, and [docs/development/checklist.md](docs/development/checklist.md) before committing.
 
 ---
 

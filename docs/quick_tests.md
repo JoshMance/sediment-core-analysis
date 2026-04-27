@@ -62,10 +62,14 @@ uv run python -m tests.variables_test
 ## Core Studio (manual)
 
 1. Run the app: `uv run python main.py`
-2. Click the **Core Studio** button in the **View** ribbon tab
-3. Verify: a blank panel opens in the workspace with placeholder text
-4. Click the button again — verify it **focuses** the existing tab (no duplicate)
-5. Close the tab and reopen — verify it opens fresh
+2. Click **Core Studio** in the **Prepare** ribbon tab
+3. Verify: a blank Core Studio tab opens (single blank instance)
+4. Load at least one image
+5. In VariablesList, right-click the image and click **Open In Core Studio**
+6. Verify: a new **CoreEntity** appears in VariablesList with draft status
+7. Verify: a Core Studio tab opens for that core
+8. Open the same core again from VariablesList — verify it focuses the existing tab (no duplicate for that core)
+9. Create/open a different core — verify it opens in a separate tab
 
 ## Image Crop (manual)
 

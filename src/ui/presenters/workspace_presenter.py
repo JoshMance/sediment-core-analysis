@@ -51,7 +51,10 @@ class WorkspacePresenter(QObject):
         self._panel_types[entry.entity_id] = entry.panel_type
 
         entity = self._store.get(entry.entity_id)
-        title = getattr(entity, "name", entry.entity_id)
+        if entry.panel_type == "CoreStudioPanel" and entry.entity_id == "core_studio_blank":
+            title = "Core Studio"
+        else:
+            title = getattr(entity, "name", entry.entity_id)
         self._view.add_tab(panel_view, title, entry.entity_id)
 
     def _on_panel_removed(self, entity_id: str) -> None:
@@ -135,7 +138,7 @@ def _make_core_studio_panel(
     from src.ui.presenters.core_studio_presenter import CoreStudioPresenter
 
     view = CoreStudioPanel()
-    presenter = CoreStudioPresenter(view, store, controller)
+    presenter = CoreStudioPresenter(view, store, controller, entry.entity_id)
     return view, presenter
 
 
