@@ -1,4 +1,5 @@
-"""Signal payload definitions for Store signals.
+"""IS this needed?
+Signal payload definitions for Store signals.
 
 Dataclasses and enums that define the shape of data
 emitted by Store signals. Presenters import these to

@@ -78,8 +78,36 @@ QFrame[frameShape="5"] {  /* QFrame::VLine */
 }
 
 /* -- Core Studio column separators -------------------------- */
+QWidget#coreStudioHeader {
+    background-color: @bg_panel;
+}
+
+QWidget#coreStudioAirGap {
+    background-color: @bg_raised;
+    border-top: 1px solid @border_inner;
+    border-bottom: 1px solid @border_inner;
+}
+
 QWidget#coreStudioCanvas {
+    background-color: @bg_panel;
+}
+
+QLabel[role="column-header"] {
+    background-color: transparent;
+    color: @fg_muted;
+}
+
+QFrame[role="column-body"] {
+    background-color: @bg_panel;
+}
+
+QWidget[role="column-content"] {
+    background-color: @bg_panel;
+}
+
+QFrame[role="column-separator"] {
     background-color: @border_inner;
+    border: none;
 }
 
 /* -- Status bar --------------------------------------------- */

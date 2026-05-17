@@ -1,4 +1,6 @@
-"""Dependency graph for entity relationships.
+"""Is This Needed?
+
+Dependency graph for entity relationships.
 
 Tracks edges between entities so the Store can determine
 which entities are affected when one changes.

@@ -1,5 +1,7 @@
 # TODO
 
+- [] Add a read the docs?
+
 - [x] Ribbon auto-switching (RibbonContext) + column separator lines
 
 - [ ] Check Munsell data is correct
