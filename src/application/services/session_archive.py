@@ -5,7 +5,6 @@ A .sedivis file is a ZIP archive with this internal layout:
     manifest.json          — format identity + version
     session.json           — serialised entities + workspace entries
     assets/
-        <id>_source.<ext>  — bundled source image (one per ImageEntity)
         <id>_core.png      — sidecar pixel data   (one per CoreEntity)
 
 Responsibilities
@@ -33,7 +32,6 @@ import numpy as np
 import pandas as pd
 
 from src.domain.entities.registry import ENTITY_TYPES
-from src.domain.entities.image_entity import ImageEntity
 from src.domain.entities.core_entity import CoreEntity
 from src.domain.entities.dataset_entity import DatasetEntity
 from src.domain.entities.calibration_entity import CalibrationEntity
@@ -78,9 +76,7 @@ def save(
 
         # ── entities ────────────────────────────────────────────────────────
         for entity in entities:
-            if isinstance(entity, ImageEntity):
-                record = _save_image_entity(entity, zf)
-            elif isinstance(entity, CoreEntity):
+            if isinstance(entity, CoreEntity):
                 record = _save_core_entity(entity, zf)
             elif isinstance(entity, DatasetEntity):
                 record = _save_dataset_entity(entity, zf)
@@ -100,33 +96,6 @@ def save(
             "workspace": [e.to_dict() for e in workspace_entries],
         }
         zf.writestr("session.json", json.dumps(session, indent=2))
-
-
-def _save_image_entity(entity: ImageEntity, zf: zipfile.ZipFile) -> dict:
-    """Bundle the source image file and return a session.json record.
-
-    For cropped images (no file_path), encodes pixel data as a sidecar PNG.
-    """
-    if entity.file_path is not None and Path(entity.file_path).exists():
-        # Original image with a source file — bundle it directly
-        src = Path(entity.file_path)
-        asset_name = f"assets/{entity.id}_{src.name}"
-        zf.write(src, asset_name)
-    elif entity.data is not None:
-        # Cropped image — encode pixel data as PNG
-        asset_name = f"assets/{entity.id}_image.png"
-        buf = io.BytesIO()
-        iio.imwrite(buf, entity.data, extension=".png")
-        zf.writestr(asset_name, buf.getvalue())
-    else:
-        raise ArchiveError(
-            f"ImageEntity '{entity.id}' has no accessible file_path "
-            f"and no pixel data. Cannot bundle asset."
-        )
-
-    d = entity.to_dict()
-    d["file_path"] = asset_name      # rewrite to archive-relative ref
-    return {"type": "ImageEntity", "data": d}
 
 
 def _save_core_entity(entity: CoreEntity, zf: zipfile.ZipFile) -> dict:
@@ -231,9 +200,7 @@ def _reconstruct_entities(records: list[dict], extract_dir: Path) -> list[object
         if type_name not in ENTITY_TYPES:
             raise ArchiveError(f"Unknown entity type '{type_name}' in session.json.")
 
-        if type_name == "ImageEntity":
-            entity = _load_image_entity(data, extract_dir)
-        elif type_name == "CoreEntity":
+        if type_name == "CoreEntity":
             entity = _load_core_entity(data, extract_dir)
         elif type_name == "DatasetEntity":
             entity = _load_dataset_entity(data, extract_dir)
@@ -244,17 +211,6 @@ def _reconstruct_entities(records: list[dict], extract_dir: Path) -> list[object
 
         entities.append(entity)
     return entities
-
-
-def _load_image_entity(data: dict, extract_dir: Path) -> ImageEntity:
-    """Resolve the bundled asset path to a real extracted path."""
-    asset_ref = data.get("file_path")
-    if asset_ref:
-        resolved = extract_dir / asset_ref
-        if not resolved.exists():
-            raise ArchiveError(f"Bundled asset missing after extraction: {asset_ref}")
-        data = {**data, "file_path": str(resolved)}
-    return ImageEntity.from_dict(data)
 
 
 def _load_core_entity(data: dict, extract_dir: Path) -> CoreEntity:

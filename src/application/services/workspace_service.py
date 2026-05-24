@@ -5,9 +5,13 @@ from src.domain.store import Store
 from src.application.workspace_state import WorkspaceEntry, WorkspaceState
 
 _PANEL_TYPE_MAP: dict[str, str] = {
-    "ImageEntity": "ImagePanel",
     "DatasetEntity": "DatasetPanel",
-    "CoreEntity": "CoreStudioPanel",
+    "CoreEntity": "CoreImagePanel",
+}
+
+_PANEL_ID_PREFIX_MAP: dict[str, str] = {
+    "DatasetPanel": "dataset",
+    "CoreImagePanel": "core_image",
 }
 
 
@@ -35,4 +39,13 @@ def open_entity(entity_id: str, store: Store, workspace_state: WorkspaceState) -
     if panel_type is None:
         return  # No panel registered for this type yet — not an error
 
-    workspace_state.open(WorkspaceEntry(entity_id=entity_id, panel_type=panel_type))
+    prefix = _PANEL_ID_PREFIX_MAP[panel_type]
+    panel_id = f"{prefix}::{entity_id}"
+
+    workspace_state.open(
+        WorkspaceEntry(
+            panel_id=panel_id,
+            panel_type=panel_type,
+            target_entity_id=entity_id,
+        )
+    )

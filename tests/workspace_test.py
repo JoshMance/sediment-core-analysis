@@ -3,8 +3,8 @@ Manual test for Workspace feature — end-to-end visual verification
 
 Tests the full flow:
   1. Load an image via FileBrowser → FilePresenter → AppController → Store
-  2. Double-click the image in VariablesList → WorkspacePresenter opens ImagePanel tab
-  3. Draw a selection on the ImagePanel → confirm → CoreEntity appears in VariablesList
+    2. Double-click the image in VariablesList → WorkspacePresenter opens Core Studio tab
+    3. Use Core Studio tools to derive child CoreEntity records
 
 All signals are logged to a LogWindow for inspection.
 
@@ -101,18 +101,18 @@ class WorkspaceTest(QWidget):
             "Ready. Load an image, double-click it in VariablesList to open in workspace."
         )
         self.log_window.add_log(
-            "In the ImagePanel: click Select, draw a region, click ✓ to create a CoreEntity."
+            "Use Core Studio operations to produce derived child cores."
         )
 
     def _assert_unique_panel_identity(self, entry) -> None:
-        """Assert each open entity maps to at most one open workspace tab."""
-        assert entry.entity_id not in self._opened_panel_ids, (
-            f"Duplicate tab opened for entity_id '{entry.entity_id}'."
+        """Assert each panel_id maps to at most one open workspace tab."""
+        assert entry.panel_id not in self._opened_panel_ids, (
+            f"Duplicate tab opened for panel_id '{entry.panel_id}'."
         )
-        self._opened_panel_ids.add(entry.entity_id)
+        self._opened_panel_ids.add(entry.panel_id)
 
-    def _on_panel_removed(self, entity_id: str, _entity_type: str | None = None) -> None:
-        self._opened_panel_ids.discard(entity_id)
+    def _on_panel_removed(self, panel_id: str, _entity_type: str | None = None) -> None:
+        self._opened_panel_ids.discard(panel_id)
 
     def closeEvent(self, event):
         self.log_window.close()

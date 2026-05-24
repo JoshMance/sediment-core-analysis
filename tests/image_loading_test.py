@@ -3,10 +3,10 @@ Image loading end-to-end test: FileBrowser → FilePresenter → AppController �
 
 Double-click an image file (.png, .jpg, .tif) and watch:
   1. FileBrowser emits fileDoubleClicked(path)
-  2. FilePresenter calls controller.create_image_entity(path)
-  3. AppController loads pixels via load_image service, builds ImageEntity
+    2. FilePresenter calls controller.import_core_from_image(path)
+    3. AppController loads pixels via load_image service, builds CoreEntity
   4. AppController calls store.add(entity)
-  5. Store emits entityAdded(id, "ImageEntity")
+    5. Store emits entityAdded(id, "CoreEntity")
 
 Run with: python -m tests.image_loading_test
 """

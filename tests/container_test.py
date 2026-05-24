@@ -8,7 +8,7 @@ Run with: python -m tests.container_test
 """
 from pathlib import Path
 
-from src.domain.entities.image_entity import ImageEntity
+from src.domain.entities.core_entity import CoreEntity
 from src.domain.store.container import EntityContainer
 
 
@@ -31,20 +31,20 @@ def main():
 
     # ── Add ─────────────────────────────────────────────────
     section("add — basic")
-    img = ImageEntity(name="photo.png", file_path=Path("/tmp/photo.png"))
+    img = CoreEntity(name="photo.png", source_file_path=Path("/tmp/photo.png"))
     eid = c.add(img)
     ok("returns id", eid)
     ok("id assigned on entity", img.id == eid)
     ok("count is 1", c.count())
 
     section("add — auto-id when None")
-    img2 = ImageEntity(name="scan.tif")
+    img2 = CoreEntity(name="scan.tif")
     eid2 = c.add(img2)
     ok("id generated", eid2)
     ok("count is 2", c.count())
 
     section("add — duplicate id raises ValueError")
-    dup = ImageEntity(name="dup.png", id=eid)
+    dup = CoreEntity(name="dup.png", id=eid)
     try:
         c.add(dup)
         fail("should have raised", RuntimeError("no error"))
@@ -78,8 +78,8 @@ def main():
     ok("count", len(all_entities))
 
     section("list_entities — by type")
-    typed = c.list_entities(entity_type="ImageEntity")
-    ok("ImageEntity count", len(typed))
+    typed = c.list_entities(entity_type="CoreEntity")
+    ok("CoreEntity count", len(typed))
 
     section("list_entities — include_ids")
     pairs = c.list_entities(include_ids=True)
@@ -107,7 +107,7 @@ def main():
     # ── Stats ───────────────────────────────────────────────
     section("count + summary")
     ok("total count", c.count())
-    ok("typed count", c.count("ImageEntity"))
+    ok("typed count", c.count("CoreEntity"))
     ok("summary", c.summary())
 
     # ── Remove ──────────────────────────────────────────────

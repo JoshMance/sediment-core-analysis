@@ -11,7 +11,7 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
 
-from src.domain.entities.image_entity import ImageEntity
+from src.domain.entities.core_entity import CoreEntity
 from src.domain.store import Store
 from tests.helpers import LogWindow, SignalLogger
 
@@ -50,7 +50,7 @@ class StoreTest(QWidget):
         layout.addWidget(self.status_label)
 
         buttons = [
-            ("Add ImageEntity", self._on_add),
+            ("Add CoreEntity", self._on_add),
             ("Update last name", self._on_update),
             ("Remove last", self._on_remove),
             ("Get last", self._on_get),
@@ -78,8 +78,8 @@ class StoreTest(QWidget):
 
     def _on_add(self):
         n = len(self._added_ids) + 1
-        img = ImageEntity(name=f"image_{n}.png", file_path=Path(f"/data/image_{n}.png"))
-        eid = self.store.add(img)
+        core = CoreEntity(name=f"image_{n}.png", source_file_path=Path(f"/data/image_{n}.png"))
+        eid = self.store.add(core)
         self._added_ids.append(eid)
         self._log(f"Added → id={eid}")
         self._refresh_status()
@@ -137,8 +137,8 @@ class StoreTest(QWidget):
         # Add three
         ids = []
         for i in range(1, 4):
-            img = ImageEntity(name=f"auto_{i}.png")
-            eid = self.store.add(img)
+            core = CoreEntity(name=f"auto_{i}.png")
+            eid = self.store.add(core)
             ids.append(eid)
             self._log(f"  add auto_{i} → {eid}")
 

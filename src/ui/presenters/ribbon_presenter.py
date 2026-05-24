@@ -137,7 +137,7 @@ class RibbonPresenter(QObject):
         paths = dlg.selectedFiles()
         if paths:
             self._controller.recent_dirs.set("image", Path(paths[0]).parent)
-            self._controller.create_image_entity(paths[0])
+            self._controller.import_core_from_image(paths[0])
 
     def _load_data(self) -> None:
         dlg = QFileDialog(self._view)

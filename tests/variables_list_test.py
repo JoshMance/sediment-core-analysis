@@ -17,7 +17,7 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
 
-from src.domain.entities.image_entity import ImageEntity
+from src.domain.entities.core_entity import CoreEntity
 from src.ui.views.shell.variables_list import VariablesList
 from src.ui.presenters.variables_presenter import VariablesPresenter
 from src.domain.store import Store
@@ -101,9 +101,9 @@ class VariablesListTest(QWidget):
 
     def _on_add(self):
         self._add_count += 1
-        entity = ImageEntity(
+        entity = CoreEntity(
             name=f"test_image_{self._add_count}.png",
-            file_path=Path(f"/fake/test_image_{self._add_count}.png"),
+            source_file_path=Path(f"/fake/test_image_{self._add_count}.png"),
         )
         self.log_window.add_log(
             f"Adding entity: {entity.name}",

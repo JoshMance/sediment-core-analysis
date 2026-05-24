@@ -30,7 +30,7 @@ class FilePresenter(QObject):
     def _on_file_selected(self, file_path: str):
         _, ext = os.path.splitext(file_path.lower())
         if ext in (".png", ".jpg", ".jpeg"):
-            entity_id = self.controller.create_image_entity(file_path)
+            entity_id = self.controller.import_core_from_image(file_path)
         elif ext == ".csv":
             entity_id = self.controller.create_dataset_entity(file_path)
         else:

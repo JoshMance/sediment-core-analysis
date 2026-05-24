@@ -23,7 +23,7 @@ class VariablesList(QWidget):
     renameRequested = Signal(str, str)   # entity_id, new_name
     entitySelected = Signal(str)         # entity_id when user single-clicks a row
     entityOpenRequested = Signal(str)    # entity_id when user double-clicks a row
-    openInCoreStudioRequested = Signal(str)  # image entity_id
+    openInCoreStudioRequested = Signal(str)  # core entity_id
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -178,7 +178,7 @@ class VariablesList(QWidget):
         menu = QMenu(self)
 
         open_in_core_studio_action = None
-        if entity_type == "Image":
+        if entity_type == "Core":
             open_in_core_studio_action = menu.addAction("Open In Core Studio")
             menu.addSeparator()
 

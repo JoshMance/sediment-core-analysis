@@ -13,7 +13,6 @@ from pathlib import Path
 
 import imageio.v3 as iio
 
-from src.domain.entities.image_entity import ImageEntity
 from src.domain.entities.core_entity import CoreEntity
 from src.domain.entities.dataset_entity import DatasetEntity
 from src.domain.entities.calibration_entity import CalibrationEntity
@@ -29,6 +28,9 @@ from src.application.ribbon_context import RibbonContext
 from src.application.recent_dirs import RecentDirs
 
 logger = logging.getLogger(__name__)
+
+_CORE_STUDIO_TAB_PREFIX = "core_studio::"
+_BLANK_CORE_STUDIO_PANEL_ID = "core_studio::blank"
 
 # ── Column-type label helpers ─────────────────────────────────────────────────
 
@@ -79,8 +81,8 @@ class AppController:
         if self._component_watcher:
             self._component_watcher(name, obj)
 
-    def create_image_entity(self, file_path: str) -> str | None:
-        """Load an image from disk and add it to the Store.
+    def import_core_from_image(self, file_path: str) -> str | None:
+        """Load an image from disk and add it to the Store as a CoreEntity.
 
         Args:
             file_path: Absolute path to an image file.
@@ -96,18 +98,24 @@ class AppController:
             logger.error("Failed to load image: %s", e)
             return None
 
-        entity = ImageEntity(
+        return self.create_core_entity(
             name=path.name,
-            file_path=path,
             data=data,
+            source_file_path=path,
+            derivation_type="import",
+            derivation_params={},
+            is_draft=False,
         )
-        return self._store.add(entity)
 
     def create_core_entity(
         self,
         name: str,
         data: object,
-        source_image_id: str | None = None,
+        source_file_path: str | Path | None = None,
+        parent_core_id: str | None = None,
+        derivation_type: str = "import",
+        derivation_params: dict | None = None,
+        calibration_id: str | None = None,
         is_draft: bool = False,
     ) -> str:
         """Construct a CoreEntity and add it to the Store.
@@ -115,7 +123,11 @@ class AppController:
         Args:
             name: Display name for the core.
             data: Cropped image array (H, W, 3) uint8.
-            source_image_id: ID of the source ImageEntity, if any.
+            source_file_path: Original import source path, if any.
+            parent_core_id: Parent core id if derived from another core.
+            derivation_type: Derivation operation type.
+            derivation_params: Derivation metadata payload.
+            calibration_id: Associated calibration id, if any.
             is_draft: True if this core is still being prepared.
 
         Returns:
@@ -124,42 +136,71 @@ class AppController:
         entity = CoreEntity(
             name=name,
             data=data,
-            source_image_id=source_image_id,
+            source_file_path=Path(source_file_path) if source_file_path is not None else None,
+            parent_core_id=parent_core_id,
+            derivation_type=derivation_type,
+            derivation_params=derivation_params or {},
+            calibration_id=calibration_id,
             is_draft=is_draft,
         )
         return self._store.add(entity)
 
-    def create_draft_core_from_image(self, image_id: str) -> str | None:
-        """Create a draft CoreEntity from an existing ImageEntity.
+    def create_child_core(
+        self,
+        parent_core_id: str,
+        data: object,
+        name: str | None = None,
+        derivation_type: str = "crop",
+        derivation_params: dict | None = None,
+        is_draft: bool = True,
+    ) -> str | None:
+        """Create a derived child CoreEntity from an existing parent core.
 
         Args:
-            image_id: ID of the source ImageEntity.
+            parent_core_id: ID of the source parent core.
+            data: Child core pixel data.
+            name: Optional explicit child name.
+            derivation_type: Derivation operation type.
+            derivation_params: Derivation metadata payload.
+            is_draft: True while the child core is still being prepared.
 
         Returns:
-            The created core id, or None if the source image is missing/invalid.
+            The created child core id, or None if parent is missing/invalid.
         """
-        source = self._store.get(image_id)
-        if not isinstance(source, ImageEntity) or source.data is None:
-            logger.warning("create_draft_core_from_image: invalid source '%s'", image_id)
+        parent = self._store.get(parent_core_id)
+        if not isinstance(parent, CoreEntity):
+            logger.warning("create_child_core: invalid parent '%s'", parent_core_id)
             return None
 
-        source_name = source.name.rsplit(".", 1)[0] if "." in source.name else source.name
-        core_name = f"{source_name}_core"
-        core_data = source.data.copy()
+        if name is None:
+            stem = parent.name.rsplit(".", 1)[0] if "." in parent.name else parent.name
+            name = f"{stem}_{derivation_type}"
 
-        return self.create_core_entity(
-            name=core_name,
-            data=core_data,
-            source_image_id=image_id,
-            is_draft=True,
+        child_id = self.create_core_entity(
+            name=name,
+            data=data,
+            source_file_path=parent.source_file_path,
+            parent_core_id=parent_core_id,
+            derivation_type=derivation_type,
+            derivation_params=derivation_params or {},
+            calibration_id=parent.calibration_id,
+            is_draft=is_draft,
         )
+        updated_children = list(parent.child_core_ids) + [child_id]
+        self._store.update_field(parent_core_id, "child_core_ids", updated_children)
+        return child_id
 
     def open_core_in_studio(self, core_id: str) -> None:
         """Open a CoreEntity in a CoreStudioPanel workspace tab."""
         if self._workspace_state is None:
             return
+        panel_id = f"{_CORE_STUDIO_TAB_PREFIX}{core_id}"
         self._workspace_state.open(
-            WorkspaceEntry(entity_id=core_id, panel_type="CoreStudioPanel")
+            WorkspaceEntry(
+                panel_id=panel_id,
+                panel_type="CoreStudioPanel",
+                target_entity_id=core_id,
+            )
         )
 
     def open_blank_core_studio(self) -> None:
@@ -171,47 +212,12 @@ class AppController:
         if self._workspace_state is None:
             return
         self._workspace_state.open(
-            WorkspaceEntry(entity_id="core_studio_blank", panel_type="CoreStudioPanel")
+            WorkspaceEntry(
+                panel_id=_BLANK_CORE_STUDIO_PANEL_ID,
+                panel_type="CoreStudioPanel",
+                target_entity_id=None,
+            )
         )
-
-    def create_cropped_image(
-        self,
-        name: str,
-        data: object,
-        parent_id: str,
-    ) -> str | None:
-        """Create a cropped ImageEntity as a child of a parent image.
-
-        The child inherits the parent's calibration_id. The parent's
-        child_ids list is updated to include the new entity.
-
-        Args:
-            name: Display name for the cropped image.
-            data: Cropped image array (H, W, 3) uint8.
-            parent_id: ID of the parent ImageEntity.
-
-        Returns:
-            The entity id assigned by the Store, or None if the parent
-            was not found.
-        """
-        parent = self._store.get(parent_id)
-        if not isinstance(parent, ImageEntity):
-            logger.error("create_cropped_image: parent '%s' not found or not an ImageEntity", parent_id)
-            return None
-
-        entity = ImageEntity(
-            name=name,
-            data=data,
-            parent_id=parent_id,
-            calibration_id=parent.calibration_id,
-        )
-        child_id = self._store.add(entity)
-
-        # Update parent's child_ids
-        updated_children = list(parent.child_ids) + [child_id]
-        self._store.update_field(parent_id, "child_ids", updated_children)
-
-        return child_id
 
     def delete_entity(self, entity_id: str) -> object:
         """Remove an entity from the Store.
@@ -386,12 +392,7 @@ class AppController:
 
         # Add entities to Store and load asset data
         for entity in entities:
-            if isinstance(entity, ImageEntity) and entity.file_path:
-                try:
-                    entity.data = load_image(entity.file_path)
-                except Exception as e:
-                    logger.warning("Could not load pixels for %s: %s", entity.id, e)
-            elif isinstance(entity, CoreEntity) and entity.asset_ref:
+            if isinstance(entity, CoreEntity) and entity.asset_ref:
                 try:
                     entity.data = iio.imread(entity.asset_ref)
                 except Exception as e:

@@ -66,16 +66,16 @@ uv run python -m tests.variables_test
 3. Verify: a blank Core Studio tab opens (single blank instance)
 4. Load at least one image
 5. In VariablesList, right-click the image and click **Open In Core Studio**
-6. Verify: a new **CoreEntity** appears in VariablesList with draft status
-7. Verify: a Core Studio tab opens for that core
+6. Verify: the imported **CoreEntity** opens in Core Studio
+7. Verify: no extra duplicate core is created by open action
 8. Open the same core again from VariablesList — verify it focuses the existing tab (no duplicate for that core)
 9. Create/open a different core — verify it opens in a separate tab
 
-## Image Crop (manual)
+## Core Derivation (manual)
 
 1. Load an image via the file browser
 2. Open it in the workspace (double-click in VariablesList)
-3. Click the **Crop** button in the image toolbar
-4. Adjust the crop rectangle, click **✓** to confirm
-5. Verify: a new **ImageEntity** (not CoreEntity) appears in VariablesList with name `<original>_crop`
-6. Open the cropped image — verify it shows the cropped region
+3. Use a Core Studio derivation operation (for example crop/split)
+4. Confirm the operation
+5. Verify: a new **CoreEntity** appears in VariablesList with name `<original>_crop` (or operation-specific suffix)
+6. Verify: the new child core records lineage to the parent core

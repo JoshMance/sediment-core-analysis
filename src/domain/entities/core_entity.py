@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import numpy as np
 from numpy.typing import NDArray
@@ -11,14 +12,18 @@ from numpy.typing import NDArray
 class CoreEntity:
     """A sediment core sample.
 
-    Owns its pixel data directly — the image IS the core (typically cropped
-    from a source ImageEntity). source_image_id records provenance but is not
-    a live reference; the pixel data stands alone.
+    Owns its pixel data directly. All image imports are treated as cores,
+    and derived cores (crop/split) record lineage to parent cores.
 
     Attributes:
         name: Display name.
-        data: Cropped core image as an (H, W, 3) uint8 RGB array.
-        source_image_id: ID of the ImageEntity this was cropped from, if any.
+        data: Core image as an (H, W, 3) uint8 RGB array.
+        source_file_path: Original imported source file path, if any.
+        parent_core_id: Parent core id if derived from another core.
+        child_core_ids: IDs of cores derived from this core.
+        derivation_type: Import/operation type (e.g. 'import', 'crop', 'split').
+        derivation_params: Operation metadata payload for reproducibility.
+        calibration_id: ID of associated CalibrationEntity, if any.
         is_draft: True while the core is still being prepared for analysis.
         id: Assigned by the Store on add().
         asset_ref: Archive-relative path to the sidecar PNG (e.g. 'assets/<id>_core.png').
@@ -26,7 +31,12 @@ class CoreEntity:
     """
     name: str
     data: NDArray[np.uint8] | None = field(default=None, repr=False)
-    source_image_id: str | None = None
+    source_file_path: Path | None = None
+    parent_core_id: str | None = None
+    child_core_ids: list[str] = field(default_factory=list)
+    derivation_type: str = "import"
+    derivation_params: dict = field(default_factory=dict)
+    calibration_id: str | None = None
     is_draft: bool = False
     id: str | None = None
     asset_ref: str | None = None
@@ -40,7 +50,12 @@ class CoreEntity:
         return {
             "id": self.id,
             "name": self.name,
-            "source_image_id": self.source_image_id,
+            "source_file_path": str(self.source_file_path) if self.source_file_path is not None else None,
+            "parent_core_id": self.parent_core_id,
+            "child_core_ids": self.child_core_ids,
+            "derivation_type": self.derivation_type,
+            "derivation_params": self.derivation_params,
+            "calibration_id": self.calibration_id,
             "is_draft": self.is_draft,
             "asset_ref": self.asset_ref,
         }
@@ -49,10 +64,16 @@ class CoreEntity:
     def from_dict(cls, data: dict) -> "CoreEntity":
         """Reconstruct from a plain dict. Pixel data is not restored here —
         the AppController loads it from the resolved asset path."""
+        source_file_path = Path(data["source_file_path"]) if data.get("source_file_path") else None
         return cls(
             id=data["id"],
             name=data["name"],
-            source_image_id=data.get("source_image_id"),
+            source_file_path=source_file_path,
+            parent_core_id=data.get("parent_core_id"),
+            child_core_ids=data.get("child_core_ids", []),
+            derivation_type=data.get("derivation_type", "import"),
+            derivation_params=data.get("derivation_params", {}),
+            calibration_id=data.get("calibration_id"),
             is_draft=bool(data.get("is_draft", False)),
             asset_ref=data.get("asset_ref"),
         )

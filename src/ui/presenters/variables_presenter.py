@@ -54,12 +54,16 @@ class VariablesPresenter(QObject):
         display_type = entity_type.removesuffix("Entity")
 
         # Determine parent for tree nesting.
-        parent_id = getattr(entity, "parent_id", None) or getattr(
-            entity, "source_image_id", None
+        parent_id = (
+            getattr(entity, "parent_core_id", None)
+            or getattr(entity, "parent_id", None)
         )
 
         # File path for OS-native icon.
-        file_path = getattr(entity, "file_path", None)
+        file_path = (
+            getattr(entity, "file_path", None)
+            or getattr(entity, "source_file_path", None)
+        )
         file_path_str = str(file_path) if file_path else None
 
         self.view.add_row(
@@ -107,11 +111,9 @@ class VariablesPresenter(QObject):
         """User double-clicked a row — open the entity in the workspace."""
         self.controller.open_in_workspace(entity_id)
 
-    def _on_open_in_core_studio_requested(self, image_id: str) -> None:
-        """User requested opening an image in Core Studio via context menu."""
-        core_id = self.controller.create_draft_core_from_image(image_id)
-        if core_id is not None:
-            self.controller.open_core_in_studio(core_id)
+    def _on_open_in_core_studio_requested(self, core_id: str) -> None:
+        """User requested opening an entity in Core Studio via context menu."""
+        self.controller.open_core_in_studio(core_id)
 
 
 # ── Preview metadata builders ─────────────────────────────────────────────────
@@ -128,13 +130,17 @@ def _build_preview_rows(entity) -> list[tuple[str, str]]:
     if entity_type == "Dataset" and data is not None:
         rows.append(("Rows", str(len(data))))
         rows.append(("Columns", str(len(data.columns))))
-    elif entity_type == "Image" and data is not None:
+    elif entity_type == "Core" and data is not None:
         h, w = data.shape[:2]
         rows.append(("Width", str(w)))
         rows.append(("Height", str(h)))
+        rows.append(("Draft", "Yes" if bool(getattr(entity, "is_draft", False)) else "No"))
     elif entity_type == "Core":
         rows.append(("Draft", "Yes" if bool(getattr(entity, "is_draft", False)) else "No"))
-    file_path = getattr(entity, "file_path", None)
+    file_path = (
+        getattr(entity, "file_path", None)
+        or getattr(entity, "source_file_path", None)
+    )
     if file_path:
         from pathlib import Path
         rows.append(("File", Path(file_path).name))

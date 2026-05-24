@@ -1,4 +1,4 @@
-"""ImagePanel — displays an image with pan/zoom/rotate and crop tools."""
+"""CoreImagePanel — displays a core image with pan/zoom/rotate and crop tools."""
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QSize, Signal
@@ -7,14 +7,14 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QToolBar, QPushButton, QLabel, QSlider,
 )
 
-from src.ui.views.panels.image_panel.canvas import ImageCanvas
+from src.ui.views.panels.core_image_panel.canvas import ImageCanvas
 
 
-class ImagePanel(QWidget):
-    """Runtime panel for inspecting a single image entity.
+class CoreImagePanel(QWidget):
+    """Runtime panel for inspecting a single core image.
 
     Pure view. Emits signals only — the Presenter handles all domain logic.
-    Created at runtime by WorkspacePresenter when an image entity is opened.
+    Created at runtime by WorkspacePresenter when a core is opened.
     """
 
     # Emitted when the user confirms a crop; carries the cropped QPixmap.

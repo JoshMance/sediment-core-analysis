@@ -3,12 +3,23 @@
 
 domain:
   entities:
-    - name: ImageEntity
-      fields: [id, name, file_path, data, parent_id, child_ids, calibration_id]
     - name: DatasetEntity
       fields: [id, name, file_path, data, columns, column_types, asset_ref]
     - name: CoreEntity
-      fields: [id, name, data, source_image_id, asset_ref]
+      fields:
+        [
+          id,
+          name,
+          data,
+          source_file_path,
+          parent_core_id,
+          child_core_ids,
+          derivation_type,
+          derivation_params,
+          calibration_id,
+          is_draft,
+          asset_ref,
+        ]
     - name: CalibrationEntity
       fields: [id, mm_per_px]
 
@@ -16,7 +27,19 @@ domain:
     - name: Store
       lifetime: long-lived
       signals: [entityAdded, entityRemoved, entityUpdated, storeReset]
-      actions: [add, get, get_many, get_field, list_entities, update_field, remove, count, summary, clear]
+      actions:
+        [
+          add,
+          get,
+          get_many,
+          get_field,
+          list_entities,
+          update_field,
+          remove,
+          count,
+          summary,
+          clear,
+        ]
 
   services: []
 
@@ -26,12 +49,11 @@ application:
       lifetime: long-lived
       writes_to: [Store, WorkspaceState]
       actions:
-        - create_image_entity
+        - import_core_from_image
         - create_core_entity
-        - create_draft_core_from_image
+        - create_child_core
         - open_core_in_studio
         - open_blank_core_studio
-        - create_cropped_image
         - delete_entity
         - rename_entity
         - create_dataset_entity
@@ -86,9 +108,21 @@ ui:
 
     - name: VariablesPresenter
       views: [VariablesList, PreviewPanel]
-      subscribes_to: [Store.entityAdded, Store.entityRemoved, Store.entityUpdated, Store.storeReset]
+      subscribes_to:
+        [
+          Store.entityAdded,
+          Store.entityRemoved,
+          Store.entityUpdated,
+          Store.storeReset,
+        ]
       calls: [AppController]
-      view_signals: [VariablesList.entitySelected, VariablesList.deleteRequested, VariablesList.renameRequested, VariablesList.entityOpenRequested]
+      view_signals:
+        [
+          VariablesList.entitySelected,
+          VariablesList.deleteRequested,
+          VariablesList.renameRequested,
+          VariablesList.entityOpenRequested,
+        ]
 
     - name: RibbonPresenter
       view: Ribbon
@@ -97,22 +131,42 @@ ui:
 
     - name: StatusBarPresenter
       view: StatusBar
-      subscribes_to: [Store.entityAdded, Store.entityRemoved, Store.entityUpdated, Store.storeReset, StatusContext.contextChanged]
+      subscribes_to:
+        [
+          Store.entityAdded,
+          Store.entityRemoved,
+          Store.entityUpdated,
+          Store.storeReset,
+          StatusContext.contextChanged,
+        ]
       calls: []
 
     - name: WorkspacePresenter
       view: WorkspaceView
-      subscribes_to: [WorkspaceState.panelAdded, WorkspaceState.panelRemoved, WorkspaceState.panelFocusRequested, Store.entityUpdated]
+      subscribes_to:
+        [
+          WorkspaceState.panelAdded,
+          WorkspaceState.panelRemoved,
+          WorkspaceState.panelFocusRequested,
+          Store.entityUpdated,
+        ]
       calls: [WorkspaceState, AppController]
-      manages: [ImagePanelPresenter, DatasetPanelPresenter, CoreStudioPresenter]
+      manages:
+        [CoreImagePanelPresenter, DatasetPanelPresenter, CoreStudioPresenter]
       view_signals: [WorkspaceView.entityDropped, WorkspaceView.tabChanged]
 
-    - name: ImagePanelPresenter
-      view: ImagePanel
+    - name: CoreImagePanelPresenter
+      view: CoreImagePanel
       lifetime: per-panel
       subscribes_to: []
       calls: [AppController]
-      view_signals: [ImagePanel.cropConfirmed, ImageCanvas.cropChanged, ImageCanvas.pixelHovered, ImageCanvas.pixelLeft]
+      view_signals:
+        [
+          CoreImagePanel.cropConfirmed,
+          ImageCanvas.cropChanged,
+          ImageCanvas.pixelHovered,
+          ImageCanvas.pixelLeft,
+        ]
 
     - name: DatasetPanelPresenter
       view: DatasetPanel

@@ -1,4 +1,4 @@
-"""ImagePanelPresenter — connects an ImagePanel view to Store and AppController."""
+"""CoreImagePanelPresenter — connects a CoreImagePanel view to Store and AppController."""
 from __future__ import annotations
 
 import numpy as np
@@ -7,11 +7,11 @@ from PySide6.QtGui import QImage, QPixmap
 
 from src.application import AppController
 from src.domain.store import Store
-from src.ui.views.panels.image_panel import ImagePanel
+from src.ui.views.panels.core_image_panel import CoreImagePanel
 
 
-class ImagePanelPresenter(QObject):
-    """Wires an ImagePanel to its ImageEntity and the AppController.
+class CoreImagePanelPresenter(QObject):
+    """Wires a CoreImagePanel to a CoreEntity and the AppController.
 
     Created by WorkspacePresenter at the time the panel tab is opened.
     Lifetime is owned by WorkspacePresenter's internal dict.
@@ -19,7 +19,7 @@ class ImagePanelPresenter(QObject):
 
     def __init__(
         self,
-        view: ImagePanel,
+        view: CoreImagePanel,
         store: Store,
         controller: AppController,
         entity_id: str,
@@ -36,10 +36,10 @@ class ImagePanelPresenter(QObject):
         view.canvas.pixelHovered.connect(self._on_pixel_hovered)
         view.canvas.pixelLeft.connect(self._on_pixel_left)
 
-    # ── Store → View ──────────────────────────────────────────
+    # Store -> View
 
     def _load_image(self) -> None:
-        """Fetch the entity's pixel data and push a QPixmap to the view."""
+        """Fetch the entity pixel data and push a QPixmap to the view."""
         entity = self._store.get(self._entity_id)
         if entity is None or entity.data is None:
             return
@@ -47,7 +47,7 @@ class ImagePanelPresenter(QObject):
         pixmap = self._ndarray_to_pixmap(entity.data)
         self._view.set_pixmap(pixmap)
 
-    # ── View → AppController ──────────────────────────────────
+    # View -> AppController
 
     def _on_pixel_hovered(self, x: int, y: int) -> None:
         if self._data is None:
@@ -61,20 +61,23 @@ class ImagePanelPresenter(QObject):
         self._controller.set_view_context([])
 
     def _on_crop_confirmed(self, pixmap: QPixmap) -> None:
-        """User confirmed a crop — create a cropped ImageEntity in the Store."""
+        """User confirmed a crop - create a derived child core in the Store."""
         entity = self._store.get(self._entity_id)
         base_name = getattr(entity, "name", self._entity_id)
         stem = base_name.rsplit(".", 1)[0] if "." in base_name else base_name
         crop_name = f"{stem}_crop"
 
         arr = self._pixmap_to_ndarray(pixmap)
-        self._controller.create_cropped_image(
-            name=crop_name,
+        self._controller.create_child_core(
+            parent_core_id=self._entity_id,
             data=arr,
-            parent_id=self._entity_id,
+            name=crop_name,
+            derivation_type="crop",
+            derivation_params={},
+            is_draft=False,
         )
 
-    # ── Conversion helpers ────────────────────────────────────
+    # Conversion helpers
 
     @staticmethod
     def _ndarray_to_pixmap(data: np.ndarray) -> QPixmap:

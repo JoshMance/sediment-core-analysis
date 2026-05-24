@@ -9,13 +9,10 @@ from PySide6.QtGui import QImage, QPixmap
 
 from src.application import AppController
 from src.domain.entities.core_entity import CoreEntity
-from src.domain.entities.image_entity import ImageEntity
 from src.domain.store import Store
 from src.ui.views.panels.core_studio_panel import CoreStudioPanel
 
 logger = logging.getLogger(__name__)
-
-_BLANK_CORE_STUDIO_ID = "core_studio_blank"
 
 
 def _array_to_pixmap(data: np.ndarray) -> QPixmap:
@@ -34,7 +31,7 @@ class CoreStudioPresenter(QObject):
         view: CoreStudioPanel,
         store: Store,
         controller: AppController,
-        core_id: str,
+        core_id: str | None,
     ) -> None:
         super().__init__()
         self._view = view
@@ -48,14 +45,15 @@ class CoreStudioPresenter(QObject):
 
     def _load_core_image(self) -> None:
         """Load the bound core's image into the panel."""
-        if self._core_id == _BLANK_CORE_STUDIO_ID:
+        core_id = self._core_id
+        if core_id is None:
             return
-        entity = self._store.get(self._core_id)
+        entity = self._store.get(core_id)
         if not isinstance(entity, CoreEntity):
-            logger.warning("Core Studio: '%s' is not a CoreEntity", self._core_id)
+            logger.warning("Core Studio: '%s' is not a CoreEntity", core_id)
             return
         if entity.data is None:
-            logger.warning("Core Studio: CoreEntity '%s' has no data", self._core_id)
+            logger.warning("Core Studio: CoreEntity '%s' has no data", core_id)
             return
         pixmap = _array_to_pixmap(entity.data)
         self._view.set_pixmap(pixmap)
@@ -63,15 +61,9 @@ class CoreStudioPresenter(QObject):
     # ── Handlers ──────────────────────────────────────────────
 
     def _on_image_dropped(self, entity_id: str) -> None:
-        """User dropped an image onto an empty panel — create/open a draft core."""
+        """User dropped an entity onto an empty panel — open if it is a core."""
         entity = self._store.get(entity_id)
-        if not isinstance(entity, ImageEntity):
-            logger.warning("Core Studio: dropped entity '%s' is not an ImageEntity", entity_id)
+        if not isinstance(entity, CoreEntity):
+            logger.warning("Core Studio: dropped entity '%s' is not a CoreEntity", entity_id)
             return
-        if entity.data is None:
-            logger.warning("Core Studio: ImageEntity '%s' has no data", entity_id)
-            return
-        core_id = self._controller.create_draft_core_from_image(entity_id)
-        if core_id is None:
-            return
-        self._controller.open_core_in_studio(core_id)
+        self._controller.open_core_in_studio(entity_id)

@@ -10,12 +10,11 @@ A `.sedivis` file is a portable, self-contained project archive. One file contai
 
 A `.sedivis` file is a **ZIP archive** with the following internal structure:
 
-```
+```text
 project.sedivis  (ZIP)
 ├── manifest.json        ← format name + version number
 ├── session.json         ← serialized entities + workspace state
 └── assets/
-    ├── <id>_source.tif  ← bundled source images (ImageEntity)
     ├── <id>_core.png    ← sidecar pixel data (CoreEntity)
     └── ...
 ```
@@ -38,13 +37,12 @@ project.sedivis  (ZIP)
 
 Every entity type gets `to_dict()` / `from_dict()` methods. These write to / read from `session.json`.
 
-- **`ImageEntity`** — `file_path` is saved as provenance only. The archive service copies the image into `assets/` and the saved record points at the bundled asset path (`assets/<id>_source.tif`). New fields `parent_id`, `child_ids`, and `calibration_id` are serialized in the JSON record. For cropped images (no `file_path`), pixel data is encoded as a sidecar PNG (`assets/<id>_image.png`).
-- **`CoreEntity`** — has no file path; holds raw pixel data. Saved as a sidecar PNG in `assets/` (`assets/<id>_core.png`). `to_dict()` omits `data` and stores `asset_ref` instead. The archive service writes/reads the PNG.
+- **`CoreEntity`** — stores core pixel data and provenance metadata. Pixel data is saved as a sidecar PNG in `assets/` (`assets/<id>_core.png`). `to_dict()` omits `data` and stores `asset_ref` instead. The archive service writes/reads the PNG.
 - **`CalibrationEntity`** — pure JSON, no sidecar assets. `to_dict()` / `from_dict()` serialize `id` and `mm_per_px` directly into `session.json`.
 
 ### Workspace State
 
-`WorkspaceEntry` (already a `@dataclass` with `entity_id` and `panel_type`) gets `to_dict()` / `from_dict()`. The list of open entries is written into `session.json` alongside the entity list.
+`WorkspaceEntry` is a `@dataclass` with `panel_id`, `panel_type`, and `target_entity_id`. It provides `to_dict()` / `from_dict()`, and the list of open entries is written into `session.json` alongside the entity list.
 
 ### Registry-based reconstruction
 
@@ -109,7 +107,7 @@ Open and Save dialogs are created as **non-native** `QFileDialog` instances (i.e
 
 `SedivisIconProvider` (`src/ui/resources/icon_provider.py`) subclasses `QFileIconProvider` and overrides `icon()`: when the file being listed has a `.sedivis` suffix it returns a `QIcon` backed by `src/ui/resources/logo/sedivis_file_icon.svg`; all other file types fall through to the default provider.
 
-```
+```text
 src/ui/resources/
 ├── icon_provider.py          ← SedivisIconProvider
 └── logo/
@@ -124,7 +122,7 @@ The `RibbonPresenter._make_file_dialog()` helper constructs the dialog, sets `Do
 
 | Phase               | Work                                                                                          | Independently testable?           |
 | ------------------- | --------------------------------------------------------------------------------------------- | --------------------------------- |
-| 1 — Serialization   | `to_dict` / `from_dict` on `ImageEntity`, `CoreEntity`, `WorkspaceEntry`                      | Yes — pure Python unit tests      |
+| 1 — Serialization   | `to_dict` / `from_dict` on `CoreEntity`, `WorkspaceEntry`                                     | Yes — pure Python unit tests      |
 | 2 — Infrastructure  | `Store.clear()` + reset signal, `WorkspaceState.clear()`                                      | Yes                               |
 | 3 — Archive service | `session_archive.py` — ZIP read/write, asset bundling, path rewriting                         | Yes — file I/O tests              |
 | 4 — AppController   | `save_session`, `load_session`, `new_session`, temp dir management                            | Yes — controller integration test |
@@ -137,7 +135,6 @@ The `RibbonPresenter._make_file_dialog()` helper constructs the dialog, sets `Do
 | File                                          | Status                                                                             |
 | --------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `src/application/services/session_archive.py` | New                                                                                |
-| `src/domain/entities/image_entity.py`         | Add `to_dict` / `from_dict`                                                        |
 | `src/domain/entities/core_entity.py`          | Add `to_dict` / `from_dict`                                                        |
 | `src/application/workspace_state.py`          | Add `clear()` to `WorkspaceState`; add `to_dict` / `from_dict` to `WorkspaceEntry` |
 | `src/domain/store/store.py`                   | Add `clear()` + `storeReset` signal (TODO already exists)                          |

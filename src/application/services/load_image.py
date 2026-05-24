@@ -1,7 +1,7 @@
 """Image loader — pure I/O service
 
 Reads an image file from disk and returns pixel data in the
-format expected by an Image Entity. No signals, no Store
+format expected by a CoreEntity import flow. No signals, no Store
 interaction, no domain logic.
 
 Internal to the application layer (services/).

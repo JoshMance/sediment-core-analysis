@@ -8,7 +8,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QWidget
 
-from src.ui.views.panels.image_panel.colour_calibrators import MunsellCalibrator, MunsellChipGrid
+from src.ui.views.panels.core_image_panel.colour_calibrators import MunsellCalibrator, MunsellChipGrid
 
 ZOOM_MIN = 0.1
 ZOOM_MAX = 10.0

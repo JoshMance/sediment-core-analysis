@@ -7,7 +7,7 @@ and Store state change along the way.
 
 Load chain:
   FileBrowser.fileDoubleClicked → FilePresenter._on_file_selected
-    → AppController.create_image_entity → Store.add → Store.entityAdded
+        → AppController.import_core_from_image → Store.add → Store.entityAdded
     → VariablesPresenter._on_entity_added → VariablesList.add_row
 
 Delete chain:
@@ -132,12 +132,12 @@ class VariablesTest(QWidget):
         self.file_presenter._on_file_selected = traced_file_selected
 
         # ── Controller trace ────────────────────────────────
-        original_create = self.controller.create_image_entity
+        original_create = self.controller.import_core_from_image
         original_delete = self.controller.delete_entity
 
         def traced_create(file_path: str):
             self.log_window.add_log(
-                f"create_image_entity({file_path})",
+                f"import_core_from_image({file_path})",
                 source="Controller",
             )
             result = original_create(file_path)
@@ -161,7 +161,7 @@ class VariablesTest(QWidget):
             )
             return result
 
-        self.controller.create_image_entity = traced_create
+        self.controller.import_core_from_image = traced_create
         self.controller.delete_entity = traced_delete
 
         # ── VariablesPresenter trace ──────────────────────

@@ -13,7 +13,7 @@ This document defines the intended Core Studio behavior and ownership boundaries
 
 - A core can exist in draft form using `is_draft: bool`.
 - Draft cores are first-class entities and must appear in VariablesList.
-- Opening an image into Core Studio creates a draft CoreEntity before editing begins.
+- Opening a core into Core Studio must not create a second duplicate core.
 
 ## State Ownership
 
@@ -28,9 +28,9 @@ This document defines the intended Core Studio behavior and ownership boundaries
 - CoreEntity must not encode direct UI commands such as "show column".
 - Presenter maps core facts to concrete visible/hidden columns.
 
-## Current Transitional Behavior
+## Current Behavior
 
-- VariablesList context menu on an ImageEntity provides "Open In Core Studio".
-- That action creates a draft CoreEntity and opens its Core Studio tab.
+- VariablesList context menu on a CoreEntity provides "Open In Core Studio".
+- That action opens the existing core tab (or focuses it if already open).
 - Ribbon "Core Studio" focuses the most recent existing core.
 - If no core exists yet, Ribbon opens a blank Core Studio panel instance.

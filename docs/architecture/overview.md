@@ -158,9 +158,9 @@ class AppController:
         self.ribbon_context = RibbonContext()
         self.recent_dirs = RecentDirs()
 
-    def create_image_entity(self, file_path: str) -> str:
+    def import_core_from_image(self, file_path: str) -> str:
         data = load_image(file_path)          # services/load_image.py
-        entity = ImageEntity(name=..., data=data)
+      entity = CoreEntity(name=..., data=data, derivation_type="import")
         return self._store.add(entity)        # Store emits entityAdded
 
     def open_in_workspace(self, entity_id: str) -> None:
@@ -188,17 +188,17 @@ Currently contains:
 
 > Application-layer record of which panels are currently open. Long-lived QObject — not a widget.
 
-| What               | Implementation                                                          |
-| ------------------ | ----------------------------------------------------------------------- |
-| Panel tracking     | `_open: dict[str, WorkspaceEntry]` keyed by `entity_id`                 |
-| `open(entry)`      | Emits `panelAdded` on first open; `panelFocusRequested` if already open |
-| `close(entity_id)` | Removes entry, emits `panelRemoved`                                     |
+| What              | Implementation                                                          |
+| ----------------- | ----------------------------------------------------------------------- |
+| Panel tracking    | `_open: dict[str, WorkspaceEntry]` keyed by `panel_id`                  |
+| `open(entry)`     | Emits `panelAdded` on first open; `panelFocusRequested` if already open |
+| `close(panel_id)` | Removes entry, emits `panelRemoved`                                     |
 
 ```python
 class WorkspaceState(QObject):
     panelAdded          = Signal(object)  # WorkspaceEntry
-    panelRemoved        = Signal(str)     # entity_id
-    panelFocusRequested = Signal(str)     # entity_id — already open, just focus it
+  panelRemoved        = Signal(str)     # panel_id
+  panelFocusRequested = Signal(str)     # panel_id — already open, just focus it
 ```
 
 The UI layer (`WorkspacePresenter`) connects to these signals to create, destroy, and focus panel widgets.
@@ -263,7 +263,7 @@ and react independently.
 | Folder    | Rule                                                                                           | Examples                                                                |
 | --------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `shell/`  | Views that are **created at startup and persist** for the lifetime of the application.         | `Ribbon`, `VariablesList`, `PreviewPanel`, `StatusBar`, `WorkspaceView` |
-| `panels/` | Views that are **created at runtime** on demand (e.g. when the user opens or creates a thing). | `ImagePanel`, `CoreStudioPanel`, entity editors                         |
+| `panels/` | Views that are **created at runtime** on demand (e.g. when the user opens or creates a thing). | `CoreImagePanel`, `CoreStudioPanel`, entity editors                     |
 
 Nothing in `shell/` is created or destroyed while the app is running. Nothing in `panels/` exists at startup.
 
@@ -402,9 +402,9 @@ User clicks "Load Image" in the Ribbon
   → Ribbon emits buttonClicked("Load Image")
   → RibbonPresenter opens a QFileDialog (starting in recent_dirs "image" directory)
   → User selects a file; RibbonPresenter records the directory via recent_dirs
-  → RibbonPresenter calls controller.create_image_entity(path)
+  → RibbonPresenter calls controller.import_core_from_image(path)
   → AppController calls load_image(path) → pixel data
-  → AppController constructs ImageEntity(name, file_path, data)
+  → AppController constructs CoreEntity(name, source_file_path, data)
   → AppController calls store.add(entity)
   → Store assigns UUID, stores entity, emits entityAdded(id, type)
   → All Presenters listening to entityAdded react
@@ -425,29 +425,27 @@ User double-clicks an entity in VariablesList
   → VariablesList emits entityOpenRequested(entity_id)
   → VariablesPresenter calls controller.open_in_workspace(entity_id)
   → AppController calls workspace_service.open_entity(entity_id, store, workspace_state)
-  → WorkspaceService maps entity type → panel type ("ImageEntity" → "ImagePanel")
+  → WorkspaceService maps entity type → panel type ("CoreEntity" → "CoreImagePanel")
   → WorkspaceService calls workspace_state.open(WorkspaceEntry(...))
   → WorkspaceState emits panelAdded(entry)  [or panelFocusRequested if already open]
-  → WorkspacePresenter receives panelAdded, calls factory, creates (ImagePanel, ImagePanelPresenter)
-  → WorkspacePresenter calls workspace_view.add_tab(panel, title, entity_id)
-  → ImagePanelPresenter loads entity from Store, converts to QPixmap, calls panel.set_pixmap()
+  → WorkspacePresenter receives panelAdded, calls factory, creates (CoreImagePanel, CoreImagePanelPresenter)
+  → WorkspacePresenter calls workspace_view.add_tab(panel, title, panel_id)
+  → CoreImagePanelPresenter loads core data from Store and updates the panel
 ```
 
 ```text
-User crops a region in ImagePanel
-  → ImagePanel emits cropConfirmed(pixmap)
-  → ImagePanelPresenter converts QPixmap → numpy array
-  → ImagePanelPresenter calls controller.create_cropped_image(name, data, parent_id)
-  → AppController creates ImageEntity with parent_id, inherits calibration_id from parent
-  → AppController appends child_id to parent’s child_ids via store.update_field
+User performs a crop/split operation in Core Studio
+  → CoreStudioPresenter derives a child pixel array from the current core
+  → CoreStudioPresenter calls controller.create_child_core(parent_core_id, data, ...)
+  → AppController creates child CoreEntity with lineage + derivation metadata
+  → AppController appends child_core_id to parent.child_core_ids via store.update_field
   → Store emits entityAdded (new child) + entityUpdated (parent)
-  → VariablesList reacts, shows new cropped image in the entity list
+  → VariablesList reacts, shows the derived child core in the entity list
 ```
 
 ```text
-User right-clicks an image in VariablesList and chooses "Open In Core Studio"
-  → VariablesList emits openInCoreStudioRequested(image_id)
-  → VariablesPresenter calls controller.create_draft_core_from_image(image_id)
+User right-clicks a core in VariablesList and chooses "Open In Core Studio"
+  → VariablesList emits openInCoreStudioRequested(core_id)
   → VariablesPresenter calls controller.open_core_in_studio(core_id)
   → WorkspaceState emits panelAdded (or panelFocusRequested if this core tab is already open)
   → WorkspacePresenter creates CoreStudioPanel + CoreStudioPresenter bound to core_id

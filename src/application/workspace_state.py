@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from PySide6.QtCore import QObject, Signal
 
@@ -11,15 +12,26 @@ from src.domain.store import Store
 @dataclass
 class WorkspaceEntry:
     """Describes a single open panel in the workspace."""
-    entity_id: str
+    panel_id: str
     panel_type: str
+    target_entity_id: str | None = None
 
     def to_dict(self) -> dict:
-        return {"entity_id": self.entity_id, "panel_type": self.panel_type}
+        return {
+            "panel_id": self.panel_id,
+            "panel_type": self.panel_type,
+            "target_entity_id": self.target_entity_id,
+        }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "WorkspaceEntry":
-        return cls(entity_id=data["entity_id"], panel_type=data["panel_type"])
+    def from_dict(cls, data: dict[str, Any]) -> "WorkspaceEntry":
+        panel_id = data["panel_id"]
+        target_entity_id = data.get("target_entity_id")
+        return cls(
+            panel_id=panel_id,
+            panel_type=data["panel_type"],
+            target_entity_id=target_entity_id,
+        )
 
 
 class WorkspaceState(QObject):
@@ -31,8 +43,8 @@ class WorkspaceState(QObject):
     """
 
     panelAdded = Signal(object)        # WorkspaceEntry
-    panelRemoved = Signal(str)         # entity_id
-    panelFocusRequested = Signal(str)  # entity_id
+    panelRemoved = Signal(str)         # panel_id
+    panelFocusRequested = Signal(str)  # panel_id
 
     def __init__(self, store: Store | None = None, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -43,28 +55,33 @@ class WorkspaceState(QObject):
 
     def open(self, entry: WorkspaceEntry) -> None:
         """Open a panel, or request focus if already open."""
-        if entry.entity_id in self._entries:
-            self.panelFocusRequested.emit(entry.entity_id)
+        if entry.panel_id in self._entries:
+            self.panelFocusRequested.emit(entry.panel_id)
         else:
-            self._entries[entry.entity_id] = entry
+            self._entries[entry.panel_id] = entry
             self.panelAdded.emit(entry)
 
-    def close(self, entity_id: str) -> None:
+    def close(self, panel_id: str) -> None:
         """Record that a panel has been closed."""
-        self._entries.pop(entity_id, None)
-        self.panelRemoved.emit(entity_id)
+        self._entries.pop(panel_id, None)
+        self.panelRemoved.emit(panel_id)
 
-    def is_open(self, entity_id: str) -> bool:
-        """Return True if a panel is currently open for this entity."""
-        return entity_id in self._entries
+    def is_open(self, panel_id: str) -> bool:
+        """Return True if a panel is currently open for this panel id."""
+        return panel_id in self._entries
 
     def clear(self) -> None:
         """Close all panels. Emits panelRemoved for each open entry."""
-        for entity_id in list(self._entries):
-            self.close(entity_id)
+        for panel_id in list(self._entries):
+            self.close(panel_id)
 
     # ── Store signal handlers ─────────────────────────────────
 
     def _on_entity_removed(self, entity_id: str, _entity_type: str) -> None:
-        if self.is_open(entity_id):
-            self.close(entity_id)
+        to_close = [
+            panel_id
+            for panel_id, entry in self._entries.items()
+            if entry.target_entity_id == entity_id
+        ]
+        for panel_id in to_close:
+            self.close(panel_id)
