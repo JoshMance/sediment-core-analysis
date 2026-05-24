@@ -21,6 +21,7 @@ This document defines the intended Core Studio behavior and ownership boundaries
 - AppController is the only writer to Store.
 - Views do not own workflow truth.
 - Presenters translate domain facts to UI behavior (for example: visible columns).
+- Presenters call Application services for scientific computations; they do not call `science.lib` directly.
 
 ## Column Visibility Rule
 

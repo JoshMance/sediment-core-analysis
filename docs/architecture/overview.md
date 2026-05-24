@@ -33,9 +33,9 @@ The system is organised into three layers. Dependencies flow inward: UI → Appl
 owns scientific transformations and reference data (e.g. RGB/CIELAB/Munsell/
 calibration transforms).
 
-Any layer may call `science.lib` when needed. Preferred orchestration is still via
-Presenter/Application when practical, but the hard rule is: scientific logic
-must live in `science`, not be reimplemented elsewhere.
+Application-layer services call `science.lib` and expose results upward.
+UI and Domain layers must not call `science.lib` directly. The hard rule is:
+scientific logic must live in `science`, not be reimplemented elsewhere.
 
 ### Domain Layer — `src/domain/`
 

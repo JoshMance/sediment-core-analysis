@@ -1,6 +1,7 @@
 """CoreStudioCanvas — lays out column widgets horizontally, image governs height."""
 from __future__ import annotations
 
+import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QHBoxLayout, QWidget
@@ -182,3 +183,33 @@ class CoreStudioCanvas(QWidget):
             self.setMinimumHeight(h)
         else:
             self.setMinimumHeight(0)
+
+    def set_channel_profiles(
+        self,
+        *,
+        r: np.ndarray,
+        g: np.ndarray,
+        b: np.ndarray,
+        l_star: np.ndarray,
+        a_star: np.ndarray,
+        b_star: np.ndarray,
+    ) -> None:
+        """Push computed channel profiles into their corresponding columns."""
+        self.r_col.set_profile(r)
+        self.g_col.set_profile(g)
+        self.b_col.set_profile(b)
+        self.l_col.set_profile(l_star)
+        self.a_col.set_profile(a_star)
+        self.b_star_col.set_profile(b_star)
+
+    def clear_channel_profiles(self) -> None:
+        """Clear all channel data columns."""
+        for col in (
+            self.r_col,
+            self.g_col,
+            self.b_col,
+            self.l_col,
+            self.a_col,
+            self.b_star_col,
+        ):
+            col.clear_profile()

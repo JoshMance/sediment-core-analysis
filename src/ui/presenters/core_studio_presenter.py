@@ -8,6 +8,7 @@ from PySide6.QtCore import QObject
 from PySide6.QtGui import QImage, QPixmap
 
 from src.application import AppController
+from src.application.services import compute_channels
 from src.domain.entities.core_entity import CoreEntity
 from src.domain.store import Store
 from src.ui.views.panels.core_studio_panel import CoreStudioPanel
@@ -47,16 +48,28 @@ class CoreStudioPresenter(QObject):
         """Load the bound core's image into the panel."""
         core_id = self._core_id
         if core_id is None:
+            self._view.clear_channel_profiles()
             return
         entity = self._store.get(core_id)
         if not isinstance(entity, CoreEntity):
             logger.warning("Core Studio: '%s' is not a CoreEntity", core_id)
+            self._view.clear_channel_profiles()
             return
         if entity.data is None:
             logger.warning("Core Studio: CoreEntity '%s' has no data", core_id)
+            self._view.clear_channel_profiles()
             return
         pixmap = _array_to_pixmap(entity.data)
         self._view.set_pixmap(pixmap)
+        channels = compute_channels.for_core(entity.data)
+        self._view.set_channel_profiles(
+            r=channels.r,
+            g=channels.g,
+            b=channels.b,
+            l_star=channels.l_star,
+            a_star=channels.a_star,
+            b_star=channels.b_star,
+        )
 
     # ── Handlers ──────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 """CoreStudioPanel — column-based panel for the core creation workflow."""
 from __future__ import annotations
 
+import numpy as np
 from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QPainter, QPixmap
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QScrollArea, QToolBar, QVBoxLayout, QWidget
@@ -145,6 +146,30 @@ class CoreStudioPanel(QWidget):
         """Set the core image. Height adjusts to preserve aspect ratio."""
         self._has_image = pixmap is not None and not pixmap.isNull()
         self.canvas.image_col.set_pixmap(pixmap)
+
+    def set_channel_profiles(
+        self,
+        *,
+        r: np.ndarray,
+        g: np.ndarray,
+        b: np.ndarray,
+        l_star: np.ndarray,
+        a_star: np.ndarray,
+        b_star: np.ndarray,
+    ) -> None:
+        """Load channel profiles into the Core Studio data columns."""
+        self.canvas.set_channel_profiles(
+            r=r,
+            g=g,
+            b=b,
+            l_star=l_star,
+            a_star=a_star,
+            b_star=b_star,
+        )
+
+    def clear_channel_profiles(self) -> None:
+        """Clear all channel columns."""
+        self.canvas.clear_channel_profiles()
 
     # ── Drag and drop ─────────────────────────────────────────
 

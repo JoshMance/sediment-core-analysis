@@ -23,8 +23,9 @@ from __future__ import annotations
 
 import math
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QFontMetrics, QImage, QPainter, QPixmap, QTransform
+import numpy as np
+from PySide6.QtCore import Qt, Signal, QPointF
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QImage, QPainter, QPen, QPixmap, QTransform
 from PySide6.QtWidgets import QFrame, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 # ── Layout constants ──────────────────────────────────────────────────────────
@@ -380,3 +381,99 @@ class DataChannelColumn(_BaseColumn):
 
     def __init__(self, title: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self._profile = _ChannelProfileContent(title=title)
+        self._content_layout = QVBoxLayout(self._content)
+        self._content_layout.setContentsMargins(0, 0, 0, 0)
+        self._content_layout.setSpacing(0)
+        self._content_layout.addWidget(self._profile)
+
+    def set_profile(self, profile: np.ndarray) -> None:
+        """Render a 1D profile as a vertical squiggly line plot."""
+        self._profile.set_profile(profile)
+
+    def clear_profile(self) -> None:
+        """Clear profile rendering from this channel column."""
+        self._profile.clear_profile()
+
+
+class _ChannelProfileContent(QWidget):
+    """Render a single numeric profile as a depth-aligned squiggly line plot."""
+
+    _RANGES: dict[str, tuple[float, float]] = {
+        "R": (0.0, 255.0),
+        "G": (0.0, 255.0),
+        "B": (0.0, 255.0),
+        "L*": (0.0, 100.0),
+        "a*": (-128.0, 127.0),
+        "b*": (-128.0, 127.0),
+    }
+
+    _PENS: dict[str, tuple[int, int, int]] = {
+        "R": (214, 74, 74),
+        "G": (67, 160, 71),
+        "B": (66, 133, 244),
+        "L*": (245, 245, 245),
+        "a*": (233, 30, 99),
+        "b*": (255, 193, 7),
+    }
+
+    def __init__(self, title: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setProperty("role", "column-content")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._title = title
+        self._profile: np.ndarray | None = None
+
+    def set_profile(self, profile: np.ndarray) -> None:
+        arr = np.asarray(profile, dtype=np.float32).reshape(-1)
+        self._profile = arr if arr.size else None
+        self.update()
+
+    def clear_profile(self) -> None:
+        self._profile = None
+        self.update()
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        super().paintEvent(event)
+        if self._profile is None:
+            return
+        rect = self.contentsRect()
+        if rect.width() <= 0 or rect.height() <= 0:
+            return
+
+        low, high = self._RANGES.get(self._title, (float(np.min(self._profile)), float(np.max(self._profile))))
+        if high <= low:
+            return
+
+        painter = QPainter(self)
+        try:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+            axis_color = self.palette().mid().color()
+            axis_color.setAlpha(120)
+            painter.setPen(axis_color)
+            mid_x = rect.left() + rect.width() / 2.0
+            painter.drawLine(QPointF(mid_x, rect.top()), QPointF(mid_x, rect.bottom()))
+
+            if rect.height() == 1:
+                sampled = self._profile[:1]
+            else:
+                src_y = np.linspace(0, self._profile.size - 1, rect.height(), dtype=np.float32)
+                sampled = np.interp(src_y, np.arange(self._profile.size), self._profile)
+            norm = np.clip((sampled - low) / (high - low), 0.0, 1.0)
+
+            rgb = self._PENS.get(self._title, (230, 230, 230))
+            pen_color = QColor(*rgb)
+            pen_color.setAlpha(230)
+            pen = QPen(pen_color, 1.5)
+            painter.setPen(pen)
+
+            x_span = max(1.0, rect.width() - 1.0)
+            points = [
+                QPointF(rect.left() + float(v) * x_span, rect.top() + float(i))
+                for i, v in enumerate(norm)
+            ]
+            for i in range(1, len(points)):
+                painter.drawLine(points[i - 1], points[i])
+        finally:
+            painter.end()
