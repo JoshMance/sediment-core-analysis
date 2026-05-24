@@ -88,3 +88,15 @@ scratch/
 ###############################
 .DS_Store
 Thumbs.db
+
+# Keep all science module files tracked.
+!science/
+!science/**
+!science/lib/
+!science/lib/**
+!science/data/
+!science/data/**
+
+# Still ignore Python cache/bytecode inside science.
+science/**/__pycache__/
+science/**/*.py[cod]

@@ -1,0 +1,5287 @@
+{
+  "book": {
+    "name": "Munsell Nearly Neutrals",
+    "hues": [
+      {
+        "hue": "5R",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5R 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5R 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5R 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5R 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5R 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5R 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5R 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5R 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5R 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5R 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5R 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5R 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5R 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5R 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5R 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5R 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5R 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5R 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5R 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5R 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5R 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5R 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5R 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5R 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5R 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5R 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5R 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5R 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5R 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5R 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5R 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5R 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5R 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5R 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5R 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5R 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5R 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5R 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5R 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5R 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5R 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5R 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5R 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5R 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5R 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5R 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5R 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5R 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5R 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5R 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5R 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5R 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5R 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5R 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5R 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5R 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "10R",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10R 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10R 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10R 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10R 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10R 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10R 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10R 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10R 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10R 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10R 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10R 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10R 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10R 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10R 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10R 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10R 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10R 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10R 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10R 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10R 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10R 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10R 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10R 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10R 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10R 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10R 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10R 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10R 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10R 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10R 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10R 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10R 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10R 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10R 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10R 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10R 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10R 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10R 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10R 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10R 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10R 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10R 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10R 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10R 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10R 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10R 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10R 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10R 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10R 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10R 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10R 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10R 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10R 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10R 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10R 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10R 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "5YR",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5YR 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5YR 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5YR 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5YR 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5YR 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5YR 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5YR 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5YR 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5YR 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5YR 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5YR 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5YR 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5YR 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5YR 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5YR 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5YR 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5YR 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5YR 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5YR 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5YR 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5YR 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5YR 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5YR 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5YR 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5YR 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5YR 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5YR 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5YR 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5YR 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5YR 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5YR 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5YR 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5YR 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5YR 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5YR 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5YR 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5YR 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5YR 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5YR 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5YR 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5YR 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5YR 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5YR 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5YR 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5YR 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5YR 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5YR 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5YR 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5YR 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5YR 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5YR 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5YR 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5YR 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5YR 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5YR 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5YR 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "10YR",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10YR 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10YR 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10YR 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10YR 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10YR 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10YR 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10YR 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10YR 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10YR 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10YR 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10YR 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10YR 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10YR 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10YR 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10YR 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10YR 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10YR 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10YR 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10YR 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10YR 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10YR 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10YR 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10YR 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10YR 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10YR 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10YR 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10YR 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10YR 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10YR 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10YR 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10YR 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10YR 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10YR 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10YR 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10YR 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10YR 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10YR 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10YR 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10YR 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10YR 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10YR 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10YR 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10YR 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10YR 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10YR 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10YR 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10YR 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10YR 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10YR 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10YR 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10YR 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10YR 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10YR 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10YR 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10YR 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10YR 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "5Y",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5Y 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5Y 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5Y 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5Y 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5Y 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5Y 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5Y 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5Y 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5Y 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5Y 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5Y 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5Y 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5Y 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5Y 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5Y 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5Y 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5Y 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5Y 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5Y 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5Y 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5Y 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5Y 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5Y 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5Y 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5Y 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5Y 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5Y 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5Y 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5Y 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5Y 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5Y 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5Y 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5Y 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5Y 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5Y 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5Y 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5Y 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5Y 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5Y 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5Y 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5Y 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5Y 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5Y 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5Y 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5Y 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5Y 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5Y 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5Y 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5Y 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5Y 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5Y 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5Y 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5Y 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5Y 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5Y 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5Y 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "10Y",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10Y 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10Y 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10Y 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10Y 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10Y 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10Y 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10Y 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10Y 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10Y 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10Y 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10Y 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10Y 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10Y 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10Y 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10Y 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10Y 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10Y 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10Y 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10Y 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10Y 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10Y 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10Y 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10Y 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10Y 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10Y 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10Y 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10Y 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10Y 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10Y 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10Y 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10Y 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10Y 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10Y 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10Y 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10Y 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10Y 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10Y 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10Y 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10Y 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10Y 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10Y 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10Y 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10Y 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10Y 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10Y 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10Y 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10Y 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10Y 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10Y 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10Y 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10Y 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10Y 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10Y 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10Y 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10Y 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10Y 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "5GY",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5GY 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5GY 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5GY 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5GY 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5GY 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5GY 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5GY 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5GY 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5GY 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5GY 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5GY 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5GY 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5GY 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5GY 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5GY 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5GY 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5GY 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5GY 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5GY 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5GY 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5GY 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5GY 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5GY 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5GY 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5GY 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5GY 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5GY 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5GY 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5GY 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5GY 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5GY 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5GY 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5GY 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5GY 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5GY 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5GY 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5GY 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5GY 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5GY 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5GY 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5GY 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5GY 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5GY 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5GY 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5GY 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5GY 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5GY 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5GY 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5GY 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5GY 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5GY 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5GY 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5GY 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5GY 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5GY 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5GY 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "10GY",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10GY 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10GY 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10GY 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10GY 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10GY 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10GY 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10GY 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10GY 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10GY 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10GY 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10GY 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10GY 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10GY 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10GY 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10GY 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10GY 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10GY 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10GY 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10GY 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10GY 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10GY 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10GY 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10GY 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10GY 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10GY 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10GY 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10GY 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10GY 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10GY 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10GY 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10GY 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10GY 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10GY 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10GY 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10GY 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10GY 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10GY 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10GY 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10GY 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10GY 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10GY 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10GY 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10GY 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10GY 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10GY 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10GY 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10GY 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10GY 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10GY 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10GY 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10GY 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10GY 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10GY 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10GY 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10GY 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10GY 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "5G",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5G 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5G 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5G 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5G 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5G 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5G 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5G 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5G 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5G 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5G 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5G 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5G 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5G 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5G 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5G 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5G 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5G 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5G 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5G 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5G 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5G 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5G 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5G 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5G 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5G 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5G 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5G 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5G 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5G 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5G 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5G 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5G 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5G 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5G 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5G 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5G 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5G 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5G 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5G 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5G 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5G 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5G 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5G 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5G 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5G 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5G 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5G 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5G 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5G 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5G 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5G 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5G 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5G 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5G 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5G 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5G 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "10G",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10G 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10G 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10G 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10G 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10G 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10G 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10G 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10G 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10G 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10G 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10G 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10G 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10G 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10G 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10G 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10G 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10G 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10G 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10G 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10G 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10G 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10G 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10G 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10G 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10G 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10G 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10G 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10G 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10G 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10G 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10G 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10G 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10G 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10G 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10G 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10G 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10G 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10G 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10G 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10G 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10G 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10G 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10G 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10G 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10G 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10G 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10G 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10G 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10G 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10G 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10G 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10G 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10G 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10G 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10G 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10G 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "5BG",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5BG 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5BG 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5BG 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5BG 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5BG 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5BG 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5BG 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5BG 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5BG 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5BG 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5BG 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5BG 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5BG 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5BG 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5BG 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5BG 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5BG 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5BG 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5BG 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5BG 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5BG 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5BG 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5BG 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5BG 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5BG 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5BG 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5BG 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5BG 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5BG 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5BG 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5BG 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5BG 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5BG 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5BG 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5BG 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5BG 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5BG 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5BG 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5BG 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5BG 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5BG 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5BG 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5BG 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5BG 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5BG 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5BG 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5BG 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5BG 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5BG 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5BG 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5BG 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5BG 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5BG 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5BG 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5BG 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5BG 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "10BG",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10BG 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10BG 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10BG 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10BG 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10BG 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10BG 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10BG 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10BG 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10BG 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10BG 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10BG 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10BG 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10BG 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10BG 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10BG 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10BG 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10BG 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10BG 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10BG 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10BG 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10BG 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10BG 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10BG 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10BG 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10BG 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10BG 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10BG 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10BG 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10BG 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10BG 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10BG 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10BG 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10BG 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10BG 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10BG 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10BG 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10BG 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10BG 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10BG 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10BG 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10BG 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10BG 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10BG 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10BG 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10BG 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10BG 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10BG 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10BG 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10BG 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10BG 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10BG 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10BG 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10BG 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10BG 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10BG 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10BG 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "5B",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5B 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5B 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5B 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5B 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5B 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5B 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5B 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5B 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5B 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5B 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5B 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5B 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5B 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5B 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5B 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5B 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5B 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5B 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5B 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5B 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5B 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5B 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5B 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5B 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5B 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5B 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5B 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5B 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5B 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5B 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5B 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5B 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5B 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5B 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5B 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5B 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5B 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5B 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5B 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5B 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5B 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5B 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5B 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5B 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5B 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5B 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5B 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5B 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5B 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5B 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5B 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5B 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5B 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5B 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5B 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5B 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "10B",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10B 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10B 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10B 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10B 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10B 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10B 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10B 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10B 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10B 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10B 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10B 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10B 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10B 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10B 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10B 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10B 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10B 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10B 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10B 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10B 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10B 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10B 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10B 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10B 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10B 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10B 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10B 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10B 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10B 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10B 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10B 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10B 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10B 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10B 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10B 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10B 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10B 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10B 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10B 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10B 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10B 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10B 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10B 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10B 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10B 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10B 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10B 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10B 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10B 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10B 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10B 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10B 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10B 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10B 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10B 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10B 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "5PB",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5PB 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5PB 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5PB 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5PB 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5PB 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5PB 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5PB 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5PB 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5PB 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5PB 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5PB 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5PB 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5PB 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5PB 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5PB 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5PB 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5PB 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5PB 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5PB 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5PB 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5PB 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5PB 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5PB 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5PB 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5PB 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5PB 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5PB 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5PB 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5PB 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5PB 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5PB 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5PB 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5PB 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5PB 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5PB 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5PB 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5PB 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5PB 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5PB 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5PB 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5PB 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5PB 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5PB 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5PB 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5PB 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5PB 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5PB 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5PB 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5PB 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5PB 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5PB 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5PB 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5PB 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5PB 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5PB 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5PB 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "10PB",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10PB 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10PB 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10PB 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10PB 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10PB 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10PB 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10PB 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10PB 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10PB 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10PB 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10PB 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10PB 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10PB 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10PB 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10PB 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10PB 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10PB 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10PB 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10PB 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10PB 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10PB 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10PB 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10PB 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10PB 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10PB 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10PB 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10PB 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10PB 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10PB 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10PB 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10PB 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10PB 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10PB 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10PB 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10PB 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10PB 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10PB 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10PB 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10PB 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10PB 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10PB 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10PB 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10PB 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10PB 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10PB 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10PB 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10PB 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10PB 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10PB 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10PB 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10PB 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10PB 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10PB 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10PB 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10PB 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10PB 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "5P",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5P 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5P 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5P 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5P 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5P 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5P 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5P 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5P 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5P 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5P 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5P 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5P 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5P 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5P 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5P 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5P 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5P 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5P 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5P 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5P 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5P 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5P 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5P 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5P 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5P 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5P 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5P 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5P 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5P 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5P 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5P 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5P 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5P 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5P 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5P 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5P 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5P 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5P 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5P 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5P 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5P 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5P 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5P 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5P 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5P 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5P 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5P 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5P 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5P 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5P 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5P 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5P 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5P 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5P 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5P 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5P 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "10P",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10P 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10P 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10P 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10P 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10P 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10P 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10P 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10P 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10P 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10P 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10P 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10P 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10P 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10P 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10P 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10P 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10P 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10P 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10P 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10P 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10P 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10P 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10P 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10P 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10P 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10P 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10P 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10P 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10P 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10P 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10P 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10P 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10P 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10P 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10P 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10P 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10P 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10P 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10P 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10P 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10P 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10P 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10P 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10P 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10P 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10P 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10P 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10P 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10P 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10P 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10P 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10P 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10P 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10P 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10P 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10P 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "5RP",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5RP 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5RP 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5RP 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5RP 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5RP 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5RP 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5RP 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5RP 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5RP 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5RP 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5RP 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5RP 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5RP 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5RP 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5RP 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5RP 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5RP 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5RP 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5RP 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5RP 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5RP 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5RP 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5RP 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5RP 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5RP 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5RP 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5RP 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5RP 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5RP 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5RP 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5RP 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5RP 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5RP 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5RP 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5RP 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5RP 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5RP 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5RP 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5RP 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5RP 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5RP 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5RP 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5RP 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5RP 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5RP 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5RP 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5RP 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5RP 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "5RP 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "5RP 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "5RP 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "5RP 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "5RP 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "5RP 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "5RP 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "5RP 6/4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hue": "10RP",
+        "values": [
+          {
+            "value": 9,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10RP 9/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10RP 9/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10RP 9/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10RP 9/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10RP 9/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10RP 9/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10RP 9/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10RP 9/4"
+              }
+            ]
+          },
+          {
+            "value": 8.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10RP 8.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10RP 8.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10RP 8.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10RP 8.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10RP 8.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10RP 8.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10RP 8.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10RP 8.5/4"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10RP 8/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10RP 8/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10RP 8/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10RP 8/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10RP 8/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10RP 8/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10RP 8/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10RP 8/4"
+              }
+            ]
+          },
+          {
+            "value": 7.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10RP 7.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10RP 7.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10RP 7.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10RP 7.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10RP 7.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10RP 7.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10RP 7.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10RP 7.5/4"
+              }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10RP 7/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10RP 7/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10RP 7/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10RP 7/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10RP 7/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10RP 7/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10RP 7/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10RP 7/4"
+              }
+            ]
+          },
+          {
+            "value": 6.5,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10RP 6.5/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10RP 6.5/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10RP 6.5/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10RP 6.5/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10RP 6.5/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10RP 6.5/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10RP 6.5/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10RP 6.5/4"
+              }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              {
+                "chroma": 0.5,
+                "chip": "10RP 6/0.5"
+              },
+              {
+                "chroma": 1,
+                "chip": "10RP 6/1"
+              },
+              {
+                "chroma": 1.5,
+                "chip": "10RP 6/1.5"
+              },
+              {
+                "chroma": 2,
+                "chip": "10RP 6/2"
+              },
+              {
+                "chroma": 2.5,
+                "chip": "10RP 6/2.5"
+              },
+              {
+                "chroma": 3,
+                "chip": "10RP 6/3"
+              },
+              {
+                "chroma": 3.5,
+                "chip": "10RP 6/3.5"
+              },
+              {
+                "chroma": 4,
+                "chip": "10RP 6/4"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
