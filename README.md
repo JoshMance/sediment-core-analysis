@@ -33,11 +33,13 @@ uv run python main.py --dev   # opens signal log window
 
 ## Project Structure
 
-```
+```text
 src/
 ├── domain/        # Entities, Store
 ├── application/   # AppController, WorkspaceState, services
 └── ui/            # Presenters, views
+
+science/           # Cross-cutting scientific transforms + reference data
 
 docs/
 ├── architecture/  # Overview, topology, diagrams
@@ -59,7 +61,7 @@ uv run ruff check src/ --fix
 uv run pytest
 ```
 
-See [docs/architecture/overview.md](docs/architecture/overview.md) for architecture, and [docs/development/checklist.md](docs/development/checklist.md) before committing.
+See [docs/architecture/overview.md](docs/architecture/overview.md) for architecture, [docs/development/checklist.md](docs/development/checklist.md) for dev-cycle checks, and [docs/development/implementation_checklist.md](docs/development/implementation_checklist.md) for panel/science change checklists.
 
 ---
 

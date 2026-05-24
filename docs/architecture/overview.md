@@ -14,7 +14,7 @@ MVP (Model-View-Presenter) + Command Pattern — idiomatic PySide6
 
 The system is organised into three layers. Dependencies flow inward: UI → Application → Domain.
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │  UI Layer          src/ui/              │
 │  (Views, Presenters)                    │
@@ -26,6 +26,16 @@ The system is organised into three layers. Dependencies flow inward: UI → Appl
 │  (Entities, Store, Domain Services)     │
 └─────────────────────────────────────────┘
 ```
+
+### Science Module (Cross-Cutting) — `/science/`
+
+`science/` is not a fourth architecture layer. It is a top-level module that
+owns scientific transformations and reference data (e.g. RGB/CIELAB/Munsell/
+calibration transforms).
+
+Any layer may call `science.lib` when needed. Preferred orchestration is still via
+Presenter/Application when practical, but the hard rule is: scientific logic
+must live in `science`, not be reimplemented elsewhere.
 
 ### Domain Layer — `src/domain/`
 
@@ -69,6 +79,7 @@ All three layers contain **Components**. **Entities** are defined and stored in 
 Domain layer, but the Application layer orchestrates their creation. Both the
 Application and Domain layers have their own **Services**, with the dependency
 rule that Application Services may use Domain Services but not vice versa.
+`science/` remains outside this layering model.
 
 ---
 
@@ -170,7 +181,7 @@ The Store itself knows nothing about files or serialization.
 Currently contains:
 
 - `load_image.py` — reads image files via `imageio.v3`.
-- `workspace_service.py` — maps entity types to panel types and calls `WorkspaceState.open`. Silently does nothing for entity types with no registered panel yet (e.g. `CoreEntity`).
+- `workspace_service.py` — maps entity types to panel types and calls `WorkspaceState.open`.
 - `session_archive.py` — reads/writes `.sedivis` ZIP archives containing entities, workspace state, and bundled assets.
 
 ### WorkspaceState (Component) — `src/application/workspace_state.py`
@@ -273,7 +284,9 @@ To change a colour, edit `colors.py` only — the change propagates to both QSS 
 
 **Rules:**
 
-- Views must not call `setStyleSheet()` directly.
+- Prefer QSS roles (`objectName` / dynamic properties) over inline styling.
+- Limited inline `setStyleSheet()` use is allowed only for tiny, local visual tweaks.
+- Inline styling must not define theme-level colour systems, typography policy, or reusable roles.
 - If a widget needs a distinct visual role (e.g. error state, primary action button),
   the View sets a Qt property or `objectName`; the appearance is defined in the QSS.
 
@@ -362,8 +375,11 @@ added as the application grows beyond initial development.
 | Views                   | Component | PySide6 widgets. Display only.                                                    |
 | Session serializer      | Service   | `json.dump`/`json.load` with Entity `to_dict()`/`from_dict()`.                    |
 | Core Studio panel       | Component | Column-based panel (depth, image, layers, RGB, CIELab) with toolbar and drag-drop |
-| Science scripts         | —         | Single-file modules in `src/science/` (e.g. `munsell.py`)                         |
-| Science reference data  | —         | Static JSON files in `src/science/data/`                                          |
+
+Science module notes:
+
+- Science library modules: reusable modules in `science/lib/` (for example, `munsell.py`).
+- Science reference data: static JSON files in `science/data/`.
 
 ## Third-Party Libraries
 
@@ -381,7 +397,7 @@ added as the application grows beyond initial development.
 
 ## Data Flow
 
-```
+```text
 User clicks "Load Image" in the Ribbon
   → Ribbon emits buttonClicked("Load Image")
   → RibbonPresenter opens a QFileDialog (starting in recent_dirs "image" directory)
@@ -395,7 +411,7 @@ User clicks "Load Image" in the Ribbon
   → Each Presenter updates its View
 ```
 
-```
+```text
 User clicks delete button (planned)
   → View emits delete_requested signal (entity_id)
   → Presenter calls controller.delete_entity(entity_id)
@@ -404,7 +420,7 @@ User clicks delete button (planned)
   → Presenters react, Views update
 ```
 
-```
+```text
 User double-clicks an entity in VariablesList
   → VariablesList emits entityOpenRequested(entity_id)
   → VariablesPresenter calls controller.open_in_workspace(entity_id)
@@ -417,7 +433,7 @@ User double-clicks an entity in VariablesList
   → ImagePanelPresenter loads entity from Store, converts to QPixmap, calls panel.set_pixmap()
 ```
 
-```
+```text
 User crops a region in ImagePanel
   → ImagePanel emits cropConfirmed(pixmap)
   → ImagePanelPresenter converts QPixmap → numpy array
@@ -428,7 +444,7 @@ User crops a region in ImagePanel
   → VariablesList reacts, shows new cropped image in the entity list
 ```
 
-```
+```text
 User right-clicks an image in VariablesList and chooses "Open In Core Studio"
   → VariablesList emits openInCoreStudioRequested(image_id)
   → VariablesPresenter calls controller.create_draft_core_from_image(image_id)
@@ -440,7 +456,7 @@ User right-clicks an image in VariablesList and chooses "Open In Core Studio"
 
 ## Key Rules
 
-1. **Dependencies flow inward** — UI → Application → Domain, never the reverse
+1. **Layer dependencies flow inward** — UI → Application → Domain, never the reverse. `science/` is cross-cutting and may be called by any layer.
 2. **Application Services may use Domain Services** — Domain Services must never use Application Services
 3. **Presenters never talk to each other** — they independently listen to Store signals
 4. **Presenters can read the Store** — only AppController can write it
@@ -450,3 +466,5 @@ User right-clicks an image in VariablesList and chooses "Open In Core Studio"
 8. **Domain Services placeholder** — `domain/services/` exists for entity specific transformations
 9. Services raise exceptions. The orchestrator decides what to do. That keeps the service reusable and the policy in one place.
 10. **Shell vs Panels** — views in `shell/` are created at startup and persist; views in `panels/` are created at runtime on demand. Never put a startup view in `panels/`, never put a runtime view in `shell/`.
+11. **Science module ownership** — scientific transformations (RGB/LAB/Munsell/calibration transforms) live in top-level `science/` as the single source of truth.
+12. **View boundary for science** — views may read pixels and compute display geometry from provided parameters, but they do not decide scientific parameters.

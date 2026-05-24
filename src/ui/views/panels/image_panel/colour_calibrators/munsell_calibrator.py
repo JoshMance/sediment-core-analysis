@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt, QPoint, QRectF, Signal
 from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPen
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from src.science.munsell import MunsellPage, available_books, get_book
+from science.lib.munsell import MunsellPage, available_books, get_book
 
 _TITLE_BAR_HEIGHT = 24
 _DEFAULT_WIDTH = 220

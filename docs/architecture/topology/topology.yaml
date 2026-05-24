@@ -1,39 +1,22 @@
 # Component topology for sediment-core-analysis
-# See guide.md for structure, rules, and purpose.
+# Code is the source of truth. This file mirrors current code structure.
 
 domain:
   entities:
     - name: ImageEntity
       fields: [id, name, file_path, data, parent_id, child_ids, calibration_id]
-
     - name: DatasetEntity
       fields: [id, name, file_path, data, columns, column_types, asset_ref]
-
     - name: CoreEntity
       fields: [id, name, data, source_image_id, asset_ref]
-
     - name: CalibrationEntity
       fields: [id, mm_per_px]
 
   components:
     - name: Store
       lifetime: long-lived
-      signals:
-        - entityAdded(entity_id, entity_type)
-        - entityRemoved(entity_id, entity_type)
-        - entityUpdated(entity_id, entity_type)
-        - storeReset()
-      actions:
-        - add(entity)
-        - get(entity_id)
-        - get_many(entity_ids)
-        - get_field(entity_id, field_name)
-        - list_entities(entity_type?, include_ids?)
-        - update_field(entity_id, field_name, value)
-        - remove(entity_id)
-        - count(entity_type?)
-        - summary()
-        - clear()
+      signals: [entityAdded, entityRemoved, entityUpdated, storeReset]
+      actions: [add, get, get_many, get_field, list_entities, update_field, remove, count, summary, clear]
 
   services: []
 
@@ -43,59 +26,47 @@ application:
       lifetime: long-lived
       writes_to: [Store, WorkspaceState]
       actions:
-        - create_image_entity(file_path)
-        - create_dataset_entity(file_path)
-        - create_core_entity(name, data, source_image_id?)
-        - create_cropped_image(name, data, parent_id)
-        - delete_entity(entity_id)
-        - rename_entity(entity_id, new_name)
-        - rename_dataset_column(entity_id, old_name, new_name)
-        - change_dataset_column_type(entity_id, col_name, new_type)
-        - update_dataset_cell(entity_id, row, col, value)
-        - open_in_workspace(entity_id)
-        - new_session()
-        - save_session(path)
-        - load_session(path)
-        - set_view_context(parts)
-        - set_ribbon_tab(tab_name)
+        - create_image_entity
+        - create_core_entity
+        - create_draft_core_from_image
+        - open_core_in_studio
+        - open_blank_core_studio
+        - create_cropped_image
+        - delete_entity
+        - rename_entity
+        - create_dataset_entity
+        - rename_dataset_column
+        - change_dataset_column_type
+        - update_dataset_cell
+        - open_in_workspace
+        - new_session
+        - save_session
+        - load_session
+        - set_view_context
+        - set_ribbon_tab
 
     - name: StatusContext
       lifetime: long-lived
       owned_by: AppController
-      signals:
-        - contextChanged(parts)
-      actions:
-        - set(parts)
+      signals: [contextChanged]
+      actions: [set]
 
     - name: RibbonContext
       lifetime: long-lived
       owned_by: AppController
-      signals:
-        - tabRequested(tab_name)
-      actions:
-        - set_tab(tab_name)
+      signals: [tabRequested]
+      actions: [set_tab]
 
     - name: RecentDirs
       lifetime: long-lived
       owned_by: AppController
-      actions:
-        - get(category)
-        - set(category, directory)
-        - clear()
+      actions: [get, set, clear]
 
     - name: WorkspaceState
       lifetime: long-lived
-      subscribes_to:
-        - Store.entityRemoved
-        - Store.storeReset
-      signals:
-        - panelAdded(entry)
-        - panelRemoved(entity_id)
-        - panelFocusRequested(entity_id)
-      actions:
-        - open(entry)
-        - close(entity_id)
-        - clear()
+      subscribes_to: [Store.entityRemoved, Store.storeReset]
+      signals: [panelAdded, panelRemoved, panelFocusRequested]
+      actions: [open, close, clear]
 
   services:
     - name: load_image
@@ -108,93 +79,51 @@ application:
 ui:
   presenters:
     - name: FilePresenter
-      status: unused # retained for potential future use
+      status: unused
       view: FileBrowser
       subscribes_to: []
       calls: [AppController]
 
     - name: VariablesPresenter
       views: [VariablesList, PreviewPanel]
-      subscribes_to:
-        [
-          Store.entityAdded,
-          Store.entityRemoved,
-          Store.entityUpdated,
-          Store.storeReset,
-        ]
+      subscribes_to: [Store.entityAdded, Store.entityRemoved, Store.entityUpdated, Store.storeReset]
       calls: [AppController]
-      view_signals:
-        - VariablesList.entitySelected(entity_id) # selection → preview.show_entity()
-        - VariablesList.deleteRequested(entity_id)
-        - VariablesList.renameRequested(entity_id, new_name)
-        - VariablesList.entityOpenRequested(entity_id)
-      note: >
-        PreviewPanel is driven by VariablesPresenter (not its own presenter)
-        because its content is entirely determined by VariablesList selection.
-        VariablesList uses a hierarchical QTreeWidget — child entities
-        (cropped images, cores) are nested under their parent image.
-        Supports drag (entity_id via application/x-entity-id mime type)
-        to enable drop targets like CoreStudioPanel.
+      view_signals: [VariablesList.entitySelected, VariablesList.deleteRequested, VariablesList.renameRequested, VariablesList.entityOpenRequested]
 
     - name: RibbonPresenter
       view: Ribbon
-      subscribes_to:
-        - RibbonContext.tabRequested
+      subscribes_to: [RibbonContext.tabRequested]
       calls: [AppController]
-      notes: >
-        Uses AppController.recent_dirs (RecentDirs) to remember the
-        last-used directory per file category ("session", "image",
-        "data", "map"). Categories are plain strings — no enum needed.
 
     - name: StatusBarPresenter
       view: StatusBar
-      subscribes_to:
-        [
-          Store.entityAdded,
-          Store.entityRemoved,
-          Store.entityUpdated,
-          Store.storeReset,
-          StatusContext.contextChanged,
-        ]
+      subscribes_to: [Store.entityAdded, Store.entityRemoved, Store.entityUpdated, Store.storeReset, StatusContext.contextChanged]
       calls: []
 
     - name: WorkspacePresenter
       view: WorkspaceView
-      subscribes_to:
-        - WorkspaceState.panelAdded
-        - WorkspaceState.panelRemoved
-        - WorkspaceState.panelFocusRequested
-        - Store.entityUpdated
+      subscribes_to: [WorkspaceState.panelAdded, WorkspaceState.panelRemoved, WorkspaceState.panelFocusRequested, Store.entityUpdated]
       calls: [WorkspaceState, AppController]
       manages: [ImagePanelPresenter, DatasetPanelPresenter, CoreStudioPresenter]
-      view_signals:
-        - WorkspaceView.entityDropped(entity_id) # entity dropped onto workspace → open_in_workspace()
-        - WorkspaceView.tabChanged(entity_id) # active tab changed → set_ribbon_tab()
+      view_signals: [WorkspaceView.entityDropped, WorkspaceView.tabChanged]
 
     - name: ImagePanelPresenter
       view: ImagePanel
       lifetime: per-panel
       subscribes_to: []
       calls: [AppController]
-      view_signals:
-        - ImagePanel.cropConfirmed(pixmap) # crop confirmed → create_cropped_image()
-        - ImageCanvas.cropChanged(rect) # crop rectangle resized/moved
-        - ImageCanvas.pixelHovered(x, y) # mouse over image → set_view_context([X: N, Y: N, RGB: (R, G, B)])
-        - ImageCanvas.pixelLeft() # cursor leaves image → set_view_context([])
+      view_signals: [ImagePanel.cropConfirmed, ImageCanvas.cropChanged, ImageCanvas.pixelHovered, ImageCanvas.pixelLeft]
 
     - name: DatasetPanelPresenter
       view: DatasetPanel
       lifetime: per-panel
       subscribes_to: [Store.entityUpdated]
       calls: [AppController]
-      view_signals:
-        - selectionChanged(row, col) # cell hover/click → set_view_context([Col: N, Row: N])
-        - columnSelected(col) # header click → set_view_context([Col: N, Row: N, Count: N, ...])
+      view_signals: [selectionChanged, columnSelected]
 
     - name: CoreStudioPresenter
       view: CoreStudioPanel
-      lifetime: per-panel (singleton)
+      lifetime: per-panel
       subscribes_to: []
       calls: [AppController]
-      view_signals:
-        - CoreStudioPanel.imageDropped(entity_id) # entity dropped onto empty panel
+      view_signals: [CoreStudioPanel.imageDropped]

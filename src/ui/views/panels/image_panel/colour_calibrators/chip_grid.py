@@ -18,7 +18,7 @@ from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
-from src.science.munsell import MunsellChip, MunsellPage
+from science.lib.munsell import MunsellChip, MunsellPage
 
 _HANDLE_SIZE = 14
 _MIN_CELL_PX = 10

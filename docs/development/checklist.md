@@ -8,6 +8,7 @@ A short list of documents worth consulting before starting work and again before
 
 - [ ] **[architecture/overview.md](architecture/overview.md)** — confirm which layer the work belongs in and where it should live.
 - [ ] **[architecture/topology/topology.yaml](architecture/topology/topology.yaml)** — check what already exists. Entities, actions, signals, presenters. No need to reinvent the wheel every day.
+- [ ] **[implementation_checklist.md](implementation_checklist.md)** — run structural checklists for panel wiring, science ownership, and documentation sync.
 
 ## Before committing
 

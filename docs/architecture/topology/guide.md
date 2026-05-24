@@ -13,16 +13,16 @@
 
 ## Rules
 
+- **Topology is descriptive, not prescriptive.** `topology.yaml` exists to reflect what already exists in code. If code and topology disagree, update topology to match code (not the other way around).
 - **Keep it complete, not detailed.** List every component, entity, service, signal, and public action. Do not describe behaviour.
 - **Update it when the structure changes.** Adding an entity, a presenter, a signal, or an AppController action all require an update here.
-- **Names only.** No return types, no parameter descriptions, no docstrings.
-- **One source of truth.** This file should reflect the code, and the code should reflect this file. If something exists in the codebase, it belongs here. If it's listed here and no longer exists, remove it.
+- **Names only.** Use names without parameter lists or explanatory comments.
+- **Keep it synced to code.** If something exists in the codebase, it belongs here. If it's listed here and no longer exists, remove it.
 
 ## Structure
 
-```
-domain:
-  entities      — domain objects and their fields
+```yaml
+domain: entities      — domain objects and their fields
   components    — long-lived domain components (e.g. Store) with signals and actions
   services      — stateless domain-layer helpers
 
@@ -31,6 +31,7 @@ application:
   services      — stateless application-layer helpers
 
 ui:
-  presenters    — one entry per presenter: its view, what signals it subscribes to,
-                  and what components it calls
+  presenters    — one entry per presenter:
+    its view, what signals it subscribes to,
+    and what components it calls
 ```
