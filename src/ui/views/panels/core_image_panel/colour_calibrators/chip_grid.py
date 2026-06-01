@@ -54,6 +54,17 @@ class MunsellChipGrid(QWidget):
         self._chip_cells: frozenset[tuple[int, int]] = frozenset()
         # Map (row_idx, col_idx) → MunsellChip — populated by set_page().
         self._cell_chips: dict[tuple[int, int], MunsellChip] = {}
+        # Axis label data — stored so paintEvent can annotate the grid.
+        self._hue: str = ""
+        self._values: list[float] = []
+        self._all_chromas: list[float] = []
+
+        # Canonical cell size — the source of truth for sizing.
+        # Widget size is always derived: cols*cell_w + (cols-1)*h_gap, etc.
+        self._cell_w_px: float = float(_DEFAULT_CELL_PX)
+        self._cell_h_px: float = float(_DEFAULT_CELL_PX)
+        self._h_gap_px: int = 0
+        self._v_gap_px: int = 0
 
         self._dragging = False
         self._resizing = False
@@ -83,6 +94,36 @@ class MunsellChipGrid(QWidget):
         """Mapping of (row_idx, col_idx) → MunsellChip for the current page."""
         return self._cell_chips
 
+    @property
+    def cell_ratio(self) -> float:
+        """Current cell height / cell width (for mini-grid aspect ratio)."""
+        return self._cell_h_px / self._cell_w_px if self._cell_w_px else 1.0
+
+    def set_gaps(self, h_px: int, v_px: int) -> None:
+        """Set inter-cell gaps in pixels. Cell size is preserved; widget grows/shrinks."""
+        h_px = max(0, min(h_px, 30))
+        v_px = max(0, min(v_px, 30))
+        self._h_gap_px = h_px
+        self._v_gap_px = v_px
+        new_w = int(self._cols * self._cell_w_px) + max(0, self._cols - 1) * h_px
+        new_h = int(self._rows * self._cell_h_px) + max(0, self._rows - 1) * v_px
+        self.resize(new_w, new_h)
+        if self.parent():
+            par = self.parent()
+            x = max(0, min(self.x(), par.width() - self.width()))
+            y = max(0, min(self.y(), par.height() - self.height()))
+            self.move(x, y)
+        self.update()
+
+    def cell_center(self, r: int, c: int) -> QPointF:
+        """Return the widget-relative centre of the chip at grid position (r, c)."""
+        stride_x = self._cell_w_px + self._h_gap_px
+        stride_y = self._cell_h_px + self._v_gap_px
+        return QPointF(
+            c * stride_x + self._cell_w_px * 0.5,
+            r * stride_y + self._cell_h_px * 0.5,
+        )
+
     def set_page(self, page: MunsellPage) -> None:
         """Reconfigure the grid for the given page and reset to default size."""
         # Build sorted column list from the union of all chroma values.
@@ -91,6 +132,9 @@ class MunsellChipGrid(QWidget):
 
         self._rows = len(page.values)
         self._cols = len(all_chromas)
+        self._hue = page.hue
+        self._values = [row.value for row in page.values]
+        self._all_chromas = all_chromas
 
         # Record which (row, col) cells actually have a chip, and map to chip.
         cells: set[tuple[int, int]] = set()
@@ -103,11 +147,12 @@ class MunsellChipGrid(QWidget):
         self._chip_cells = frozenset(cells)
         self._cell_chips = cell_chips
 
-        w, h = self._clamp_size(
-            self._cols * _DEFAULT_CELL_PX,
-            self._rows * _DEFAULT_CELL_PX,
-        )
-        self.resize(w, h)
+        self._h_gap_px = 0
+        self._v_gap_px = 0
+        cw, ch = self._clamp_cell_size(_DEFAULT_CELL_PX, _DEFAULT_CELL_PX)
+        self._cell_w_px = float(cw)
+        self._cell_h_px = float(ch)
+        self.resize(self._cols * cw, self._rows * ch)
         self.update()
 
     # ── Painting ──────────────────────────────────────────────────────────────
@@ -121,32 +166,33 @@ class MunsellChipGrid(QWidget):
 
         gw = float(self.width())
         gh = float(self.height())
-        cw = gw / self._cols
-        ch = gh / self._rows
+        cw = self._cell_w_px
+        ch = self._cell_h_px
+        stride_x = cw + self._h_gap_px
+        stride_y = ch + self._v_gap_px
 
-        # ── Cell fill (25% white) + 1px white borders ─────────────────────
-        fill = QColor(255, 255, 255, 64)   # 25% opacity
-        border = QPen(QColor("#FFFFFF"), 1)
+        # ── Cell borders (1px blue, no fill) ─────────────────────────────
+        border = QPen(QColor("#0078D7"), 1)
         painter.setPen(border)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         for r, c in self._chip_cells:
-            rect = QRectF(c * cw, r * ch, cw, ch)
-            painter.setBrush(fill)
+            rect = QRectF(c * stride_x, r * stride_y, cw, ch)
             painter.drawRect(rect)
 
-        # ── Outer grid boundary (3px white) ──────────────────────────────
+        # ── Outer grid boundary (3px blue) ───────────────────────────────
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(QRectF(0, 0, gw, gh))
 
-        # ── Crosshairs (2px white) ────────────────────────────────────────
+        # ── Crosshairs (2px blue) at cell centres ─────────────────────────
         arm = min(cw, ch) * 0.15
-        painter.setPen(QPen(QColor("#FFFFFF"), 2))
+        painter.setPen(QPen(QColor("#0078D7"), 2))
         for r, c in self._chip_cells:
-            cx = c * cw + cw * 0.5
-            cy = r * ch + ch * 0.5
+            cx = c * stride_x + cw * 0.5
+            cy = r * stride_y + ch * 0.5
             painter.drawLine(QPointF(cx - arm, cy), QPointF(cx + arm, cy))
             painter.drawLine(QPointF(cx, cy - arm), QPointF(cx, cy + arm))
 
-        # ── Corner L-bracket handles (1px white) ──────────────────────────
+        # ── Corner L-bracket handles (1px blue) ───────────────────────────
         arm_h = float(_HANDLE_SIZE)
         painter.setPen(border)
         for x0, y0, dx, dy in (
@@ -192,7 +238,13 @@ class MunsellChipGrid(QWidget):
 
             raw_w = sw + (dx if "r" in corner else -dx)
             raw_h = sh + (dy if "b" in corner else -dy)
-            cw, ch = self._clamp_size(raw_w, raw_h)
+            # Derive proposed cell size from proposed widget size.
+            raw_cw = (raw_w - max(0, self._cols - 1) * self._h_gap_px) / self._cols if self._cols else raw_w
+            raw_ch = (raw_h - max(0, self._rows - 1) * self._v_gap_px) / self._rows if self._rows else raw_h
+            cell_w, cell_h = self._clamp_cell_size(raw_cw, raw_ch)
+            # Reconstruct widget size from clamped cell size.
+            cw = self._cols * cell_w + max(0, self._cols - 1) * self._h_gap_px
+            ch = self._rows * cell_h + max(0, self._rows - 1) * self._v_gap_px
 
             # Keep the fixed corner in place after clamping.
             new_x = (sx + sw - cw) if "l" in corner else sx
@@ -205,6 +257,8 @@ class MunsellChipGrid(QWidget):
 
             self.move(new_x, new_y)
             self.resize(cw, ch)
+            self._cell_w_px = float(cell_w)
+            self._cell_h_px = float(cell_h)
             self.update()
 
         elif self._dragging and self.parent():
@@ -254,20 +308,13 @@ class MunsellChipGrid(QWidget):
             "br": QRect(w-hs, h-hs, hs, hs),
         }
 
-    def _clamp_size(self, w: int, h: int) -> tuple[int, int]:
-        """Clamp (w, h) so cells stay within the allowed aspect ratio."""
-        min_w = self._cols * _MIN_CELL_PX if self._cols else _MIN_CELL_PX
-        min_h = self._rows * _MIN_CELL_PX if self._rows else _MIN_CELL_PX
-        w = max(int(w), min_w)
-        h = max(int(h), min_h)
-
-        if self._rows and self._cols:
-            ratio = h / w
-            lo = (_MIN_CELL_RATIO * self._rows) / self._cols
-            hi = (_MAX_CELL_RATIO * self._rows) / self._cols
-            if ratio < lo:
-                h = int(w * lo)
-            elif ratio > hi:
-                h = int(w * hi)
-
-        return w, h
+    def _clamp_cell_size(self, cw: float, ch: float) -> tuple[int, int]:
+        """Clamp cell (cw, ch) so each cell respects the allowed aspect ratio."""
+        cw = max(int(cw), _MIN_CELL_PX)
+        ch = max(int(ch), _MIN_CELL_PX)
+        ratio = ch / cw if cw else _MIN_CELL_RATIO
+        if ratio < _MIN_CELL_RATIO:
+            ch = int(cw * _MIN_CELL_RATIO)
+        elif ratio > _MAX_CELL_RATIO:
+            ch = int(cw * _MAX_CELL_RATIO)
+        return cw, ch

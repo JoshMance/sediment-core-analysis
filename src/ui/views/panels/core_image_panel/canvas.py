@@ -33,6 +33,8 @@ class ImageCanvas(QWidget):
     # Emitted when the user presses Escape while the ruler tool is active.
     # The panel should call _deactivate_ruler in response.
     rulerCancelled = Signal()
+    # Emitted when the user confirms the Munsell calibration (overlays auto-close).
+    munsellClosed = Signal()
     # Emitted on mouse-move when the cursor is over a valid image pixel.
     pixelHovered = Signal(int, int)  # image-space x, y
     # Emitted when the cursor leaves the image area or the canvas widget.
@@ -73,6 +75,7 @@ class ImageCanvas(QWidget):
         self._chip_grid = MunsellChipGrid(parent=self)
         self._calibrator.pageSelected.connect(self._on_munsell_page_selected)
         self._calibrator.confirmRequested.connect(self._on_confirm_calibration)
+        self._calibrator.gapChanged.connect(self._on_gap_changed)
         self._chip_grid.positionChanged.connect(self._update_preview_colours)
 
     # ── Public API ────────────────────────────────────────────
@@ -112,6 +115,8 @@ class ImageCanvas(QWidget):
         """Set rotation in degrees (display only — selection coords are unaffected)."""
         self._rotation = angle % 360
         self.update()
+        if self._chip_grid.isVisible():
+            self._update_preview_colours()
 
     def get_rotation(self) -> float:
         return self._rotation
@@ -179,7 +184,15 @@ class ImageCanvas(QWidget):
         if self._crop_visible and self._crop_rect:
             self._draw_crop(painter)
         if self._ruler_active and (self._ruler_p1 is not None or self._ruler_mouse is not None):
+            painter.save()
+            if self._rotation != 0:
+                cx = self._pixmap.width() / 2
+                cy = self._pixmap.height() / 2
+                painter.translate(cx, cy)
+                painter.rotate(self._rotation)
+                painter.translate(-cx, -cy)
             self._draw_ruler_overlay(painter)
+            painter.restore()
         painter.restore()
 
     def _draw_crop(self, painter: QPainter) -> None:
@@ -258,7 +271,8 @@ class ImageCanvas(QWidget):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._ruler_active:
-            img_pos = self._widget_to_image(event.position().toPoint())
+            wp = event.position().toPoint()
+            img_pos = self._widget_to_image(wp)
             if (
                 self._pixmap
                 and 0 <= img_pos.x() < self._pixmap.width()
@@ -389,13 +403,12 @@ class ImageCanvas(QWidget):
         if not self._chip_grid.cell_chips:
             return None
         img = self._pixmap.toImage()
-        cw = self._chip_grid.width() / self._chip_grid.cols
-        ch_h = self._chip_grid.height() / self._chip_grid.rows
         colour_map: dict[tuple[int, int], tuple[int, int, int]] = {}
         results: list = []
         for (r, c), chip in self._chip_grid.cell_chips.items():
-            wx = self._chip_grid.x() + c * cw + cw * 0.5
-            wy = self._chip_grid.y() + r * ch_h + ch_h * 0.5
+            center = self._chip_grid.cell_center(r, c)
+            wx = self._chip_grid.x() + center.x()
+            wy = self._chip_grid.y() + center.y()
             img_pos = self._widget_to_image(QPoint(int(wx), int(wy)))
             rgb = self._sample_3x3(img, img_pos)
             colour_map[(r, c)] = rgb
@@ -414,15 +427,15 @@ class ImageCanvas(QWidget):
         self._calibrator.set_preview_colours(colour_map, ratio)
 
     def _current_cell_ratio(self) -> float:
-        """Return cell_h / cell_w for the current chip grid size."""
-        if not self._chip_grid.rows or not self._chip_grid.cols:
-            return 1.0
-        cw = self._chip_grid.width() / self._chip_grid.cols
-        ch = self._chip_grid.height() / self._chip_grid.rows
-        return ch / cw if cw > 0 else 1.0
+        """Return cell_h / cell_w for the current chip grid."""
+        return self._chip_grid.cell_ratio
+
+    def _on_gap_changed(self, h_px: int, v_px: int) -> None:
+        self._chip_grid.set_gaps(h_px, v_px)
+        self._update_preview_colours()
 
     def _on_confirm_calibration(self) -> None:
-        """Sample at current grid position and update preview colours."""
+        """Sample at current grid position, update preview, then close overlays."""
         result = self._sample_current_grid()
         if result is None:
             return
@@ -431,6 +444,9 @@ class ImageCanvas(QWidget):
         print("=== Calibration samples ===")
         for rgb, chip in results:
             print(f"  RGB {rgb}  →  {chip.notation}")
+        self.set_calibrator_visible(False)
+        self._chip_grid.hide()
+        self.munsellClosed.emit()
 
     def _sample_3x3(
         self, img: QImage, img_pos: QPointF
@@ -452,13 +468,29 @@ class ImageCanvas(QWidget):
         return (rs // count, gs // count, bs // count)
 
     def _widget_to_image(self, widget_pos: QPoint) -> QPointF:
-        """Convert widget-space coordinates to image-space coordinates."""
+        """Convert widget-space coordinates to image-space coordinates.
+
+        Applies the inverse of the current rotation so callers always receive
+        coordinates in the original (unrotated) image pixel space.
+        """
         if not self._pixmap:
             return QPointF()
         img_offset_x = (self.width() / self._zoom - self._pixmap.width()) / 2
         img_offset_y = (self.height() / self._zoom - self._pixmap.height()) / 2
         scene_x = (widget_pos.x() - self._pan_x) / self._zoom
         scene_y = (widget_pos.y() - self._pan_y) / self._zoom
+
+        if self._rotation:
+            cx = img_offset_x + self._pixmap.width() / 2
+            cy = img_offset_y + self._pixmap.height() / 2
+            dx = scene_x - cx
+            dy = scene_y - cy
+            theta = -math.radians(self._rotation)
+            cos_t = math.cos(theta)
+            sin_t = math.sin(theta)
+            scene_x = cx + dx * cos_t - dy * sin_t
+            scene_y = cy + dx * sin_t + dy * cos_t
+
         return QPointF(scene_x - img_offset_x, scene_y - img_offset_y)
 
     def _get_crop_handles(self) -> dict[str, QRectF]:

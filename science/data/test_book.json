@@ -1,0 +1,78 @@
+{
+  "book": {
+    "name": "Test Book",
+    "hues": [
+      {
+        "hue": "5Y",
+        "values": [
+          {
+            "value": 8,
+            "chromas": [
+              { "chroma": 2, "chip": "5Y 8/2" },
+              { "chroma": 4, "chip": "5Y 8/4" },
+              { "chroma": 6, "chip": "5Y 8/6" },
+              { "chroma": 8, "chip": "5Y 8/8" },
+              { "chroma": 10, "chip": "5Y 8/10" },
+              { "chroma": 12, "chip": "5Y 8/12" }
+            ]
+          },
+          {
+            "value": 7,
+            "chromas": [
+              { "chroma": 2, "chip": "5Y 7/2" },
+              { "chroma": 4, "chip": "5Y 7/4" },
+              { "chroma": 6, "chip": "5Y 7/6" },
+              { "chroma": 8, "chip": "5Y 7/8" },
+              { "chroma": 10, "chip": "5Y 7/10" },
+              { "chroma": 12, "chip": "5Y 7/12" }
+            ]
+          },
+          {
+            "value": 6,
+            "chromas": [
+              { "chroma": 2, "chip": "5Y 6/2" },
+              { "chroma": 4, "chip": "5Y 6/4" },
+              { "chroma": 6, "chip": "5Y 6/6" },
+              { "chroma": 8, "chip": "5Y 6/8" },
+              { "chroma": 10, "chip": "5Y 6/10" },
+              { "chroma": 12, "chip": "5Y 6/12" }
+            ]
+          },
+          {
+            "value": 5,
+            "chromas": [
+              { "chroma": 2, "chip": "5Y 5/2" },
+              { "chroma": 4, "chip": "5Y 5/4" },
+              { "chroma": 6, "chip": "5Y 5/6" },
+              { "chroma": 8, "chip": "5Y 5/8" },
+              { "chroma": 10, "chip": "5Y 5/10" }
+            ]
+          },
+          {
+            "value": 4,
+            "chromas": [
+              { "chroma": 2, "chip": "5Y 4/2" },
+              { "chroma": 4, "chip": "5Y 4/4" },
+              { "chroma": 6, "chip": "5Y 4/6" },
+              { "chroma": 8, "chip": "5Y 4/8" }
+            ]
+          },
+          {
+            "value": 3,
+            "chromas": [
+              { "chroma": 2, "chip": "5Y 3/2" },
+              { "chroma": 4, "chip": "5Y 3/4" }
+            ]
+          },
+          {
+            "value": 2.5,
+            "chromas": [
+              { "chroma": 2, "chip": "5Y 2.5/2" },
+              { "chroma": 4, "chip": "5Y 2.5/4" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

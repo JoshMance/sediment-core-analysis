@@ -28,6 +28,7 @@ class CoreImagePanel(QWidget):
         self.canvas = ImageCanvas(self)
         self.canvas.rulerComplete.connect(self._on_ruler_complete)
         self.canvas.rulerCancelled.connect(self._deactivate_ruler)
+        self.canvas.munsellClosed.connect(self._on_munsell_closed)
         self.toolbar = self._build_toolbar()
 
         layout = QVBoxLayout(self)
@@ -149,6 +150,9 @@ class CoreImagePanel(QWidget):
 
     def _on_calibrate_toggled(self) -> None:
         self.canvas.set_calibrator_visible(self._calibrate_btn.isChecked())
+
+    def _on_munsell_closed(self) -> None:
+        self._calibrate_btn.setChecked(False)
 
     def _on_ruler_toggled(self) -> None:
         self.canvas.set_ruler_mode(self._ruler_btn.isChecked())

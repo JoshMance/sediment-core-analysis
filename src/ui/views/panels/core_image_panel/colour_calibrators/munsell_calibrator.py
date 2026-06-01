@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt, QPoint, QRectF, Signal
 from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPen
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QPushButton, QSlider, QVBoxLayout, QWidget
 
 from science.lib.munsell import MunsellPage, available_books, get_book
 
@@ -100,6 +100,8 @@ class MunsellCalibrator(QWidget):
     pageSelected = Signal(object)  # MunsellPage | None
     # Emitted when the user clicks "Confirm" to sample the chip grid.
     confirmRequested = Signal()
+    # Emitted when either gap slider changes. Payload: (h_px, v_px).
+    gapChanged = Signal(int, int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -170,7 +172,55 @@ class MunsellCalibrator(QWidget):
 
         layout.addLayout(page_row)
 
-        # ── Mini grid preview ──────────────────────────────────────────
+        # ── Gap controls (shown only once a page is selected) ────────────
+        self._gap_widget = QWidget()
+        self._gap_widget.setStyleSheet("background: transparent;")
+        gap_layout = QVBoxLayout(self._gap_widget)
+        gap_layout.setContentsMargins(0, 2, 0, 0)
+        gap_layout.setSpacing(2)
+
+        h_row = QHBoxLayout()
+        h_row.setContentsMargins(0, 0, 0, 0)
+        h_row.setSpacing(4)
+        h_lbl = QLabel("H gap")
+        h_lbl.setFixedWidth(36)
+        h_lbl.setStyleSheet(_LABEL_STYLE)
+        self._h_gap_slider = QSlider(Qt.Orientation.Horizontal)
+        self._h_gap_slider.setRange(0, 30)
+        self._h_gap_slider.setValue(0)
+        self._h_gap_slider.setCursor(Qt.CursorShape.ArrowCursor)
+        self._h_gap_label = QLabel("0 px")
+        self._h_gap_label.setFixedWidth(28)
+        self._h_gap_label.setStyleSheet(_LABEL_STYLE)
+        h_row.addWidget(h_lbl)
+        h_row.addWidget(self._h_gap_slider, 1)
+        h_row.addWidget(self._h_gap_label)
+        gap_layout.addLayout(h_row)
+
+        v_row = QHBoxLayout()
+        v_row.setContentsMargins(0, 0, 0, 0)
+        v_row.setSpacing(4)
+        v_lbl = QLabel("V gap")
+        v_lbl.setFixedWidth(36)
+        v_lbl.setStyleSheet(_LABEL_STYLE)
+        self._v_gap_slider = QSlider(Qt.Orientation.Horizontal)
+        self._v_gap_slider.setRange(0, 30)
+        self._v_gap_slider.setValue(0)
+        self._v_gap_slider.setCursor(Qt.CursorShape.ArrowCursor)
+        self._v_gap_label = QLabel("0 px")
+        self._v_gap_label.setFixedWidth(28)
+        self._v_gap_label.setStyleSheet(_LABEL_STYLE)
+        v_row.addWidget(v_lbl)
+        v_row.addWidget(self._v_gap_slider, 1)
+        v_row.addWidget(self._v_gap_label)
+        gap_layout.addLayout(v_row)
+
+        self._h_gap_slider.valueChanged.connect(self._on_gap_changed)
+        self._v_gap_slider.valueChanged.connect(self._on_gap_changed)
+        self._gap_widget.hide()
+        layout.addWidget(self._gap_widget)
+
+        # ── Mini grid preview ─────────────────────────────────────────────────────────────
         self._mini_grid = _MiniGrid()
         self._mini_grid.hide()
         layout.addWidget(self._mini_grid)
@@ -214,6 +264,8 @@ class MunsellCalibrator(QWidget):
         self._confirm_btn.setVisible(False)
         self._mini_grid.clear()
         self._mini_grid.hide()
+        self._gap_widget.hide()
+        self._reset_gaps()
         self._after_layout_change()
         self.pageSelected.emit(None)
 
@@ -224,6 +276,8 @@ class MunsellCalibrator(QWidget):
         if book_idx == 0 or index == 0:
             self._confirm_btn.setVisible(False)
             self._mini_grid.hide()
+            self._gap_widget.hide()
+            self._reset_gaps()
             self._after_layout_change()
             self.pageSelected.emit(None)
             return
@@ -231,9 +285,29 @@ class MunsellCalibrator(QWidget):
         page = book.pages[index - 1]  # -1 because index 0 is the placeholder
         self._mini_grid.set_page(page)
         self._mini_grid.show()
+        self._gap_widget.show()
         self._confirm_btn.setVisible(True)
         self._after_layout_change()
         self.pageSelected.emit(page)
+
+    def _on_gap_changed(self) -> None:
+        h = self._h_gap_slider.value()
+        v = self._v_gap_slider.value()
+        self._h_gap_label.setText(f"{h} px")
+        self._v_gap_label.setText(f"{v} px")
+        self.gapChanged.emit(h, v)
+
+    def _reset_gaps(self) -> None:
+        """Reset gap sliders to zero without emitting gapChanged."""
+        for slider, label in (
+            (self._h_gap_slider, self._h_gap_label),
+            (self._v_gap_slider, self._v_gap_label),
+        ):
+            slider.blockSignals(True)
+            slider.setValue(0)
+            slider.blockSignals(False)
+            label.setText("0 px")
+
     # ── Public API ──────────────────────────────────────────────────────────
     def set_preview_colours(
         self,
