@@ -27,6 +27,7 @@ class CoreImagePanel(QWidget):
 
         self.canvas = ImageCanvas(self)
         self.canvas.rulerComplete.connect(self._on_ruler_complete)
+        self.canvas.rulerCancelled.connect(self._deactivate_ruler)
         self.toolbar = self._build_toolbar()
 
         layout = QVBoxLayout(self)
@@ -175,6 +176,8 @@ class CoreImagePanel(QWidget):
             mm_per_px = mm / px_distance
             self.distanceCalibrated.emit(mm_per_px)
             self._deactivate_ruler()
+        else:
+            self.canvas.reset_ruler_p2()
 
     def _deactivate_ruler(self) -> None:
         self._ruler_btn.setChecked(False)

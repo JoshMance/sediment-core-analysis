@@ -30,6 +30,9 @@ class ImageCanvas(QWidget):
     # Emitted when the user completes a two-point ruler measurement.
     # Payload: pixel distance between the two points.
     rulerComplete = Signal(float)
+    # Emitted when the user presses Escape while the ruler tool is active.
+    # The panel should call _deactivate_ruler in response.
+    rulerCancelled = Signal()
     # Emitted on mouse-move when the cursor is over a valid image pixel.
     pixelHovered = Signal(int, int)  # image-space x, y
     # Emitted when the cursor leaves the image area or the canvas widget.
@@ -64,6 +67,7 @@ class ImageCanvas(QWidget):
         self._ruler_mouse: QPointF | None = None
 
         self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self._calibrator = MunsellCalibrator(parent=self)
         self._chip_grid = MunsellChipGrid(parent=self)
@@ -174,7 +178,7 @@ class ImageCanvas(QWidget):
         painter.translate(img_x, img_y)
         if self._crop_visible and self._crop_rect:
             self._draw_crop(painter)
-        if self._ruler_active and self._ruler_p1 is not None:
+        if self._ruler_active and (self._ruler_p1 is not None or self._ruler_mouse is not None):
             self._draw_ruler_overlay(painter)
         painter.restore()
 
@@ -254,7 +258,15 @@ class ImageCanvas(QWidget):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._ruler_active:
-            self._ruler_mouse = self._widget_to_image(event.position().toPoint())
+            img_pos = self._widget_to_image(event.position().toPoint())
+            if (
+                self._pixmap
+                and 0 <= img_pos.x() < self._pixmap.width()
+                and 0 <= img_pos.y() < self._pixmap.height()
+            ):
+                self._ruler_mouse = img_pos
+            else:
+                self._ruler_mouse = None
             self.update()
             return
 
@@ -524,16 +536,64 @@ class ImageCanvas(QWidget):
         self.setCursor(Qt.CursorShape.CrossCursor if active else Qt.CursorShape.ArrowCursor)
         self.update()
 
+    def reset_ruler_p2(self) -> None:
+        """Clear P2, returning to the P1-locked state so the user can repick."""
+        self._ruler_p2 = None
+        self.update()
+
+    def keyPressEvent(self, event) -> None:  # noqa: ANN001
+        if self._ruler_active and event.key() == Qt.Key.Key_Escape:
+            self._ruler_p1 = None
+            self._ruler_p2 = None
+            self._ruler_mouse = None
+            self.update()
+            self.rulerCancelled.emit()
+            return
+        super().keyPressEvent(event)
+
     def _draw_ruler_overlay(self, painter: QPainter) -> None:
-        """Draw ruler points and measurement line in image-coordinate space."""
+        """Draw ruler points and measurement line in image-coordinate space.
+
+        Visual state rules
+        ------------------
+        * Before P1 is committed: ghost dot at cursor (50 % opacity).
+        * After P1 committed, before P2: P1 full opacity, line to cursor,
+          ghost dot at cursor (50 %).
+        * After P2 committed (transient, shown while dialog is open): both
+          dots and line at full opacity.
+        """
         r = 5.0 / self._zoom
         pw = 2.0 / self._zoom
-        yellow = QColor(255, 200, 0)
-        painter.setPen(QPen(yellow, pw))
-        painter.setBrush(yellow)
+        yellow_full  = QColor(0, 120, 215, 255)
+        yellow_ghost = QColor(0, 120, 215, 128)
+
+        if self._ruler_p1 is None:
+            # Pre-P1: ghost dot only.
+            if self._ruler_mouse is not None:
+                painter.setPen(QPen(yellow_ghost, pw))
+                painter.setBrush(yellow_ghost)
+                painter.drawEllipse(self._ruler_mouse, r, r)
+            return
+
+        # P1 committed.
+        painter.setPen(QPen(yellow_full, pw))
+        painter.setBrush(yellow_full)
         painter.drawEllipse(self._ruler_p1, r, r)
+
         target = self._ruler_p2 if self._ruler_p2 is not None else self._ruler_mouse
-        if target is not None:
-            painter.drawEllipse(target, r, r)
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawLine(self._ruler_p1, target)
+        if target is None:
+            return  # P1 set but cursor is off-image
+
+        # Line.
+        painter.setPen(QPen(yellow_full, pw))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawLine(self._ruler_p1, target)
+
+        # Second dot: full opacity when committed, ghost when pending.
+        if self._ruler_p2 is not None:
+            painter.setPen(QPen(yellow_full, pw))
+            painter.setBrush(yellow_full)
+        else:
+            painter.setPen(QPen(yellow_ghost, pw))
+            painter.setBrush(yellow_ghost)
+        painter.drawEllipse(target, r, r)
