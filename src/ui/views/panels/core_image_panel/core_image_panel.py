@@ -4,9 +4,10 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QToolBar, QPushButton, QLabel, QSlider,
+    QWidget, QVBoxLayout, QToolBar, QPushButton, QLabel, QSlider, QComboBox,
 )
 
+from science.lib import available_illuminants
 from src.ui.views.panels.core_image_panel.canvas import ImageCanvas
 
 
@@ -21,6 +22,8 @@ class CoreImagePanel(QWidget):
     cropConfirmed = Signal(object)  # QPixmap
     # Emitted when distance calibration is confirmed; carries mm_per_px.
     distanceCalibrated = Signal(float)
+    # Emitted when the user selects an illuminant; carries key str or None.
+    illuminantChanged = Signal(object)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -44,6 +47,18 @@ class CoreImagePanel(QWidget):
         self.canvas.set_pixmap(pixmap)
         self._deactivate_crop()
         self._deactivate_ruler()
+
+    def set_illuminant(self, key: str | None) -> None:
+        """Update the illuminant combo without emitting illuminantChanged."""
+        self._illuminant_combo.blockSignals(True)
+        idx = 0
+        if key is not None:
+            for i in range(self._illuminant_combo.count()):
+                if self._illuminant_combo.itemData(i) == key:
+                    idx = i
+                    break
+        self._illuminant_combo.setCurrentIndex(idx)
+        self._illuminant_combo.blockSignals(False)
 
     # ── Toolbar ───────────────────────────────────────────────
 
@@ -123,6 +138,17 @@ class CoreImagePanel(QWidget):
         self._calibrate_btn.clicked.connect(self._on_calibrate_toggled)
         tb.addWidget(self._calibrate_btn)
 
+        tb.addSeparator()
+
+        tb.addWidget(QLabel("Illuminant:"))
+        self._illuminant_combo = QComboBox()
+        self._illuminant_combo.setToolTip("Select the capture illuminant for this core")
+        self._illuminant_combo.addItem("—", userData=None)
+        for key, name in available_illuminants().items():
+            self._illuminant_combo.addItem(name, userData=key)
+        self._illuminant_combo.currentIndexChanged.connect(self._on_illuminant_changed)
+        tb.addWidget(self._illuminant_combo)
+
         return tb
 
     # ── Slots ─────────────────────────────────────────────────
@@ -153,6 +179,9 @@ class CoreImagePanel(QWidget):
 
     def _on_munsell_closed(self) -> None:
         self._calibrate_btn.setChecked(False)
+
+    def _on_illuminant_changed(self, index: int) -> None:
+        self.illuminantChanged.emit(self._illuminant_combo.itemData(index))
 
     def _on_ruler_toggled(self) -> None:
         self.canvas.set_ruler_mode(self._ruler_btn.isChecked())

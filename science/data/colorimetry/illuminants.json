@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "source": "CIE 1931 2-degree observer",
+  "illuminants": {
+    "A": {
+      "name": "Incandescent (A)",
+      "white_point_xyz": [1.0985, 1.0, 0.35585]
+    },
+    "C": { "name": "Illuminant C", "white_point_xyz": [0.98074, 1.0, 1.18232] },
+    "D50": {
+      "name": "Daylight (D50)",
+      "white_point_xyz": [0.96422, 1.0, 0.82521]
+    },
+    "D55": {
+      "name": "Daylight (D55)",
+      "white_point_xyz": [0.95682, 1.0, 0.92149]
+    },
+    "D65": {
+      "name": "Daylight (D65)",
+      "white_point_xyz": [0.95047, 1.0, 1.08883]
+    },
+    "F2": {
+      "name": "Fluorescent (F2)",
+      "white_point_xyz": [0.99186, 1.0, 0.67393]
+    },
+    "F11": {
+      "name": "Fluorescent (F11)",
+      "white_point_xyz": [1.00962, 1.0, 0.6435]
+    }
+  }
+}

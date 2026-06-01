@@ -1,13 +1,18 @@
 """Colour-space conversion functions for RGB, XYZ, and CIELAB.
 
-Public API (first slice):
+Public API:
 
+- available_illuminants
 - rgb_to_cielab
 - cielab_to_rgb
 - rgb_to_xyz
 - xyz_to_rgb
 - cielab_to_xyz
 - xyz_to_cielab
+
+All colour functions require an explicit ``illuminant`` key (e.g. ``"D65"``,
+``"C"``, ``"D50"``).  Use ``available_illuminants()`` to enumerate valid keys.
+No illuminant is assumed or defaulted.
 
 Input policy for RGB:
 
@@ -22,8 +27,7 @@ Output policy for *_to_rgb:
 
 XYZ contract:
 
-- XYZ values are in relative scale where white has Y=1.0, matching the
-    active colorimetry profile in science/data/colorimetry.
+- XYZ values are in relative scale where Y=1.0 at the chosen white point.
 """
 from __future__ import annotations
 
@@ -34,80 +38,82 @@ from functools import lru_cache
 
 import numpy as np
 
-_COLORIMETRY_PATH = (
-    pathlib.Path(__file__).parent.parent
-    / "data"
-    / "colorimetry"
-    / "srgb_d65_2deg.json"
-)
+_DATA_DIR = pathlib.Path(__file__).parent.parent / "data" / "colorimetry"
+_ILLUMINANTS_PATH = _DATA_DIR / "illuminants.json"
+_SRGB_STANDARD_PATH = _DATA_DIR / "srgb_standard.json"
 
 
 @dataclass(frozen=True)
 class _ColorimetrySpec:
-    """Runtime colorimetry constants loaded from module data."""
-
-    schema_version: int
-    name: str
-    source: str
-    illuminant: str
-    observer_degrees: int
     white_point_xyz: np.ndarray
     rgb_to_xyz: np.ndarray
     xyz_to_rgb: np.ndarray
 
 
 @lru_cache(maxsize=1)
-def _colorimetry_spec() -> _ColorimetrySpec:
-    """Load and validate colorimetry constants from JSON data."""
-    raw = json.loads(_COLORIMETRY_PATH.read_text(encoding="utf-8"))
+def _load_srgb_standard() -> dict:
+    raw = json.loads(_SRGB_STANDARD_PATH.read_text(encoding="utf-8"))
+    if int(raw.get("schema_version", 0)) != 1:
+        raise ValueError("Unsupported srgb_standard schema_version")
+    return raw
 
-    required = {
-        "schema_version",
-        "name",
-        "source",
-        "illuminant",
-        "observer_degrees",
-        "white_point_xyz",
-        "rgb_to_xyz",
-        "xyz_to_rgb",
-    }
-    missing = sorted(required - set(raw))
-    if missing:
+
+@lru_cache(maxsize=1)
+def _load_illuminants() -> dict[str, dict]:
+    raw = json.loads(_ILLUMINANTS_PATH.read_text(encoding="utf-8"))
+    if int(raw.get("schema_version", 0)) != 1:
+        raise ValueError("Unsupported illuminants schema_version")
+    return raw["illuminants"]
+
+
+def available_illuminants() -> dict[str, str]:
+    """Return a mapping of illuminant key -> display name.
+
+    Example::
+
+        {'A': 'Incandescent (A)', 'D65': 'Daylight (D65)', ...}
+    """
+    return {key: entry["name"] for key, entry in _load_illuminants().items()}
+
+
+def _derive_rgb_to_xyz(primaries_xy: dict, white_xyz: np.ndarray) -> np.ndarray:
+    """Derive the 3x3 RGB→XYZ matrix from xy primaries and a white point XYZ.
+
+    Standard derivation per IEC 61966-2-1 / Lindbloom method.
+    """
+    def _xy_to_xyz(xy: list[float]) -> np.ndarray:
+        x, y = xy
+        return np.array([x / y, 1.0, (1.0 - x - y) / y], dtype=np.float64)
+
+    R = _xy_to_xyz(primaries_xy["R"])
+    G = _xy_to_xyz(primaries_xy["G"])
+    B = _xy_to_xyz(primaries_xy["B"])
+
+    M = np.column_stack([R, G, B])
+    S = np.linalg.solve(M, white_xyz)
+    return M * S
+
+
+@lru_cache(maxsize=16)
+def _spec_for(illuminant: str) -> _ColorimetrySpec:
+    """Derive and cache colorimetry matrices for the given illuminant key."""
+    import logging
+    _log = logging.getLogger(__name__)
+    illuminants = _load_illuminants()
+    if illuminant not in illuminants:
         raise ValueError(
-            f"Colorimetry spec is missing required keys: {missing}"
+            f"Unknown illuminant {illuminant!r}. "
+            f"Available: {sorted(illuminants)}"
         )
-
-    schema_version = int(raw["schema_version"])
-    if schema_version != 1:
-        raise ValueError(
-            f"Unsupported colorimetry schema_version={schema_version}; expected 1"
-        )
-
-    name = str(raw["name"])
-    source = str(raw["source"])
-    illuminant = str(raw["illuminant"])
-    observer_degrees = int(raw["observer_degrees"])
-
-    white = np.asarray(raw["white_point_xyz"], dtype=np.float64)
-    rgb_to_xyz = np.asarray(raw["rgb_to_xyz"], dtype=np.float64)
-    xyz_to_rgb = np.asarray(raw["xyz_to_rgb"], dtype=np.float64)
-
-    if white.shape != (3,):
-        raise ValueError("white_point_xyz must have exactly 3 values")
-    if rgb_to_xyz.shape != (3, 3):
-        raise ValueError("rgb_to_xyz must be a 3x3 matrix")
-    if xyz_to_rgb.shape != (3, 3):
-        raise ValueError("xyz_to_rgb must be a 3x3 matrix")
-
+    srgb = _load_srgb_standard()
+    white_xyz = np.asarray(illuminants[illuminant]["white_point_xyz"], dtype=np.float64)
+    rgb_to_xyz_mat = _derive_rgb_to_xyz(srgb["primaries_xy"], white_xyz)
+    xyz_to_rgb_mat = np.linalg.inv(rgb_to_xyz_mat)
+    _log.debug("[illuminant] derived matrices for %r | white_xyz=%s", illuminant, white_xyz)
     return _ColorimetrySpec(
-        schema_version=schema_version,
-        name=name,
-        source=source,
-        illuminant=illuminant,
-        observer_degrees=observer_degrees,
-        white_point_xyz=white,
-        rgb_to_xyz=rgb_to_xyz,
-        xyz_to_rgb=xyz_to_rgb,
+        white_point_xyz=white_xyz,
+        rgb_to_xyz=rgb_to_xyz_mat,
+        xyz_to_rgb=xyz_to_rgb_mat,
     )
 
 
@@ -195,33 +201,33 @@ def _lab_inverse(f_component: np.ndarray) -> np.ndarray:
     )
 
 
-def rgb_to_xyz(rgb: np.ndarray) -> np.ndarray:
-    """Convert RGB to CIE XYZ using the active colorimetry profile.
+def rgb_to_xyz(rgb: np.ndarray, illuminant: str) -> np.ndarray:
+    """Convert RGB to CIE XYZ under the given illuminant.
 
     Accepts int or float RGB. Returns float32 XYZ.
     """
-    spec = _colorimetry_spec()
+    spec = _spec_for(illuminant)
     rgb01 = _to_rgb01(rgb)
     linear = _srgb_to_linear(rgb01)
     xyz = np.tensordot(linear, spec.rgb_to_xyz.T, axes=([-1], [0]))
     return xyz.astype(np.float32)
 
 
-def xyz_to_rgb(xyz: np.ndarray) -> np.ndarray:
-    """Convert CIE XYZ to RGB uint8 in 0..255 using active profile.
+def xyz_to_rgb(xyz: np.ndarray, illuminant: str) -> np.ndarray:
+    """Convert CIE XYZ to RGB uint8 in 0..255 under the given illuminant.
 
     Values outside displayable RGB gamut are clipped before uint8 output.
     """
-    spec = _colorimetry_spec()
+    spec = _spec_for(illuminant)
     arr = _require_3_channels(xyz, "xyz").astype(np.float64)
     linear = np.tensordot(arr, spec.xyz_to_rgb.T, axes=([-1], [0]))
     srgb01 = _linear_to_srgb(linear)
     return _rgb01_to_uint8(srgb01)
 
 
-def xyz_to_cielab(xyz: np.ndarray) -> np.ndarray:
-    """Convert CIE XYZ to CIELAB using active profile white point."""
-    spec = _colorimetry_spec()
+def xyz_to_cielab(xyz: np.ndarray, illuminant: str) -> np.ndarray:
+    """Convert CIE XYZ to CIELAB under the given illuminant white point."""
+    spec = _spec_for(illuminant)
     arr = _require_3_channels(xyz, "xyz").astype(np.float64)
     ratio = arr / spec.white_point_xyz
     f = _lab_forward(ratio)
@@ -233,9 +239,9 @@ def xyz_to_cielab(xyz: np.ndarray) -> np.ndarray:
     return lab.astype(np.float32)
 
 
-def cielab_to_xyz(cielab: np.ndarray) -> np.ndarray:
-    """Convert CIELAB to CIE XYZ using active profile white point."""
-    spec = _colorimetry_spec()
+def cielab_to_xyz(cielab: np.ndarray, illuminant: str) -> np.ndarray:
+    """Convert CIELAB to CIE XYZ under the given illuminant white point."""
+    spec = _spec_for(illuminant)
     lab = _require_3_channels(cielab, "cielab").astype(np.float64)
     l = lab[..., 0]
     a = lab[..., 1]
@@ -254,17 +260,18 @@ def cielab_to_xyz(cielab: np.ndarray) -> np.ndarray:
     return xyz.astype(np.float32)
 
 
-def rgb_to_cielab(rgb: np.ndarray) -> np.ndarray:
-    """Convert RGB to CIELAB using the active colorimetry profile."""
-    return xyz_to_cielab(rgb_to_xyz(rgb))
+def rgb_to_cielab(rgb: np.ndarray, illuminant: str) -> np.ndarray:
+    """Convert RGB to CIELAB under the given illuminant."""
+    return xyz_to_cielab(rgb_to_xyz(rgb, illuminant), illuminant)
 
 
-def cielab_to_rgb(cielab: np.ndarray) -> np.ndarray:
-    """Convert CIELAB to RGB uint8 in 0..255."""
-    return xyz_to_rgb(cielab_to_xyz(cielab))
+def cielab_to_rgb(cielab: np.ndarray, illuminant: str) -> np.ndarray:
+    """Convert CIELAB to RGB uint8 in 0..255 under the given illuminant."""
+    return xyz_to_rgb(cielab_to_xyz(cielab, illuminant), illuminant)
 
 
 __all__ = [
+    "available_illuminants",
     "rgb_to_cielab",
     "cielab_to_rgb",
     "rgb_to_xyz",

@@ -197,6 +197,15 @@ class AppController:
         """
         self._store.update_field(core_id, "mm_per_px", mm_per_px)
 
+    def set_core_illuminant(self, core_id: str, illuminant: str | None) -> None:
+        """Update the capture illuminant for a core.
+
+        Propagation to child cores is handled automatically by the Store via
+        PROPAGATION_RULES in src/domain/entities/propagation.py.
+        """
+        logger.debug("[illuminant] setting core %s illuminant -> %r", core_id, illuminant)
+        self._store.update_field(core_id, "illuminant", illuminant)
+
     def open_core_in_studio(self, core_id: str) -> None:
         """Open a CoreEntity in a CoreStudioPanel workspace tab."""
         if self._workspace_state is None:

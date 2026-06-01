@@ -53,4 +53,12 @@ PROPAGATION_RULES: list[PropagationRule] = [
         direction="down",
         via="child_core_ids",
     ),
+    # Illuminant cascades the same way — if you set the capture illuminant
+    # on a parent core, all derived cores inherit it.
+    PropagationRule(
+        entity_type="CoreEntity",
+        field="illuminant",
+        direction="down",
+        via="child_core_ids",
+    ),
 ]

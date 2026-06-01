@@ -1,6 +1,7 @@
 """CoreImagePanelPresenter — connects a CoreImagePanel view to Store and AppController."""
 from __future__ import annotations
 
+import logging
 import numpy as np
 from PySide6.QtCore import QObject
 from PySide6.QtGui import QImage, QPixmap
@@ -8,6 +9,8 @@ from PySide6.QtGui import QImage, QPixmap
 from src.application import AppController
 from src.domain.store import Store
 from src.ui.views.panels.core_image_panel import CoreImagePanel
+
+logger = logging.getLogger(__name__)
 
 
 class CoreImagePanelPresenter(QObject):
@@ -36,6 +39,12 @@ class CoreImagePanelPresenter(QObject):
         view.canvas.pixelHovered.connect(self._on_pixel_hovered)
         view.canvas.pixelLeft.connect(self._on_pixel_left)
         view.distanceCalibrated.connect(self._on_distance_calibrated)
+        view.illuminantChanged.connect(self._on_illuminant_changed)
+        store.entityUpdated.connect(self._on_entity_updated)
+
+        entity = self._store.get(self._entity_id)
+        if entity is not None:
+            view.set_illuminant(entity.illuminant)
 
     # Store -> View
 
@@ -63,6 +72,18 @@ class CoreImagePanelPresenter(QObject):
 
     def _on_distance_calibrated(self, mm_per_px: float) -> None:
         self._controller.set_core_mm_per_px(self._entity_id, mm_per_px)
+
+    def _on_illuminant_changed(self, key: str | None) -> None:
+        logger.debug("[illuminant] user selected %r for core %s", key, self._entity_id)
+        self._controller.set_core_illuminant(self._entity_id, key)
+
+    def _on_entity_updated(self, entity_id: str, entity_type: str) -> None:
+        if entity_id != self._entity_id:
+            return
+        entity = self._store.get(entity_id)
+        if entity is not None:
+            logger.debug("[illuminant] store update received for core %s, syncing combo to %r", entity_id, entity.illuminant)
+            self._view.set_illuminant(entity.illuminant)
 
     def _on_crop_confirmed(self, pixmap: QPixmap) -> None:
         """User confirmed a crop - create a derived child core in the Store."""

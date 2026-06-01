@@ -62,7 +62,7 @@ class CoreStudioPresenter(QObject):
             return
         pixmap = _array_to_pixmap(entity.data)
         self._view.set_pixmap(pixmap)
-        channels = compute_channels.for_core(entity.data)
+        channels = compute_channels.for_core(entity.data, entity.illuminant)
         self._view.set_channel_profiles(
             r=channels.r,
             g=channels.g,
@@ -76,11 +76,29 @@ class CoreStudioPresenter(QObject):
     # ── Handlers ──────────────────────────────────────────────
 
     def _on_entity_updated(self, entity_id: str, entity_type: str) -> None:
-        """React to store changes — refresh the depth ruler scale if our core changed."""
+        """React to store changes — refresh scale and channels if our core changed."""
         if entity_id == self._core_id and entity_type == "CoreEntity":
             entity = self._store.get(entity_id)
             if isinstance(entity, CoreEntity):
                 self._view.canvas.set_mm_per_px(entity.mm_per_px)
+                if entity.data is not None:
+                    logger.debug(
+                        "[illuminant] recomputing channels for core %s (illuminant=%r)",
+                        entity_id, entity.illuminant,
+                    )
+                    channels = compute_channels.for_core(entity.data, entity.illuminant)
+                    logger.debug(
+                        "[illuminant] L* sample (first 5 rows): %s",
+                        channels.l_star[:5],
+                    )
+                    self._view.set_channel_profiles(
+                        r=channels.r,
+                        g=channels.g,
+                        b=channels.b,
+                        l_star=channels.l_star,
+                        a_star=channels.a_star,
+                        b_star=channels.b_star,
+                    )
 
     def _on_image_dropped(self, entity_id: str) -> None:
         """User dropped an entity onto an empty panel — open if it is a core."""

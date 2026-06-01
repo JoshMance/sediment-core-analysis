@@ -20,11 +20,13 @@ class ChannelProfiles:
     b_star: np.ndarray
 
 
-def for_core(image: np.ndarray) -> ChannelProfiles:
+def for_core(image: np.ndarray, illuminant: str | None) -> ChannelProfiles:
     """Compute row-wise RGB and CIELAB channels for a core image.
 
     The Core Studio image column rotates landscape images to vertical display.
     Profiles follow that same orientation so depth alignment stays consistent.
+
+    If *illuminant* is ``None`` the CIELAB channels are returned as NaN arrays.
     """
     arr = np.asarray(image)
     if arr.ndim != 3 or arr.shape[2] != 3:
@@ -34,7 +36,12 @@ def for_core(image: np.ndarray) -> ChannelProfiles:
 
     oriented = np.rot90(arr) if arr.shape[1] > arr.shape[0] else arr
     row_rgb = oriented.astype(np.float32).mean(axis=1)
-    row_lab = rgb_to_cielab(row_rgb).astype(np.float32)
+
+    if illuminant is not None:
+        row_lab = rgb_to_cielab(row_rgb, illuminant).astype(np.float32)
+    else:
+        n = row_rgb.shape[0]
+        row_lab = np.full((n, 3), np.nan, dtype=np.float32)
 
     return ChannelProfiles(
         r=row_rgb[:, 0],

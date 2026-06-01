@@ -37,6 +37,7 @@ class CoreEntity:
     derivation_type: str = "import"
     derivation_params: dict = field(default_factory=dict)
     mm_per_px: float = 0.0
+    illuminant: str | None = None
     is_draft: bool = False
     id: str | None = None
     asset_ref: str | None = None
@@ -56,6 +57,7 @@ class CoreEntity:
             "derivation_type": self.derivation_type,
             "derivation_params": self.derivation_params,
             "mm_per_px": self.mm_per_px,
+            "illuminant": self.illuminant,
             "is_draft": self.is_draft,
             "asset_ref": self.asset_ref,
         }
@@ -74,6 +76,7 @@ class CoreEntity:
             derivation_type=data.get("derivation_type", "import"),
             derivation_params=data.get("derivation_params", {}),
             mm_per_px=float(data.get("mm_per_px", 0.0)),
+            illuminant=data.get("illuminant"),
             is_draft=bool(data.get("is_draft", False)),
             asset_ref=data.get("asset_ref"),
         )

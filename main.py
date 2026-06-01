@@ -30,6 +30,14 @@ from src.ui.resources.theme import apply_theme
 
 def main() -> None:
     dev_mode = "--dev" in sys.argv
+    verbose = "--verbose" in sys.argv
+
+    import logging
+    logging.basicConfig(
+        level=logging.DEBUG if verbose else logging.WARNING,
+        format="%(name)s [%(levelname)s] %(message)s",
+    )
+
     app = QApplication(sys.argv)
     dark = True if "--dark" in sys.argv else (False if "--light" in sys.argv else None)
     apply_theme(app, dark=dark)
