@@ -177,6 +177,6 @@ _PANEL_FACTORIES: dict[str, object] = {
 
 # Maps panel type → ribbon tab name. Panels not listed default to "Home".
 _RIBBON_TAB_MAP: dict[str, str] = {
-    "CoreImagePanel": "Prepare",
-    "CoreStudioPanel": "Prepare",
+    "CoreImagePanel": "Analysis",
+    "CoreStudioPanel": "Analysis",
 }

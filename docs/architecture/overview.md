@@ -23,7 +23,7 @@ The system is organised into three layers. Dependencies flow inward: UI → Appl
 │  (AppController, Application Services)  │
 ├─────────────────────────────────────────┤
 │  Domain Layer      src/domain/          │
-│  (Entities, Store, Domain Services)     │
+│  (Entities, Store)                      │
 └─────────────────────────────────────────┘
 ```
 
@@ -89,18 +89,12 @@ rule that Application Services may use Domain Services but not vice versa.
 
 > Domain objects defined by identity. Maintain state over time. Plain Python.
 
-| What                        | Implementation                                                         |
-| --------------------------- | ---------------------------------------------------------------------- |
-| Entity classes (5-10 types) | `dataclasses` (stdlib). No Qt.                                         |
-| Business logic on Entities  | Methods on the dataclass, or standalone functions in the same module.  |
-| Serialization               | `to_dict()` / `from_dict()` methods on each Entity. Use `json` stdlib. |
-
-### Domain Services — `src/domain/services/`
-
-> Stateless operations that span multiple Entities. Currently a placeholder.
-
-At this scale, Entity logic lives next to the Entity it operates on. Domain
-Services will be added as cross-Entity operations emerge.
+| What                        | Implementation                                                                                                                                                                                  |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entity classes (5-10 types) | `dataclasses` (stdlib). No Qt.                                                                                                                                                                  |
+| Business logic on Entities  | Methods on the dataclass, or standalone functions in the same module.                                                                                                                           |
+| Serialization               | `to_dict()` / `from_dict()` methods on each Entity. Use `json` stdlib.                                                                                                                          |
+| Field propagation rules     | `propagation.py` — declares which fields cascade to related entities on `Store.update_field`. Add a `PropagationRule` entry there; the Store handles traversal automatically (BFS, cycle-safe). |
 
 ### Store (Component) — `src/domain/store/`
 
@@ -455,13 +449,13 @@ User right-clicks a core in VariablesList and chooses "Open In Core Studio"
 ## Key Rules
 
 1. **Layer dependencies flow inward** — UI → Application → Domain, never the reverse. `science/` is cross-cutting and may be called by any layer.
-2. **Application Services may use Domain Services** — Domain Services must never use Application Services
+2. **Application Services may not call upward** — Application Services must never use UI components
 3. **Presenters never talk to each other** — they independently listen to Store signals
 4. **Presenters can read the Store** — only AppController can write it
 5. **Only AppController writes to Store** — undo/redo via QUndoCommand planned
 6. **Views are dumb** — they emit signals for user actions, display what Presenters tell them
 7. **No custom Event Bus** — Store's Qt signals serve the same purpose
-8. **Domain Services placeholder** — `domain/services/` exists for entity specific transformations
+8. **Propagation rules** — field cascades to related entities are declared in `domain/entities/propagation.py`; the Store applies them automatically in `update_field`
 9. Services raise exceptions. The orchestrator decides what to do. That keeps the service reusable and the policy in one place.
 10. **Shell vs Panels** — views in `shell/` are created at startup and persist; views in `panels/` are created at runtime on demand. Never put a startup view in `panels/`, never put a runtime view in `shell/`.
 11. **Science module ownership** — scientific transformations (RGB/LAB/Munsell/calibration transforms) live in top-level `science/` as the single source of truth.

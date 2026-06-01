@@ -42,6 +42,7 @@ class CoreStudioPresenter(QObject):
 
         # ── View signals ──────────────────────────────────────
         self._view.imageDropped.connect(self._on_image_dropped)
+        self._store.entityUpdated.connect(self._on_entity_updated)
         self._load_core_image()
 
     def _load_core_image(self) -> None:
@@ -70,8 +71,16 @@ class CoreStudioPresenter(QObject):
             a_star=channels.a_star,
             b_star=channels.b_star,
         )
+        self._view.canvas.set_mm_per_px(entity.mm_per_px)
 
     # ── Handlers ──────────────────────────────────────────────
+
+    def _on_entity_updated(self, entity_id: str, entity_type: str) -> None:
+        """React to store changes — refresh the depth ruler scale if our core changed."""
+        if entity_id == self._core_id and entity_type == "CoreEntity":
+            entity = self._store.get(entity_id)
+            if isinstance(entity, CoreEntity):
+                self._view.canvas.set_mm_per_px(entity.mm_per_px)
 
     def _on_image_dropped(self, entity_id: str) -> None:
         """User dropped an entity onto an empty panel — open if it is a core."""

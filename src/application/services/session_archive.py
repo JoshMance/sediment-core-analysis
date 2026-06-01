@@ -34,7 +34,6 @@ import pandas as pd
 from src.domain.entities.registry import ENTITY_TYPES
 from src.domain.entities.core_entity import CoreEntity
 from src.domain.entities.dataset_entity import DatasetEntity
-from src.domain.entities.calibration_entity import CalibrationEntity
 from src.application.workspace_state import WorkspaceEntry
 
 FORMAT_NAME = "sedivis"
@@ -80,8 +79,6 @@ def save(
                 record = _save_core_entity(entity, zf)
             elif isinstance(entity, DatasetEntity):
                 record = _save_dataset_entity(entity, zf)
-            elif isinstance(entity, CalibrationEntity):
-                record = {"type": "CalibrationEntity", "data": entity.to_dict()}
             else:
                 # Future entity types: save via to_dict(), no asset bundling
                 record = {
@@ -204,8 +201,6 @@ def _reconstruct_entities(records: list[dict], extract_dir: Path) -> list[object
             entity = _load_core_entity(data, extract_dir)
         elif type_name == "DatasetEntity":
             entity = _load_dataset_entity(data, extract_dir)
-        elif type_name == "CalibrationEntity":
-            entity = CalibrationEntity.from_dict(data)
         else:
             entity = ENTITY_TYPES[type_name].from_dict(data)
 

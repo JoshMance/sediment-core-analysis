@@ -10,6 +10,5 @@ Examples of what belongs here:
   - A detail view shown when an entity is selected
 
 Examples of what does NOT belong here (they live in shell/):
-  - FileBrowser  — always present in the shell
   - VariablesList — always present in the shell
 """

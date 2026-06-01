@@ -35,6 +35,7 @@ class CoreImagePanelPresenter(QObject):
         view.cropConfirmed.connect(self._on_crop_confirmed)
         view.canvas.pixelHovered.connect(self._on_pixel_hovered)
         view.canvas.pixelLeft.connect(self._on_pixel_left)
+        view.distanceCalibrated.connect(self._on_distance_calibrated)
 
     # Store -> View
 
@@ -59,6 +60,9 @@ class CoreImagePanelPresenter(QObject):
 
     def _on_pixel_left(self) -> None:
         self._controller.set_view_context([])
+
+    def _on_distance_calibrated(self, mm_per_px: float) -> None:
+        self._controller.set_core_mm_per_px(self._entity_id, mm_per_px)
 
     def _on_crop_confirmed(self, pixmap: QPixmap) -> None:
         """User confirmed a crop - create a derived child core in the Store."""

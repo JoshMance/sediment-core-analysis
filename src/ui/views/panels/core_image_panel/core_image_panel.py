@@ -19,11 +19,14 @@ class CoreImagePanel(QWidget):
 
     # Emitted when the user confirms a crop; carries the cropped QPixmap.
     cropConfirmed = Signal(object)  # QPixmap
+    # Emitted when distance calibration is confirmed; carries mm_per_px.
+    distanceCalibrated = Signal(float)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.canvas = ImageCanvas(self)
+        self.canvas.rulerComplete.connect(self._on_ruler_complete)
         self.toolbar = self._build_toolbar()
 
         layout = QVBoxLayout(self)
@@ -38,6 +41,7 @@ class CoreImagePanel(QWidget):
         """Set the image to display and reset crop state."""
         self.canvas.set_pixmap(pixmap)
         self._deactivate_crop()
+        self._deactivate_ruler()
 
     # ── Toolbar ───────────────────────────────────────────────
 
@@ -101,6 +105,15 @@ class CoreImagePanel(QWidget):
 
         tb.addSeparator()
 
+        self._ruler_btn = QPushButton("Calibrate Distance")
+        self._ruler_btn.setToolTip("Click two points on the image, then enter the real distance in mm")
+        self._ruler_btn.setCheckable(True)
+        self._ruler_btn.setFixedHeight(28)
+        self._ruler_btn.clicked.connect(self._on_ruler_toggled)
+        tb.addWidget(self._ruler_btn)
+
+        tb.addSeparator()
+
         self._calibrate_btn = QPushButton("Calibrate Munsell")
         self._calibrate_btn.setToolTip("Toggle Munsell colour calibrator")
         self._calibrate_btn.setCheckable(True)
@@ -135,6 +148,37 @@ class CoreImagePanel(QWidget):
 
     def _on_calibrate_toggled(self) -> None:
         self.canvas.set_calibrator_visible(self._calibrate_btn.isChecked())
+
+    def _on_ruler_toggled(self) -> None:
+        self.canvas.set_ruler_mode(self._ruler_btn.isChecked())
+
+    def _on_ruler_complete(self, px_distance: float) -> None:
+        from PySide6.QtWidgets import QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QLabel
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Calibrate Distance")
+        layout = QFormLayout(dialog)
+        layout.addRow(QLabel(f"Pixel distance: {px_distance:.1f} px"))
+        mm_spin = QDoubleSpinBox()
+        mm_spin.setRange(0.01, 100_000.0)
+        mm_spin.setDecimals(2)
+        mm_spin.setSuffix(" mm")
+        mm_spin.setValue(10.0)
+        layout.addRow("Real-world distance:", mm_spin)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addRow(buttons)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            mm = mm_spin.value()
+            mm_per_px = mm / px_distance
+            self.distanceCalibrated.emit(mm_per_px)
+            self._deactivate_ruler()
+
+    def _deactivate_ruler(self) -> None:
+        self._ruler_btn.setChecked(False)
+        self.canvas.set_ruler_mode(False)
 
     def _deactivate_crop(self) -> None:
         self._crop_btn.setChecked(False)

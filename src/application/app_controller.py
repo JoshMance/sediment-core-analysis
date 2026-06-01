@@ -15,7 +15,6 @@ import imageio.v3 as iio
 
 from src.domain.entities.core_entity import CoreEntity
 from src.domain.entities.dataset_entity import DatasetEntity
-from src.domain.entities.calibration_entity import CalibrationEntity
 from src.domain.store import Store
 from src.application.services.load_image import load_image
 from src.application.services.load_csv import load_csv
@@ -115,7 +114,7 @@ class AppController:
         parent_core_id: str | None = None,
         derivation_type: str = "import",
         derivation_params: dict | None = None,
-        calibration_id: str | None = None,
+        mm_per_px: float = 0.0,
         is_draft: bool = False,
     ) -> str:
         """Construct a CoreEntity and add it to the Store.
@@ -127,7 +126,7 @@ class AppController:
             parent_core_id: Parent core id if derived from another core.
             derivation_type: Derivation operation type.
             derivation_params: Derivation metadata payload.
-            calibration_id: Associated calibration id, if any.
+            mm_per_px: Millimetres per pixel. 0.0 means uncalibrated.
             is_draft: True if this core is still being prepared.
 
         Returns:
@@ -140,7 +139,7 @@ class AppController:
             parent_core_id=parent_core_id,
             derivation_type=derivation_type,
             derivation_params=derivation_params or {},
-            calibration_id=calibration_id,
+            mm_per_px=mm_per_px,
             is_draft=is_draft,
         )
         return self._store.add(entity)
@@ -183,12 +182,20 @@ class AppController:
             parent_core_id=parent_core_id,
             derivation_type=derivation_type,
             derivation_params=derivation_params or {},
-            calibration_id=parent.calibration_id,
+            mm_per_px=parent.mm_per_px,
             is_draft=is_draft,
         )
         updated_children = list(parent.child_core_ids) + [child_id]
         self._store.update_field(parent_core_id, "child_core_ids", updated_children)
         return child_id
+
+    def set_core_mm_per_px(self, core_id: str, mm_per_px: float) -> None:
+        """Update the spatial calibration scale for a core.
+
+        Propagation to child cores is handled automatically by the Store via
+        PROPAGATION_RULES in src/domain/entities/propagation.py.
+        """
+        self._store.update_field(core_id, "mm_per_px", mm_per_px)
 
     def open_core_in_studio(self, core_id: str) -> None:
         """Open a CoreEntity in a CoreStudioPanel workspace tab."""

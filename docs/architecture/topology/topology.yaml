@@ -16,12 +16,18 @@ domain:
           child_core_ids,
           derivation_type,
           derivation_params,
-          calibration_id,
+          mm_per_px,
           is_draft,
           asset_ref,
         ]
-    - name: CalibrationEntity
-      fields: [id, mm_per_px]
+
+  propagation_rules:
+    - entity_type: CoreEntity
+      field: mm_per_px
+      direction: down
+      via: child_core_ids
+      # Declared in src/domain/entities/propagation.py.
+      # The Store applies these rules automatically in update_field (BFS, cycle-safe).
 
   components:
     - name: Store
@@ -41,8 +47,6 @@ domain:
           clear,
         ]
 
-  services: []
-
 application:
   components:
     - name: AppController
@@ -54,6 +58,7 @@ application:
         - create_child_core
         - open_core_in_studio
         - open_blank_core_studio
+        - set_core_mm_per_px
         - delete_entity
         - rename_entity
         - create_dataset_entity
@@ -100,12 +105,6 @@ application:
 
 ui:
   presenters:
-    - name: FilePresenter
-      status: unused
-      view: FileBrowser
-      subscribes_to: []
-      calls: [AppController]
-
     - name: VariablesPresenter
       views: [VariablesList, PreviewPanel]
       subscribes_to:
@@ -163,6 +162,7 @@ ui:
       view_signals:
         [
           CoreImagePanel.cropConfirmed,
+          CoreImagePanel.distanceCalibrated,
           ImageCanvas.cropChanged,
           ImageCanvas.pixelHovered,
           ImageCanvas.pixelLeft,
@@ -178,6 +178,6 @@ ui:
     - name: CoreStudioPresenter
       view: CoreStudioPanel
       lifetime: per-panel
-      subscribes_to: []
+      subscribes_to: [Store.entityUpdated]
       calls: [AppController]
       view_signals: [CoreStudioPanel.imageDropped]

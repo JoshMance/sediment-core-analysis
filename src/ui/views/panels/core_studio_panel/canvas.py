@@ -18,10 +18,6 @@ from src.ui.views.panels.core_studio_panel.columns import (
     DataChannelColumn,
 )
 
-# Temporary view-side depth scale (will be replaced by calibration data from the domain layer later)
-# 1333 px = 710 mm
-TEMP_DEPTH_MM_PER_PX = 710 / 1333
-
 
 class _HoverOverlay(QWidget):
     """Top-layer overlay for hover guide line and depth label."""
@@ -101,6 +97,7 @@ class CoreStudioCanvas(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self._columns: list[tuple[QWidget, float]] = []  # (widget, width_ratio)
+        self._mm_per_image_px: float = 0.0
         self._hover_y = -1
         self._hover_mm = -1.0
 
@@ -114,11 +111,7 @@ class CoreStudioCanvas(QWidget):
         self._overlay.raise_()
 
         # ── build columns in order ────────────────────────────
-        # Temporary scale provider — will be replaced by presenter with calibration data.
-        def temp_scale_provider():
-            return TEMP_DEPTH_MM_PER_PX
-
-        self.depth_ruler = DepthRulerColumn(scale_provider=temp_scale_provider)
+        self.depth_ruler = DepthRulerColumn(scale_provider=None)
         self.image_col = ImageColumn()
         self.layer_col = LayerColumn()
 
@@ -158,6 +151,7 @@ class CoreStudioCanvas(QWidget):
         self._sync_height()
         self._overlay.setGeometry(self.rect())
         self._overlay.raise_()
+        self.depth_ruler.update()
 
     def _on_hover_update(self, y: int, mm: float) -> None:
         """Store hover Y and mm, trigger repaint for overlay."""
@@ -213,3 +207,23 @@ class CoreStudioCanvas(QWidget):
             self.b_star_col,
         ):
             col.clear_profile()
+
+    def set_mm_per_px(self, mm_per_px: float) -> None:
+        """Update the depth ruler scale. 0.0 renders the uncalibrated '?' state.
+
+        mm_per_px is in millimetres per *image* pixel (from calibration).  The
+        scale provider divides by the current display scale so the ruler draws
+        in screen-pixel space, matching the on-screen image height exactly.
+        """
+        self._mm_per_image_px = mm_per_px
+
+        def _scale_provider() -> float:
+            if self._mm_per_image_px <= 0:
+                return 0.0
+            display_scale = self.image_col.display_scale()
+            if display_scale <= 0:
+                return 0.0
+            return self._mm_per_image_px / display_scale
+
+        self.depth_ruler.set_scale_provider(_scale_provider)
+        self.depth_ruler.update()

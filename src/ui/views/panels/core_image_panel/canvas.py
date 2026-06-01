@@ -1,6 +1,8 @@
 """ImageCanvas — pan, zoom, rotate, and crop overlay."""
 from __future__ import annotations
 
+import math
+
 from PySide6.QtCore import Qt, QPoint, QPointF, QRectF, Signal
 from PySide6.QtGui import (
     QPainter, QPixmap, QPaintEvent, QWheelEvent, QMouseEvent,
@@ -25,10 +27,9 @@ class ImageCanvas(QWidget):
     Pure view — emits signals, does no domain logic.
     """
 
-    cropChanged = Signal(object)  # QRectF in image coordinates
-    # Emitted after the calibration colour flash completes.
-    # Payload: list of (rgb_tuple, MunsellChip) pairs.
-    calibrationComplete = Signal(list)
+    # Emitted when the user completes a two-point ruler measurement.
+    # Payload: pixel distance between the two points.
+    rulerComplete = Signal(float)
     # Emitted on mouse-move when the cursor is over a valid image pixel.
     pixelHovered = Signal(int, int)  # image-space x, y
     # Emitted when the cursor leaves the image area or the canvas widget.
@@ -56,11 +57,16 @@ class ImageCanvas(QWidget):
         self._is_panning = False
         self._last_mouse_pos = QPoint()
 
+        # Ruler state (stored in image coordinates, pre-rotation)
+        self._ruler_active: bool = False
+        self._ruler_p1: QPointF | None = None
+        self._ruler_p2: QPointF | None = None
+        self._ruler_mouse: QPointF | None = None
+
         self.setMouseTracking(True)
 
         self._calibrator = MunsellCalibrator(parent=self)
         self._chip_grid = MunsellChipGrid(parent=self)
-        self._calibration_samples: list = []
         self._calibrator.pageSelected.connect(self._on_munsell_page_selected)
         self._calibrator.confirmRequested.connect(self._on_confirm_calibration)
         self._chip_grid.positionChanged.connect(self._update_preview_colours)
@@ -163,10 +169,14 @@ class ImageCanvas(QWidget):
         painter.drawPixmap(int(img_x), int(img_y), self._pixmap)
         painter.restore()
 
-        # Draw crop in unrotated image space (after restore)
+        # Draw overlays in unrotated image space
+        painter.save()
+        painter.translate(img_x, img_y)
         if self._crop_visible and self._crop_rect:
-            painter.translate(img_x, img_y)
             self._draw_crop(painter)
+        if self._ruler_active and self._ruler_p1 is not None:
+            self._draw_ruler_overlay(painter)
+        painter.restore()
 
     def _draw_crop(self, painter: QPainter) -> None:
         # Dimmed overlay outside the crop
@@ -209,6 +219,21 @@ class ImageCanvas(QWidget):
         if event.button() != Qt.MouseButton.LeftButton:
             return
 
+        if self._ruler_active:
+            img_pos = self._widget_to_image(event.position().toPoint())
+            if self._ruler_p1 is None:
+                self._ruler_p1 = img_pos
+                self._ruler_mouse = img_pos
+            else:
+                self._ruler_p2 = img_pos
+                dx = self._ruler_p2.x() - self._ruler_p1.x()
+                dy = self._ruler_p2.y() - self._ruler_p1.y()
+                dist = math.sqrt(dx * dx + dy * dy)
+                if dist > 0:
+                    self.rulerComplete.emit(dist)
+            self.update()
+            return
+
         if self._crop_visible and self._crop_rect:
             img_pos = self._widget_to_image(event.position().toPoint())
             for handle_name, handle_rect in self._get_crop_handles().items():
@@ -228,6 +253,11 @@ class ImageCanvas(QWidget):
         self.setCursor(Qt.CursorShape.ClosedHandCursor)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._ruler_active:
+            self._ruler_mouse = self._widget_to_image(event.position().toPoint())
+            self.update()
+            return
+
         if self._dragging_crop and self._crop_rect:
             img_pos = self._widget_to_image(event.position().toPoint())
             delta_widget = event.position().toPoint() - self._drag_start_pos
@@ -243,7 +273,6 @@ class ImageCanvas(QWidget):
                     self._dragging_crop, img_pos, self._drag_start_rect
                 )
 
-            self.cropChanged.emit(self._crop_rect)
             self.update()
             return
 
@@ -279,6 +308,9 @@ class ImageCanvas(QWidget):
     def leaveEvent(self, event) -> None:  # noqa: ANN001
         super().leaveEvent(event)
         self.pixelLeft.emit()
+        if self._ruler_active:
+            self._ruler_mouse = None
+            self.update()
 
     # ── Internal helpers ──────────────────────────────────────
 
@@ -378,17 +410,15 @@ class ImageCanvas(QWidget):
         return ch / cw if cw > 0 else 1.0
 
     def _on_confirm_calibration(self) -> None:
-        """Sample at current grid position, store results, and emit calibrationComplete."""
+        """Sample at current grid position and update preview colours."""
         result = self._sample_current_grid()
         if result is None:
             return
         colour_map, results = result
-        self._calibration_samples = results
         self._calibrator.set_preview_colours(colour_map, self._current_cell_ratio())
         print("=== Calibration samples ===")
         for rgb, chip in results:
             print(f"  RGB {rgb}  →  {chip.notation}")
-        self.calibrationComplete.emit(list(results))
 
     def _sample_3x3(
         self, img: QImage, img_pos: QPointF
@@ -484,3 +514,26 @@ class ImageCanvas(QWidget):
                 self.setCursor(Qt.CursorShape.SizeAllCursor)
                 return
         self.setCursor(Qt.CursorShape.ArrowCursor)
+
+    def set_ruler_mode(self, active: bool) -> None:
+        """Enable or disable the two-point distance ruler tool."""
+        self._ruler_active = active
+        self._ruler_p1 = None
+        self._ruler_p2 = None
+        self._ruler_mouse = None
+        self.setCursor(Qt.CursorShape.CrossCursor if active else Qt.CursorShape.ArrowCursor)
+        self.update()
+
+    def _draw_ruler_overlay(self, painter: QPainter) -> None:
+        """Draw ruler points and measurement line in image-coordinate space."""
+        r = 5.0 / self._zoom
+        pw = 2.0 / self._zoom
+        yellow = QColor(255, 200, 0)
+        painter.setPen(QPen(yellow, pw))
+        painter.setBrush(yellow)
+        painter.drawEllipse(self._ruler_p1, r, r)
+        target = self._ruler_p2 if self._ruler_p2 is not None else self._ruler_mouse
+        if target is not None:
+            painter.drawEllipse(target, r, r)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawLine(self._ruler_p1, target)

@@ -75,14 +75,9 @@ class Ribbon(QWidget):
         self._add_group(home, "Import", ["Load Image", "Load Data", "Load Map"])
         self._tabs.addTab(home, "Home")
 
-        # -- Prepare tab
-        prepare = self._make_tab()
-        self._add_group(prepare, "Core", ["Core Studio"])
-        self._tabs.addTab(prepare, "Prepare")
-
         # -- Analysis tab
         analysis = self._make_tab()
-        self._add_group(analysis, "Core", ["Analyse"])
+        self._add_group(analysis, "Core", ["Core Studio", "Analyse"])
         self._tabs.addTab(analysis, "Analysis")
 
         # -- Map tab

@@ -11,6 +11,7 @@ from __future__ import annotations
 from PySide6.QtCore import QObject, Signal
 
 from src.domain.store.container import EntityContainer
+from src.domain.entities.propagation import PROPAGATION_RULES
 
 
 class Store(QObject):
@@ -68,11 +69,34 @@ class Store(QObject):
     def update_field(
         self, entity_id: str, field_name: str, value: object
     ) -> None:
-        """Update a field on an entity. Emits entityUpdated."""
-        self._container.update_field(entity_id, field_name, value)
-        entity = self._container.get(entity_id)
-        entity_type = type(entity).__name__
-        self.entityUpdated.emit(entity_id, entity_type)
+        """Update a field on an entity and cascade to related entities.
+
+        Emits ``entityUpdated`` for every entity that is written.
+        Propagation targets are determined by ``PROPAGATION_RULES`` in
+        ``src/domain/entities/propagation.py``.  Traversal is BFS with a
+        visited-set so cycles in the entity graph cannot cause infinite loops.
+        """
+        queue: list[str] = [entity_id]
+        visited: set[str] = set()
+
+        while queue:
+            eid = queue.pop(0)
+            if eid in visited:
+                continue
+            visited.add(eid)
+
+            self._container.update_field(eid, field_name, value)
+            entity = self._container.get(eid)
+            entity_type = type(entity).__name__
+            self.entityUpdated.emit(eid, entity_type)
+
+            for rule in PROPAGATION_RULES:
+                if rule.entity_type == entity_type and rule.field == field_name:
+                    related = getattr(entity, rule.via, None)
+                    if isinstance(related, list):
+                        queue.extend(related)
+                    elif isinstance(related, str) and related:
+                        queue.append(related)
 
     # ── Delete ──────────────────────────────────────────────────
 

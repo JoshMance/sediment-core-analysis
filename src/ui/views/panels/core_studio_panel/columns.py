@@ -113,20 +113,23 @@ class _DepthRulerContent(QWidget):
         if rect.isEmpty():
             return
 
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
+        painter.fillRect(rect, self.palette().window())
+
         if self._scale_provider is None:
+            self._draw_uncalibrated(painter, rect)
             return
-        
+
         mm_per_px = self._scale_provider()
         if mm_per_px <= 0:
+            self._draw_uncalibrated(painter, rect)
             return
 
         pixels_per_mm = 1.0 / mm_per_px
         font_metrics = QFontMetrics(self.font())
         label_interval_mm = self._label_interval_mm(pixels_per_mm, font_metrics)
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
-        painter.fillRect(rect, self.palette().window())
 
         max_mm = int(math.ceil(rect.height() * mm_per_px))
         if max_mm < 0:
@@ -227,6 +230,13 @@ class _DepthRulerContent(QWidget):
         text_rect.setRight(int(text_right))
         painter.drawText(text_rect, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter, label)
 
+    def _draw_uncalibrated(self, painter: QPainter, rect) -> None:
+        """Draw a centred '?' to indicate the ruler has not been calibrated."""
+        color = self.palette().color(self.foregroundRole())
+        color.setAlphaF(0.4)
+        painter.setPen(color)
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "?")
+
 
 class DepthRulerColumn(_BaseColumn):
     """Depth ruler — thin column with millimeter tick marks.
@@ -307,6 +317,15 @@ class ImageColumn(_BaseColumn):
         if self._pixmap is None or self._pixmap.isNull():
             return 0
         return int(self._pixmap.height() * (width / self._pixmap.width()))
+
+    def display_scale(self) -> float:
+        """Return current screen-pixels-per-image-pixel ratio (0.0 if not yet laid out)."""
+        if self._pixmap is None or self._pixmap.isNull():
+            return 0.0
+        image_h = self._pixmap.height()
+        if image_h == 0:
+            return 0.0
+        return self._image_view.height() / image_h
 
     # ── internals ─────────────────────────────────────────────
 

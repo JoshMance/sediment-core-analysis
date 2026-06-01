@@ -23,7 +23,7 @@ class CoreEntity:
         child_core_ids: IDs of cores derived from this core.
         derivation_type: Import/operation type (e.g. 'import', 'crop', 'split').
         derivation_params: Operation metadata payload for reproducibility.
-        calibration_id: ID of associated CalibrationEntity, if any.
+        mm_per_px: Millimetres per pixel. 0.0 means uncalibrated.
         is_draft: True while the core is still being prepared for analysis.
         id: Assigned by the Store on add().
         asset_ref: Archive-relative path to the sidecar PNG (e.g. 'assets/<id>_core.png').
@@ -36,7 +36,7 @@ class CoreEntity:
     child_core_ids: list[str] = field(default_factory=list)
     derivation_type: str = "import"
     derivation_params: dict = field(default_factory=dict)
-    calibration_id: str | None = None
+    mm_per_px: float = 0.0
     is_draft: bool = False
     id: str | None = None
     asset_ref: str | None = None
@@ -55,7 +55,7 @@ class CoreEntity:
             "child_core_ids": self.child_core_ids,
             "derivation_type": self.derivation_type,
             "derivation_params": self.derivation_params,
-            "calibration_id": self.calibration_id,
+            "mm_per_px": self.mm_per_px,
             "is_draft": self.is_draft,
             "asset_ref": self.asset_ref,
         }
@@ -73,7 +73,7 @@ class CoreEntity:
             child_core_ids=data.get("child_core_ids", []),
             derivation_type=data.get("derivation_type", "import"),
             derivation_params=data.get("derivation_params", {}),
-            calibration_id=data.get("calibration_id"),
+            mm_per_px=float(data.get("mm_per_px", 0.0)),
             is_draft=bool(data.get("is_draft", False)),
             asset_ref=data.get("asset_ref"),
         )
