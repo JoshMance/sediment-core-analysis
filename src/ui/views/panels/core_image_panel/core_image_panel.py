@@ -4,7 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QToolBar, QPushButton, QLabel, QSlider, QComboBox,
+    QWidget, QVBoxLayout, QToolBar, QPushButton, QLabel, QSpinBox, QComboBox,
 )
 
 from science.lib import available_illuminants
@@ -82,18 +82,14 @@ class CoreImagePanel(QWidget):
         tb.addSeparator()
 
         tb.addWidget(QLabel("Rotate:"))
-        self._rotation_slider = QSlider(Qt.Orientation.Horizontal)
-        self._rotation_slider.setRange(0, 360)
-        self._rotation_slider.setValue(0)
-        self._rotation_slider.setFixedWidth(140)
-        self._rotation_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
-        self._rotation_slider.setTickInterval(45)
-        self._rotation_slider.valueChanged.connect(self._on_rotation_changed)
-        tb.addWidget(self._rotation_slider)
-
-        self._rotation_label = QLabel("0°")
-        self._rotation_label.setFixedWidth(36)
-        tb.addWidget(self._rotation_label)
+        self._rotation_spinbox = QSpinBox()
+        self._rotation_spinbox.setRange(0, 359)
+        self._rotation_spinbox.setValue(0)
+        self._rotation_spinbox.setSuffix("°")
+        self._rotation_spinbox.setWrapping(True)
+        self._rotation_spinbox.setFixedWidth(72)
+        self._rotation_spinbox.valueChanged.connect(self._on_rotation_changed)
+        tb.addWidget(self._rotation_spinbox)
 
         tb.addSeparator()
 
@@ -155,7 +151,6 @@ class CoreImagePanel(QWidget):
 
     def _on_rotation_changed(self, angle: int) -> None:
         self.canvas.set_rotation(angle)
-        self._rotation_label.setText(f"{angle}°")
 
     def _on_crop_toggled(self) -> None:
         if self._crop_btn.isChecked():
