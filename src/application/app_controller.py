@@ -18,6 +18,7 @@ from src.domain.entities.dataset_entity import DatasetEntity
 from src.domain.store import Store
 from src.application.services.load_image import load_image
 from src.application.services.load_csv import load_csv
+from src.application.services.resolve_image import resolve as resolve_image
 from src.application.services.session_archive import save as archive_save
 from src.application.services.session_archive import load as archive_load
 from src.application.services.session_archive import ArchiveError
@@ -55,9 +56,46 @@ class AppController:
         self._workspace_state = workspace_state
         self._component_watcher = component_watcher
         self._session_temp_dir: tempfile.TemporaryDirectory | None = None
+        self._resolved_cache: dict[str, object] = {}  # entity_id -> ndarray
         self.status_context = StatusContext()
         self.ribbon_context = RibbonContext()
         self.recent_dirs = RecentDirs()
+
+        # Invalidate resolved-image cache on store mutations.
+        store.entityUpdated.connect(self._on_store_entity_updated)
+        store.entityRemoved.connect(self._on_store_entity_removed)
+        store.storeReset.connect(self._resolved_cache.clear)
+
+    def _on_store_entity_updated(self, entity_id: str, entity_type: str) -> None:
+        self._resolved_cache.pop(entity_id, None)
+
+    def _on_store_entity_removed(self, entity_id: str, entity_type: str) -> None:
+        self._resolved_cache.pop(entity_id, None)
+
+    def get_resolved_data(self, entity_id: str) -> object:
+        """Return the display image for a core: base_data with filter_stack applied.
+
+        Results are cached until the entity is updated or removed.  Returns
+        ``None`` if the entity does not exist or has no pixel data.
+        """
+        import numpy as np
+        if entity_id in self._resolved_cache:
+            return self._resolved_cache[entity_id]
+        entity = self._store.get(entity_id)
+        if not isinstance(entity, CoreEntity) or entity.base_data is None:
+            return None
+        resolved = resolve_image(entity.base_data, entity.filter_stack)
+        self._resolved_cache[entity_id] = resolved
+        return resolved
+
+    def set_filter_stack(self, entity_id: str, stack: list[dict]) -> None:
+        """Replace the filter stack for a core.
+
+        Propagation to child cores is handled automatically by the Store via
+        PROPAGATION_RULES in src/domain/entities/propagation.py.
+        Cache invalidation happens via the entityUpdated signal.
+        """
+        self._store.update_field(entity_id, "filter_stack", stack)
 
     def set_view_context(self, parts: list[str]) -> None:
         """Post context strings to the status bar right side.
@@ -99,7 +137,7 @@ class AppController:
 
         return self.create_core_entity(
             name=path.name,
-            data=data,
+            base_data=data,
             source_file_path=path,
             derivation_type="import",
             derivation_params={},
@@ -109,24 +147,26 @@ class AppController:
     def create_core_entity(
         self,
         name: str,
-        data: object,
+        base_data: object,
         source_file_path: str | Path | None = None,
         parent_core_id: str | None = None,
         derivation_type: str = "import",
         derivation_params: dict | None = None,
         mm_per_px: float = 0.0,
+        filter_stack: list[dict] | None = None,
         is_draft: bool = False,
     ) -> str:
         """Construct a CoreEntity and add it to the Store.
 
         Args:
             name: Display name for the core.
-            data: Cropped image array (H, W, 3) uint8.
+            base_data: Raw image array (H, W, 3) uint8 — write-once source pixels.
             source_file_path: Original import source path, if any.
             parent_core_id: Parent core id if derived from another core.
             derivation_type: Derivation operation type.
             derivation_params: Derivation metadata payload.
             mm_per_px: Millimetres per pixel. 0.0 means uncalibrated.
+            filter_stack: Initial filter stack. Defaults to empty.
             is_draft: True if this core is still being prepared.
 
         Returns:
@@ -134,12 +174,13 @@ class AppController:
         """
         entity = CoreEntity(
             name=name,
-            data=data,
+            base_data=base_data,
             source_file_path=Path(source_file_path) if source_file_path is not None else None,
             parent_core_id=parent_core_id,
             derivation_type=derivation_type,
             derivation_params=derivation_params or {},
             mm_per_px=mm_per_px,
+            filter_stack=filter_stack if filter_stack is not None else [],
             is_draft=is_draft,
         )
         return self._store.add(entity)
@@ -147,7 +188,7 @@ class AppController:
     def create_child_core(
         self,
         parent_core_id: str,
-        data: object,
+        base_data: object,
         name: str | None = None,
         derivation_type: str = "crop",
         derivation_params: dict | None = None,
@@ -155,9 +196,13 @@ class AppController:
     ) -> str | None:
         """Create a derived child CoreEntity from an existing parent core.
 
+        The child starts with a copy of the parent's current filter_stack.
+        If the parent's filter_stack is later changed, the Store propagation
+        rules cascade the new stack to the child automatically.
+
         Args:
             parent_core_id: ID of the source parent core.
-            data: Child core pixel data.
+            base_data: Child core raw pixel data (write-once).
             name: Optional explicit child name.
             derivation_type: Derivation operation type.
             derivation_params: Derivation metadata payload.
@@ -177,17 +222,61 @@ class AppController:
 
         child_id = self.create_core_entity(
             name=name,
-            data=data,
+            base_data=base_data,
             source_file_path=parent.source_file_path,
             parent_core_id=parent_core_id,
             derivation_type=derivation_type,
             derivation_params=derivation_params or {},
             mm_per_px=parent.mm_per_px,
+            filter_stack=list(parent.filter_stack),
             is_draft=is_draft,
         )
         updated_children = list(parent.child_core_ids) + [child_id]
         self._store.update_field(parent_core_id, "child_core_ids", updated_children)
         return child_id
+
+    def create_cropped_child_core(
+        self,
+        parent_core_id: str,
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        name: str | None = None,
+    ) -> str | None:
+        """Crop a rect from a core's *raw* base_data and create a child entity.
+
+        The child's base_data is the unfiltered pixel slice — filters are
+        inherited from the parent and applied at render time.  This means
+        the child always renders identically to the same region on the parent.
+
+        Args:
+            parent_core_id: ID of the source parent core.
+            x, y, w, h: Crop region in image-space pixels (clamped to image bounds).
+            name: Optional explicit child name.
+
+        Returns:
+            The created child core id, or None if the parent is missing / has no data.
+        """
+        import numpy as np
+        parent = self._store.get(parent_core_id)
+        if not isinstance(parent, CoreEntity) or parent.base_data is None:
+            logger.warning("create_cropped_child_core: parent '%s' has no base_data", parent_core_id)
+            return None
+        img_h, img_w = parent.base_data.shape[:2]
+        x = max(0, min(x, img_w - 1))
+        y = max(0, min(y, img_h - 1))
+        w = max(1, min(w, img_w - x))
+        h = max(1, min(h, img_h - y))
+        crop = parent.base_data[y:y + h, x:x + w, :].copy()
+        return self.create_child_core(
+            parent_core_id=parent_core_id,
+            base_data=crop,
+            name=name,
+            derivation_type="crop",
+            derivation_params={"x": x, "y": y, "w": w, "h": h},
+            is_draft=False,
+        )
 
     def set_core_mm_per_px(self, core_id: str, mm_per_px: float) -> None:
         """Update the spatial calibration scale for a core.
@@ -234,6 +323,18 @@ class AppController:
                 target_entity_id=None,
             )
         )
+
+    def open_core_studio(self) -> None:
+        """Open Core Studio, focusing the most recent core or a blank panel.
+
+        If at least one CoreEntity exists, opens (or focuses) the most recently
+        added one.  Otherwise opens the blank Core Studio panel.
+        """
+        cores = self._store.list_entities(entity_type="CoreEntity", include_ids=True)
+        if cores:
+            self.open_core_in_studio(cores[-1][0])
+        else:
+            self.open_blank_core_studio()
 
     def delete_entity(self, entity_id: str) -> object:
         """Remove an entity from the Store.
@@ -410,7 +511,7 @@ class AppController:
         for entity in entities:
             if isinstance(entity, CoreEntity) and entity.asset_ref:
                 try:
-                    entity.data = iio.imread(entity.asset_ref)
+                    entity.base_data = iio.imread(entity.asset_ref)
                 except Exception as e:
                     logger.warning("Could not load core pixels for %s: %s", entity.id, e)
             elif isinstance(entity, DatasetEntity) and entity.asset_ref:

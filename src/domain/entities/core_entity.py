@@ -17,7 +17,10 @@ class CoreEntity:
 
     Attributes:
         name: Display name.
-        data: Core image as an (H, W, 3) uint8 RGB array.
+        base_data: Raw core image as an (H, W, 3) uint8 RGB array.  Write-once
+                   after import or crop — never mutated.  Callers that need the
+                   display image (with filters applied) should use
+                   ``AppController.get_resolved_data`` instead.
         source_file_path: Original imported source file path, if any.
         parent_core_id: Parent core id if derived from another core.
         child_core_ids: IDs of cores derived from this core.
@@ -30,7 +33,7 @@ class CoreEntity:
                    Populated by the archive service on load; not set during normal runtime.
     """
     name: str
-    data: NDArray[np.uint8] | None = field(default=None, repr=False)
+    base_data: NDArray[np.uint8] | None = field(default=None, repr=False)
     source_file_path: Path | None = None
     parent_core_id: str | None = None
     child_core_ids: list[str] = field(default_factory=list)
@@ -38,6 +41,7 @@ class CoreEntity:
     derivation_params: dict = field(default_factory=dict)
     mm_per_px: float = 0.0
     illuminant: str | None = None
+    filter_stack: list[dict] = field(default_factory=list)
     is_draft: bool = False
     id: str | None = None
     asset_ref: str | None = None
@@ -58,6 +62,7 @@ class CoreEntity:
             "derivation_params": self.derivation_params,
             "mm_per_px": self.mm_per_px,
             "illuminant": self.illuminant,
+            "filter_stack": self.filter_stack,
             "is_draft": self.is_draft,
             "asset_ref": self.asset_ref,
         }
@@ -77,6 +82,7 @@ class CoreEntity:
             derivation_params=data.get("derivation_params", {}),
             mm_per_px=float(data.get("mm_per_px", 0.0)),
             illuminant=data.get("illuminant"),
+            filter_stack=list(data.get("filter_stack", [])),
             is_draft=bool(data.get("is_draft", False)),
             asset_ref=data.get("asset_ref"),
         )

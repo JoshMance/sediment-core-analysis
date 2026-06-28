@@ -9,6 +9,7 @@ from .transform import (
 	xyz_to_cielab,
 	xyz_to_rgb,
 )
+from .filters import brightness, contrast, gamma
 
 __all__ = [
 	"available_illuminants",
@@ -18,4 +19,7 @@ __all__ = [
 	"xyz_to_rgb",
 	"cielab_to_xyz",
 	"xyz_to_cielab",
+	"brightness",
+	"contrast",
+	"gamma",
 ]

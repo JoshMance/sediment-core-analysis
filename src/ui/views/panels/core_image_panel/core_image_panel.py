@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 
 from science.lib import available_illuminants
 from src.ui.views.panels.core_image_panel.canvas import ImageCanvas
+from src.ui.views.panels.core_image_panel.filter_panel import FilterPanel
 
 
 class CoreImagePanel(QWidget):
@@ -18,12 +19,15 @@ class CoreImagePanel(QWidget):
     Created at runtime by WorkspacePresenter when a core is opened.
     """
 
-    # Emitted when the user confirms a crop; carries the cropped QPixmap.
-    cropConfirmed = Signal(object)  # QPixmap
+    # Emitted when the user confirms a crop.
+    # Carries the crop region as (x, y, w, h) in image-space pixels.
+    cropConfirmed = Signal(float, float, float, float)
     # Emitted when distance calibration is confirmed; carries mm_per_px.
     distanceCalibrated = Signal(float)
     # Emitted when the user selects an illuminant; carries key str or None.
     illuminantChanged = Signal(object)
+    # Emitted when the filter stack changes; carries the new list[dict].
+    filterStackChanged = Signal(list)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -33,12 +37,15 @@ class CoreImagePanel(QWidget):
         self.canvas.rulerCancelled.connect(self._deactivate_ruler)
         self.canvas.munsellClosed.connect(self._on_munsell_closed)
         self.toolbar = self._build_toolbar()
+        self._filter_panel = FilterPanel(self)
+        self._filter_panel.filterStackChanged.connect(self.filterStackChanged)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.addWidget(self.toolbar)
         layout.addWidget(self.canvas, 1)
+        layout.addWidget(self._filter_panel)
 
     # ── Public API ────────────────────────────────────────────
 
@@ -59,6 +66,10 @@ class CoreImagePanel(QWidget):
                     break
         self._illuminant_combo.setCurrentIndex(idx)
         self._illuminant_combo.blockSignals(False)
+
+    def set_filter_stack(self, stack: list[dict]) -> None:
+        """Sync the filter panel to *stack* without emitting filterStackChanged."""
+        self._filter_panel.set_stack(stack)
 
     # ── Toolbar ───────────────────────────────────────────────
 
@@ -161,9 +172,9 @@ class CoreImagePanel(QWidget):
             self._deactivate_crop()
 
     def _on_confirm_clicked(self) -> None:
-        pixmap = self.canvas.get_crop_pixmap()
-        if pixmap:
-            self.cropConfirmed.emit(pixmap)
+        rect = self.canvas.get_crop_rect()
+        if rect:
+            self.cropConfirmed.emit(rect.x(), rect.y(), rect.width(), rect.height())
         self._deactivate_crop()
 
     def _on_cancel_clicked(self) -> None:

@@ -9,8 +9,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from src.ui.views.shell.ribbon.ribbon import Ribbon
 from src.ui.resources.icon_provider import SedivisIconProvider
-from src.application import AppController
-from src.application.services.session_archive import ArchiveError
+from src.application import AppController, ArchiveError
 
 logger = logging.getLogger(__name__)
 
@@ -109,18 +108,7 @@ class RibbonPresenter(QObject):
         logger.info("Fit -- not implemented yet")
 
     def _core_studio(self) -> None:
-        store = getattr(self._controller, "_store", None)
-        if store is None:
-            logger.warning("Core Studio: no Store available")
-            return
-
-        cores = store.list_entities(entity_type="CoreEntity", include_ids=True)
-        if cores:
-            latest_core_id = cores[-1][0]
-            self._controller.open_core_in_studio(latest_core_id)
-            return
-
-        self._controller.open_blank_core_studio()
+        self._controller.open_core_studio()
 
     def _analyse(self) -> None:
         logger.info("Analyse -- not implemented yet")

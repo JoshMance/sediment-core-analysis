@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 from PySide6.QtCore import Qt, QSize, Signal
-from PySide6.QtGui import QDragEnterEvent, QDropEvent, QPainter, QPixmap
+from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent, QPainter, QPixmap
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QScrollArea, QToolBar, QVBoxLayout, QWidget
 
 from src.ui.views.panels.core_studio_panel.canvas import CoreStudioCanvas
@@ -108,6 +108,8 @@ class CoreStudioPanel(QWidget):
 
     # Emitted when the user drops an entity onto an empty panel.
     imageDropped = Signal(str)  # entity_id
+    # Emitted when the user clicks Export PDF in the toolbar.
+    exportPdfRequested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -197,6 +199,9 @@ class CoreStudioPanel(QWidget):
         tb = QToolBar()
         tb.setMovable(False)
         tb.setIconSize(QSize(20, 20))
+        export_action = QAction("Export PDF", tb)
+        export_action.triggered.connect(self.exportPdfRequested)
+        tb.addAction(export_action)
         return tb
 
     def resizeEvent(self, event) -> None:  # noqa: N802

@@ -39,8 +39,8 @@ def test_import_image_creates_core_entity(tmp_path: Path) -> None:
     assert isinstance(entity, CoreEntity)
     assert entity.derivation_type == "import"
     assert entity.source_file_path == image_path
-    assert entity.data is not None
-    assert entity.data.shape == expected.shape
+    assert entity.base_data is not None
+    assert entity.base_data.shape == expected.shape
 
 
 def test_create_child_core_preserves_lineage(tmp_path: Path) -> None:
@@ -50,7 +50,7 @@ def test_create_child_core_preserves_lineage(tmp_path: Path) -> None:
     parent_data = np.full((4, 4, 3), 100, dtype=np.uint8)
     parent_id = controller.create_core_entity(
         name="parent",
-        data=parent_data,
+        base_data=parent_data,
         source_file_path=tmp_path / "parent.png",
         derivation_type="import",
         derivation_params={},
@@ -60,7 +60,7 @@ def test_create_child_core_preserves_lineage(tmp_path: Path) -> None:
     child_data = np.full((2, 2, 3), 25, dtype=np.uint8)
     child_id = controller.create_child_core(
         parent_core_id=parent_id,
-        data=child_data,
+        base_data=child_data,
         derivation_type="crop",
         derivation_params={"x": 1, "y": 1, "w": 2, "h": 2},
         is_draft=False,
@@ -84,7 +84,7 @@ def test_open_in_workspace_maps_core_to_core_image_panel() -> None:
 
     core_id = controller.create_core_entity(
         name="openable-core",
-        data=np.zeros((2, 2, 3), dtype=np.uint8),
+        base_data=np.zeros((2, 2, 3), dtype=np.uint8),
         derivation_type="import",
         derivation_params={},
     )
@@ -104,7 +104,7 @@ def test_core_studio_opens_alongside_core_image_panel() -> None:
 
     core_id = controller.create_core_entity(
         name="studio-openable-core",
-        data=np.zeros((2, 2, 3), dtype=np.uint8),
+        base_data=np.zeros((2, 2, 3), dtype=np.uint8),
         derivation_type="import",
         derivation_params={},
     )
@@ -144,9 +144,9 @@ def test_session_save_load_round_trip_core_and_workspace(tmp_path: Path) -> None
 
     loaded_core = store.get(core_id)
     assert isinstance(loaded_core, CoreEntity)
-    assert loaded_core.data is not None
-    assert loaded_core.data.shape == expected.shape
-    assert np.array_equal(loaded_core.data, expected)
+    assert loaded_core.base_data is not None
+    assert loaded_core.base_data.shape == expected.shape
+    assert np.array_equal(loaded_core.base_data, expected)
     image_panel_id = f"core_image::{core_id}"
     assert workspace_state.is_open(image_panel_id)
     assert workspace_state._entries[image_panel_id].panel_type == "CoreImagePanel"
@@ -160,7 +160,7 @@ def test_delete_entity_closes_targeted_panels() -> None:
 
     core_id = controller.create_core_entity(
         name="delete-me-core",
-        data=np.zeros((2, 2, 3), dtype=np.uint8),
+        base_data=np.zeros((2, 2, 3), dtype=np.uint8),
         derivation_type="import",
         derivation_params={},
     )

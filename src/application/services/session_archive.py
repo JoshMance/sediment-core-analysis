@@ -99,14 +99,14 @@ def _save_core_entity(entity: CoreEntity, zf: zipfile.ZipFile) -> dict:
     """Encode pixel data as PNG, write as sidecar, return session.json record."""
     asset_name = f"assets/{entity.id}_core.png"
 
-    if entity.data is not None:
+    if entity.base_data is not None:
         buf = io.BytesIO()
-        iio.imwrite(buf, entity.data, extension=".png")
+        iio.imwrite(buf, entity.base_data, extension=".png")
         zf.writestr(asset_name, buf.getvalue())
-    # If data is None there is nothing to bundle; asset_ref will be None on load.
+    # If base_data is None there is nothing to bundle; asset_ref will be None on load.
 
     d = entity.to_dict()
-    d["asset_ref"] = asset_name if entity.data is not None else None
+    d["asset_ref"] = asset_name if entity.base_data is not None else None
     return {"type": "CoreEntity", "data": d}
 
 def _save_dataset_entity(entity: DatasetEntity, zf: zipfile.ZipFile) -> dict:

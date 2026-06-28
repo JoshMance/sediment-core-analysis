@@ -61,4 +61,12 @@ PROPAGATION_RULES: list[PropagationRule] = [
         direction="down",
         via="child_core_ids",
     ),
+    # Filter stack cascades to all child cores so they render with the
+    # same processing pipeline as their parent.
+    PropagationRule(
+        entity_type="CoreEntity",
+        field="filter_stack",
+        direction="down",
+        via="child_core_ids",
+    ),
 ]
