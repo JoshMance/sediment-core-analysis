@@ -72,7 +72,7 @@ class Ribbon(QWidget):
         # -- Home tab
         home = self._make_tab()
         self._add_group(home, "File", ["New", "Open", "Save"])
-        self._add_group(home, "Import", ["Load Image", "Load Data", "Load Map"])
+        self._add_group(home, "Import", ["Load Image", "Load Data", "New Dataset", "Load Map"])
         self._tabs.addTab(home, "Home")
 
         # -- Analysis tab

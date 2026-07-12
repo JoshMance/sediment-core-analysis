@@ -4,7 +4,17 @@
 domain:
   entities:
     - name: DatasetEntity
-      fields: [id, name, file_path, data, columns, column_types, asset_ref]
+      fields:
+        [
+          id,
+          name,
+          file_path,
+          data,
+          columns,
+          column_types,
+          depth_column,
+          asset_ref,
+        ]
     - name: CoreEntity
       fields:
         [
@@ -20,6 +30,7 @@ domain:
           illuminant,
           filter_stack,
           is_draft,
+          dataset_plots,
           asset_ref,
         ]
 
@@ -73,6 +84,12 @@ application:
         - delete_entity
         - rename_entity
         - create_dataset_entity
+        - create_blank_dataset
+        - add_dataset_column
+        - remove_dataset_column
+        - add_dataset_row
+        - remove_dataset_row
+        - paste_dataset_data
         - rename_dataset_column
         - change_dataset_column_type
         - update_dataset_cell
@@ -82,6 +99,8 @@ application:
         - load_session
         - set_view_context
         - set_ribbon_tab
+        - set_dataset_depth_column
+        - set_dataset_plots
 
     - name: StatusContext
       lifetime: long-lived
@@ -184,11 +203,34 @@ ui:
       lifetime: per-panel
       subscribes_to: [Store.entityUpdated]
       calls: [AppController]
-      view_signals: [selectionChanged, columnSelected]
+      view_signals:
+        [
+          selectionChanged,
+          columnSelected,
+          DatasetPanel.depthColumnSetRequested,
+          DatasetPanel.addColumnRequested,
+          DatasetPanel.removeColumnRequested,
+          DatasetPanel.addRowRequested,
+          DatasetPanel.removeRowRequested,
+          DatasetPanel.pasteRequested,
+        ]
 
     - name: CoreStudioPresenter
       view: CoreStudioPanel
       lifetime: per-panel
       subscribes_to: [Store.entityUpdated]
       calls: [AppController]
-      view_signals: [CoreStudioPanel.imageDropped, CoreStudioPanel.exportPdfRequested]
+      view_signals:
+        [
+          CoreStudioPanel.imageDropped,
+          CoreStudioPanel.exportPdfRequested,
+          CoreStudioPanel.dataPlotChangeRequested,
+        ]
+
+  views:
+    - name: DatasetPlotDialog
+      lifetime: transient
+      # Modal dialog opened by CoreStudioPresenter when user clicks "Manage data plots".
+      # Receives dataset descriptors and active_plots at construction; emits plotsSelected.
+      # No Store access — all data passed in by presenter.
+      signals: [plotsSelected]

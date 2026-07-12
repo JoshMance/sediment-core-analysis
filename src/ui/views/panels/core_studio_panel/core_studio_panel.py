@@ -51,6 +51,7 @@ class _CoreStudioHeader(QWidget):
         self._right_gutter = 0
 
         self._header_cells: list[tuple[QWidget, float]] = []
+        self._dynamic_cells: list[tuple[QWidget, float]] = []
         self._layout = QHBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(0)
@@ -91,8 +92,27 @@ class _CoreStudioHeader(QWidget):
         if panel_w <= 0:
             return
         max_std = int(panel_w * MAX_COLUMN_WIDTH_FRACTION)
-        for widget, ratio in self._header_cells:
+        for widget, ratio in self._header_cells + self._dynamic_cells:
             widget.setFixedWidth(int(max_std * ratio))
+
+    def add_dynamic_header(self, title: str, ratio: float) -> None:
+        """Append a dynamic header cell (for dataset plot columns)."""
+        label = _HeaderCell(title)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setFixedHeight(28)
+        label.setProperty("role", "column-header")
+        self._layout.insertWidget(self._layout.count() - 1, label)
+        self._dynamic_cells.append((label, ratio))
+        self._apply_max_widths()
+
+    def clear_dynamic_headers(self) -> None:
+        """Remove all dynamic header cells."""
+        for widget, _ in self._dynamic_cells:
+            self._layout.removeWidget(widget)
+            widget.setParent(None)  # type: ignore[arg-type]
+            widget.deleteLater()
+        self._dynamic_cells.clear()
+        self._apply_max_widths()
 
 
 class CoreStudioPanel(QWidget):
@@ -110,6 +130,8 @@ class CoreStudioPanel(QWidget):
     imageDropped = Signal(str)  # entity_id
     # Emitted when the user clicks Export PDF in the toolbar.
     exportPdfRequested = Signal()
+    # Emitted when the user clicks "Manage data plots".
+    dataPlotChangeRequested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -173,6 +195,21 @@ class CoreStudioPanel(QWidget):
         """Clear all channel columns."""
         self.canvas.clear_channel_profiles()
 
+    def set_dataset_plot_columns(
+        self,
+        plots: list[tuple[str, "np.ndarray", "np.ndarray"]],
+    ) -> None:
+        """Replace all dataset plot columns.
+
+        Args:
+            plots: List of (label, depths_mm, values) tuples.
+        """
+        self.header.clear_dynamic_headers()
+        self.canvas.clear_dataset_plot_columns()
+        for label, depths, values in plots:
+            self.header.add_dynamic_header(label, CHANNEL_WIDTH_RATIO)
+            self.canvas.add_dataset_plot_column(label, depths, values)
+
     # ── Drag and drop ─────────────────────────────────────────
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:  # noqa: N802
@@ -202,6 +239,9 @@ class CoreStudioPanel(QWidget):
         export_action = QAction("Export PDF", tb)
         export_action.triggered.connect(self.exportPdfRequested)
         tb.addAction(export_action)
+        plots_action = QAction("Manage data plots…", tb)
+        plots_action.triggered.connect(self.dataPlotChangeRequested)
+        tb.addAction(plots_action)
         return tb
 
     def resizeEvent(self, event) -> None:  # noqa: N802

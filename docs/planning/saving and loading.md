@@ -2,7 +2,7 @@
 
 ## Goal
 
-A `.sedivis` file is a portable, self-contained project archive. One file contains everything: entity state, workspace state, and all required assets (source images). It can move between machines without breaking.
+A `.sedivis` file is a portable, self-contained project archive. One file contains everything: entity state, workspace state, and all required assets (core images and dataset CSVs). It can move between machines without breaking.
 
 ---
 
@@ -16,6 +16,7 @@ project.sedivis  (ZIP)
 ├── session.json         ← serialized entities + workspace state
 └── assets/
     ├── <id>_core.png    ← sidecar pixel data (CoreEntity)
+    ├── <id>_data.csv    ← sidecar tabular data (DatasetEntity)
     └── ...
 ```
 
@@ -37,8 +38,8 @@ project.sedivis  (ZIP)
 
 Every entity type gets `to_dict()` / `from_dict()` methods. These write to / read from `session.json`.
 
-- **`CoreEntity`** — stores core pixel data and provenance metadata. Pixel data is saved as a sidecar PNG in `assets/` (`assets/<id>_core.png`). `to_dict()` omits `data` and stores `asset_ref` instead. The archive service writes/reads the PNG.
-- **`CalibrationEntity`** — pure JSON, no sidecar assets. `to_dict()` / `from_dict()` serialize `id` and `mm_per_px` directly into `session.json`.
+- **`CoreEntity`** — stores core pixel data and provenance metadata. Pixel data is saved as a sidecar PNG in `assets/` (`assets/<id>_core.png`). `to_dict()` omits `base_data` and stores `asset_ref` instead. The archive service writes/reads the PNG.
+- **`DatasetEntity`** — owns its tabular data as a pandas DataFrame. The DataFrame is saved as a sidecar CSV in `assets/` (`assets/<id>_data.csv`). `to_dict()` omits `data` and stores `asset_ref` instead. On load, `AppController` reads the CSV and reconstructs `data`, `columns`, and `column_types`. The original `file_path` is kept as provenance only — it is never re-read. Datasets created by manual entry have `file_path = None`.
 
 ### Workspace State
 

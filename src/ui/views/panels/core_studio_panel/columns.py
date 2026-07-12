@@ -494,3 +494,119 @@ class _ChannelProfileContent(QWidget):
                 painter.drawLine(points[i - 1], points[i])
         finally:
             painter.end()
+
+
+# ── Dataset plot column ──────────────────────────────────────────────────────
+
+class _DatasetPlotContent(QWidget):
+    """Render a dataset column as a depth-aligned line plot.
+
+    ``scale_provider`` is a callable matching the depth ruler's convention:
+    it returns the current mm-per-screen-pixel ratio.  A depth value ``d``
+    (in mm) maps to screen y = d / scale_provider().
+    """
+
+    def __init__(self, label: str, scale_provider=None, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setProperty("role", "column-content")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._label = label
+        self._scale_provider = scale_provider
+        self._depths: np.ndarray | None = None   # mm values
+        self._values: np.ndarray | None = None   # numeric values (same length)
+
+    def set_scale_provider(self, provider) -> None:
+        self._scale_provider = provider
+        self.update()
+
+    def set_data(self, depths: np.ndarray, values: np.ndarray) -> None:
+        """Load depth (mm) and value arrays. Both must be 1-D and same length."""
+        arr_d = np.asarray(depths, dtype=np.float64).reshape(-1)
+        arr_v = np.asarray(values, dtype=np.float64).reshape(-1)
+        n = min(len(arr_d), len(arr_v))
+        self._depths = arr_d[:n]
+        self._values = arr_v[:n]
+        self.update()
+
+    def clear_data(self) -> None:
+        self._depths = None
+        self._values = None
+        self.update()
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        super().paintEvent(event)
+        rect = self.contentsRect()
+        if rect.width() <= 0 or rect.height() <= 0:
+            return
+
+        painter = QPainter(self)
+        try:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+            # Centre axis
+            axis_color = self.palette().mid().color()
+            axis_color.setAlpha(120)
+            painter.setPen(axis_color)
+            mid_x = rect.left() + rect.width() / 2.0
+            painter.drawLine(QPointF(mid_x, rect.top()), QPointF(mid_x, rect.bottom()))
+
+            if self._depths is None or self._values is None or self._depths.size == 0:
+                return
+            if self._scale_provider is None:
+                return
+            mm_per_screen_px = self._scale_provider()
+            if mm_per_screen_px <= 0:
+                return
+
+            # Value normalisation
+            finite = np.isfinite(self._values)
+            if not np.any(finite):
+                return
+            v_min = float(np.nanmin(self._values[finite]))
+            v_max = float(np.nanmax(self._values[finite]))
+            span = v_max - v_min if v_max != v_min else 1.0
+
+            pen = QPen(QColor(66, 133, 244), 1.5)
+            painter.setPen(pen)
+
+            points: list[QPointF] = []
+            for d, v in zip(self._depths, self._values):
+                if not (np.isfinite(d) and np.isfinite(v)):
+                    continue
+                screen_y = rect.top() + d / mm_per_screen_px
+                norm_v = (v - v_min) / span
+                screen_x = rect.left() + norm_v * (rect.width() - 1)
+                points.append(QPointF(screen_x, screen_y))
+
+            for i in range(1, len(points)):
+                painter.drawLine(points[i - 1], points[i])
+
+            # Column label (top-left, small)
+            painter.setPen(self.palette().text().color())
+            font = painter.font()
+            font.setPointSize(max(6, font.pointSize() - 2))
+            painter.setFont(font)
+            painter.drawText(rect.adjusted(3, 3, -3, -3), Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft, self._label)
+        finally:
+            painter.end()
+
+
+class DatasetPlotColumn(_BaseColumn):
+    """Column that renders a dataset variable as a depth-aligned line plot."""
+
+    def __init__(self, label: str, scale_provider=None, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._plot = _DatasetPlotContent(label=label, scale_provider=scale_provider)
+        layout = QVBoxLayout(self._content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self._plot)
+
+    def set_scale_provider(self, provider) -> None:
+        self._plot.set_scale_provider(provider)
+
+    def set_data(self, depths: np.ndarray, values: np.ndarray) -> None:
+        self._plot.set_data(depths, values)
+
+    def clear_data(self) -> None:
+        self._plot.clear_data()

@@ -9,10 +9,13 @@ Follows MVP pattern where Presenter:
 from __future__ import annotations
 
 from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QMessageBox
 
 from src.ui.views.shell.variables_list import VariablesList
 from src.ui.views.shell.preview import PreviewPanel
 from src.domain.store import Store
+from src.domain.entities.dataset_entity import DatasetEntity
+from src.domain.entities.core_entity import CoreEntity
 from src.application import AppController
 
 
@@ -100,7 +103,26 @@ class VariablesPresenter(QObject):
             self.view.update_row_name(entity_id, _display_name(entity, fallback=str(entity_id)))
 
     def _on_delete_requested(self, entity_id: str):
-        """User clicked Delete — route to AppController."""
+        """User clicked Delete — warn if a dataset is referenced, then route to AppController."""
+        entity = self.store.get(entity_id)
+        if isinstance(entity, DatasetEntity):
+            referencing: list[str] = []
+            for core in self.store.list_entities("CoreEntity"):
+                if not isinstance(core, CoreEntity):
+                    continue
+                if any(p.get("dataset_id") == entity_id for p in core.dataset_plots):
+                    referencing.append(core.name)
+            if referencing:
+                names = ", ".join(referencing)
+                answer = QMessageBox.question(
+                    self.view,
+                    "Delete dataset",
+                    f"'{entity.name}' is used as a data plot in: {names}.\n\n"
+                    "Deleting it will remove those plots. Continue?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                )
+                if answer != QMessageBox.StandardButton.Yes:
+                    return
         self.controller.delete_entity(entity_id)
 
     def _on_rename_requested(self, entity_id: str, new_name: str):

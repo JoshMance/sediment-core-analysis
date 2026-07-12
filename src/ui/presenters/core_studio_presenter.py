@@ -12,8 +12,10 @@ from PySide6.QtWidgets import QFileDialog
 from src.application import AppController
 from src.application.services import compute_channels
 from src.domain.entities.core_entity import CoreEntity
+from src.domain.entities.dataset_entity import DatasetEntity
 from src.domain.store import Store
 from src.ui.views.panels.core_studio_panel import CoreStudioPanel
+from src.ui.views.panels.core_studio_panel.dataset_plot_dialog import DatasetPlotDialog
 from src.ui.views.panels.core_studio_panel.pdf_export import render_to_pdf
 
 logger = logging.getLogger(__name__)
@@ -46,8 +48,10 @@ class CoreStudioPresenter(QObject):
         # ── View signals ──────────────────────────────────────
         self._view.imageDropped.connect(self._on_image_dropped)
         self._view.exportPdfRequested.connect(self._on_export_pdf)
+        self._view.dataPlotChangeRequested.connect(self._on_data_plot_change_requested)
         self._store.entityUpdated.connect(self._on_entity_updated)
         self._load_core_image()
+        self._refresh_dataset_plots()
 
     def _load_core_image(self) -> None:
         """Load the bound core's resolved image into the panel."""
@@ -81,7 +85,8 @@ class CoreStudioPresenter(QObject):
     # ── Handlers ──────────────────────────────────────────────
 
     def _on_entity_updated(self, entity_id: str, entity_type: str) -> None:
-        """React to store changes — refresh scale and channels if our core changed."""
+        """React to store changes — refresh scale and channels if our core changed,
+        or refresh plots if a linked DatasetEntity changed."""
         if entity_id == self._core_id and entity_type == "CoreEntity":
             entity = self._store.get(entity_id)
             if isinstance(entity, CoreEntity):
@@ -106,6 +111,14 @@ class CoreStudioPresenter(QObject):
                         b_star=channels.b_star,
                     )
                     self._view.set_pixmap(_array_to_pixmap(resolved))
+                # dataset_plots may have changed too
+                self._refresh_dataset_plots()
+        elif entity_type == "DatasetEntity" and self._core_id is not None:
+            # Check if this dataset is one we're displaying
+            core = self._store.get(self._core_id)
+            if isinstance(core, CoreEntity):
+                if any(p.get("dataset_id") == entity_id for p in core.dataset_plots):
+                    self._refresh_dataset_plots()
 
     def _on_image_dropped(self, entity_id: str) -> None:
         """User dropped an entity onto an empty panel — open if it is a core."""
@@ -131,3 +144,62 @@ class CoreStudioPresenter(QObject):
         if not paths:
             return
         render_to_pdf(self._view.canvas, self._view.header, Path(paths[0]))
+
+    def _on_data_plot_change_requested(self) -> None:
+        """Open the dataset picker dialog and update plots on confirm."""
+        if self._core_id is None:
+            return
+        core = self._store.get(self._core_id)
+        if not isinstance(core, CoreEntity):
+            return
+
+        # Build descriptor list from all DatasetEntities in the store
+        datasets: list[dict] = []
+        for ds in self._store.list_entities("DatasetEntity"):
+            if not isinstance(ds, DatasetEntity):
+                continue
+            datasets.append({
+                "id": ds.id,
+                "name": ds.name,
+                "depth_column": ds.depth_column,
+                "columns": ds.columns,
+                "column_types": ds.column_types,
+            })
+
+        dlg = DatasetPlotDialog(
+            datasets=datasets,
+            active_plots=core.dataset_plots,
+            parent=self._view,
+        )
+        dlg.plotsSelected.connect(
+            lambda plots: self._controller.set_dataset_plots(self._core_id, plots)
+        )
+        dlg.exec()
+
+    def _refresh_dataset_plots(self) -> None:
+        """Rebuild the dynamic dataset plot columns from the current CoreEntity state."""
+        if self._core_id is None:
+            self._view.set_dataset_plot_columns([])
+            return
+        core = self._store.get(self._core_id)
+        if not isinstance(core, CoreEntity):
+            self._view.set_dataset_plot_columns([])
+            return
+
+        plot_specs: list[tuple[str, np.ndarray, np.ndarray]] = []
+        for plot in core.dataset_plots:
+            ds_id = plot.get("dataset_id")
+            col_name = plot.get("column_name")
+            ds = self._store.get(ds_id)
+            if not isinstance(ds, DatasetEntity):
+                continue
+            if ds.data is None or ds.depth_column is None:
+                continue
+            if col_name not in ds.data.columns or ds.depth_column not in ds.data.columns:
+                continue
+            depths = ds.data[ds.depth_column].to_numpy(dtype=np.float64)
+            values = ds.data[col_name].to_numpy(dtype=np.float64)
+            label = f"{ds.name}/{col_name}"
+            plot_specs.append((label, depths, values))
+
+        self._view.set_dataset_plot_columns(plot_specs)

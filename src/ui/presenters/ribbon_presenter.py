@@ -141,6 +141,9 @@ class RibbonPresenter(QObject):
             self._controller.recent_dirs.set("data", Path(paths[0]).parent)
             self._controller.create_dataset_entity(paths[0])
 
+    def _new_dataset(self) -> None:
+        self._controller.create_blank_dataset()
+
     def _load_map(self) -> None:
         logger.info("Load Map -- not implemented yet")
 
@@ -160,5 +163,6 @@ class RibbonPresenter(QObject):
             "Analyse": self._analyse,
             "Load Image": self._load_image,
             "Load Data": self._load_data,
+            "New Dataset": self._new_dataset,
             "Load Map": self._load_map,
         }

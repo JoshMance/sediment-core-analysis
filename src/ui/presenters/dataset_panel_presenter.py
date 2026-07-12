@@ -38,6 +38,12 @@ class DatasetPanelPresenter(QObject):
         view.cellEdited.connect(self._on_cell_edited)
         view.columnRenamed.connect(self._on_column_renamed)
         view.columnTypeChangeRequested.connect(self._on_column_type_change_requested)
+        view.depthColumnSetRequested.connect(self._on_depth_column_set_requested)
+        view.addColumnRequested.connect(self._on_add_column_requested)
+        view.removeColumnRequested.connect(self._on_remove_column_requested)
+        view.addRowRequested.connect(self._on_add_row_requested)
+        view.removeRowRequested.connect(self._on_remove_row_requested)
+        view.pasteRequested.connect(self._on_paste_requested)
         view.selectionChanged.connect(self._on_selection_changed)
         view.columnSelected.connect(self._on_column_selected)
 
@@ -52,7 +58,10 @@ class DatasetPanelPresenter(QObject):
         if entity is None or entity.data is None:
             return
         display_df = _apply_display_types(entity.data, entity.column_types)
-        self._view.load_dataframe(display_df, entity.columns, entity.column_types)
+        self._view.load_dataframe(
+            display_df, entity.columns, entity.column_types,
+            depth_column=entity.depth_column,
+        )
 
     def _on_entity_updated(self, entity_id: str, entity_type: str) -> None:
         """Store says something changed — refresh if it's our entity."""
@@ -69,6 +78,24 @@ class DatasetPanelPresenter(QObject):
 
     def _on_column_type_change_requested(self, col_name: str, new_type: str) -> None:
         self._controller.change_dataset_column_type(self._entity_id, col_name, new_type)
+
+    def _on_depth_column_set_requested(self, col_name: str) -> None:
+        self._controller.set_dataset_depth_column(self._entity_id, col_name)
+
+    def _on_add_column_requested(self) -> None:
+        self._controller.add_dataset_column(self._entity_id)
+
+    def _on_remove_column_requested(self, col_name: str) -> None:
+        self._controller.remove_dataset_column(self._entity_id, col_name)
+
+    def _on_add_row_requested(self) -> None:
+        self._controller.add_dataset_row(self._entity_id)
+
+    def _on_remove_row_requested(self, row_index: int) -> None:
+        self._controller.remove_dataset_row(self._entity_id, row_index)
+
+    def _on_paste_requested(self, start_row: int, start_col: int, rows: list) -> None:
+        self._controller.paste_dataset_data(self._entity_id, start_row, start_col, rows)
 
     def _on_selection_changed(self, row: int, col: int) -> None:
         self._current_row = row

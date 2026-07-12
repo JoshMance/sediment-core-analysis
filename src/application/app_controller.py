@@ -339,12 +339,22 @@ class AppController:
     def delete_entity(self, entity_id: str) -> object:
         """Remove an entity from the Store.
 
+        If a DatasetEntity is deleted, any CoreEntity that references it via
+        ``dataset_plots`` is updated to remove the stale entries first.
+
         Args:
             entity_id: The id of the entity to remove.
 
         Returns:
             The removed entity.
         """
+        entity = self._store.get(entity_id)
+        if isinstance(entity, DatasetEntity):
+            for core_id, core in self._store.list_entities("CoreEntity", include_ids=True):
+                clean = [p for p in core.dataset_plots if p.get("dataset_id") != entity_id]
+                if len(clean) != len(core.dataset_plots):
+                    core.dataset_plots = clean
+                    self._store.update_field(core_id, "dataset_plots", clean)
         return self._store.remove(entity_id)
 
     def rename_entity(self, entity_id: str, new_name: str) -> None:
@@ -381,6 +391,32 @@ class AppController:
         )
         return self._store.add(entity)
 
+    def set_dataset_depth_column(self, dataset_id: str, col_name: str | None) -> None:
+        """Designate *col_name* as the depth axis for a DatasetEntity.
+
+        Args:
+            dataset_id: ID of the DatasetEntity.
+            col_name: Column name whose values are depth in mm, or None to clear.
+        """
+        entity = self._store.get(dataset_id)
+        if entity is None or not isinstance(entity, DatasetEntity):
+            return
+        entity.depth_column = col_name
+        self._store.update_field(dataset_id, "depth_column", col_name)
+
+    def set_dataset_plots(self, core_id: str, plots: list[dict]) -> None:
+        """Replace the dataset plot list on a CoreEntity.
+
+        Args:
+            core_id: ID of the CoreEntity.
+            plots: List of {dataset_id: str, column_name: str} dicts.
+        """
+        entity = self._store.get(core_id)
+        if entity is None or not isinstance(entity, CoreEntity):
+            return
+        entity.dataset_plots = plots
+        self._store.update_field(core_id, "dataset_plots", plots)
+
     def rename_dataset_column(self, entity_id: str, old_name: str, new_name: str) -> None:
         """Rename a column on a DatasetEntity in the Store.
 
@@ -398,7 +434,20 @@ class AppController:
             (new_name if col == old_name else col): label
             for col, label in entity.column_types.items()
         }
+        # Cascade: update depth_column if it was the renamed column
+        if entity.depth_column == old_name:
+            entity.depth_column = new_name
+            self._store.update_field(entity_id, "depth_column", new_name)
         self._store.update_field(entity_id, "data", entity.data)
+        # Cascade: update any CoreEntity dataset_plots that reference the old col name
+        for core_id, core in self._store.list_entities("CoreEntity", include_ids=True):
+            updated = False
+            for p in core.dataset_plots:
+                if p.get("dataset_id") == entity_id and p.get("column_name") == old_name:
+                    p["column_name"] = new_name
+                    updated = True
+            if updated:
+                self._store.update_field(core_id, "dataset_plots", core.dataset_plots)
 
     def change_dataset_column_type(
         self, entity_id: str, col_name: str, new_type: str
@@ -415,6 +464,154 @@ class AppController:
             return
         entity.column_types[col_name] = new_type
         self._store.update_field(entity_id, "column_types", entity.column_types)
+
+    def create_blank_dataset(self) -> str:
+        """Create an empty DatasetEntity, auto-name it, and open it in the workspace.
+
+        Returns:
+            The entity id assigned by the Store.
+        """
+        import pandas as pd
+        existing = self._store.list_entities("DatasetEntity")
+        name = f"Dataset {len(existing) + 1}"
+        entity = DatasetEntity(
+            name=name,
+            data=pd.DataFrame(),
+            columns=[],
+            column_types={},
+        )
+        entity_id = self._store.add(entity)
+        if self._workspace_state is not None:
+            from src.application.services import workspace_service
+            try:
+                workspace_service.open_entity(entity_id, self._store, self._workspace_state)
+            except ValueError as e:
+                logger.warning("create_blank_dataset: %s", e)
+        return entity_id
+
+    def add_dataset_column(self, entity_id: str) -> None:
+        """Append an auto-named Text column to a DatasetEntity."""
+        import pandas as pd
+        entity = self._store.get(entity_id)
+        if entity is None or not isinstance(entity, DatasetEntity):
+            return
+        if entity.data is None:
+            entity.data = pd.DataFrame()
+        col_name = f"Column {len(entity.columns) + 1}"
+        while col_name in entity.columns:
+            col_name = f"Column {len(entity.columns) + len(entity.data.columns) + 1}"
+        entity.data[col_name] = pd.Series([None] * len(entity.data), dtype=object)
+        entity.columns = list(entity.data.columns)
+        entity.column_types[col_name] = "Text"
+        self._store.update_field(entity_id, "data", entity.data)
+
+    def remove_dataset_column(self, entity_id: str, col_name: str) -> None:
+        """Remove a column from a DatasetEntity, cascading to depth_column and dataset_plots."""
+        entity = self._store.get(entity_id)
+        if entity is None or not isinstance(entity, DatasetEntity) or entity.data is None:
+            return
+        if col_name not in entity.data.columns:
+            return
+        entity.data = entity.data.drop(columns=[col_name])
+        entity.columns = list(entity.data.columns)
+        entity.column_types.pop(col_name, None)
+        if entity.depth_column == col_name:
+            entity.depth_column = None
+            self._store.update_field(entity_id, "depth_column", None)
+        self._store.update_field(entity_id, "data", entity.data)
+        # Clean stale dataset_plots refs in all cores
+        for core_id, core in self._store.list_entities("CoreEntity", include_ids=True):
+            clean = [
+                p for p in core.dataset_plots
+                if not (p.get("dataset_id") == entity_id and p.get("column_name") == col_name)
+            ]
+            if len(clean) != len(core.dataset_plots):
+                core.dataset_plots = clean
+                self._store.update_field(core_id, "dataset_plots", clean)
+
+    def add_dataset_row(self, entity_id: str) -> None:
+        """Append a blank row to a DatasetEntity."""
+        import pandas as pd
+        entity = self._store.get(entity_id)
+        if entity is None or not isinstance(entity, DatasetEntity):
+            return
+        if entity.data is None:
+            entity.data = pd.DataFrame()
+        blank = {col: None for col in entity.data.columns}
+        entity.data = pd.concat(
+            [entity.data, pd.DataFrame([blank])], ignore_index=True
+        )
+        self._store.update_field(entity_id, "data", entity.data)
+
+    def remove_dataset_row(self, entity_id: str, row_index: int) -> None:
+        """Remove a row from a DatasetEntity by its 0-based integer position."""
+        entity = self._store.get(entity_id)
+        if entity is None or not isinstance(entity, DatasetEntity) or entity.data is None:
+            return
+        if row_index < 0 or row_index >= len(entity.data):
+            return
+        entity.data = (
+            entity.data
+            .drop(index=entity.data.index[row_index])
+            .reset_index(drop=True)
+        )
+        self._store.update_field(entity_id, "data", entity.data)
+
+    def paste_dataset_data(
+        self,
+        entity_id: str,
+        start_row: int,
+        start_col: int,
+        rows: list[list[str]],
+    ) -> None:
+        """Paste a 2-D block of string values into a DatasetEntity.
+
+        Auto-creates columns and rows as needed so the paste area always fits.
+        One ``entityUpdated`` signal is emitted at the end (not per-cell).
+
+        Args:
+            entity_id: ID of the DatasetEntity.
+            start_row: 0-based row of the top-left paste anchor.
+            start_col: 0-based column of the top-left paste anchor.
+            rows: 2-D list of string values (row-major).
+        """
+        import pandas as pd
+        entity = self._store.get(entity_id)
+        if entity is None or not isinstance(entity, DatasetEntity):
+            return
+        if entity.data is None:
+            entity.data = pd.DataFrame()
+        if not rows:
+            return
+
+        needed_cols = start_col + max(len(r) for r in rows)
+        needed_rows = start_row + len(rows)
+
+        # Expand columns if needed
+        while len(entity.columns) < needed_cols:
+            col_name = f"Column {len(entity.columns) + 1}"
+            entity.data[col_name] = pd.Series([None] * len(entity.data), dtype=object)
+            entity.columns = list(entity.data.columns)
+            entity.column_types[col_name] = "Text"
+
+        # Expand rows if needed
+        while len(entity.data) < needed_rows:
+            blank = {col: None for col in entity.data.columns}
+            entity.data = pd.concat(
+                [entity.data, pd.DataFrame([blank])], ignore_index=True
+            )
+
+        # Fill cells
+        for r_offset, row in enumerate(rows):
+            for c_offset, value in enumerate(row):
+                abs_row = start_row + r_offset
+                abs_col = start_col + c_offset
+                if abs_col >= len(entity.columns):
+                    continue
+                entity.data.iloc[abs_row, abs_col] = value if value != "" else None
+
+        entity.columns = list(entity.data.columns)
+        self._store.update_field(entity_id, "data", entity.data)
 
     def update_dataset_cell(
         self, entity_id: str, row: int, col: int, value: object

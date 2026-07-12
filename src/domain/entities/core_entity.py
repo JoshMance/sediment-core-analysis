@@ -28,6 +28,8 @@ class CoreEntity:
         derivation_params: Operation metadata payload for reproducibility.
         mm_per_px: Millimetres per pixel. 0.0 means uncalibrated.
         is_draft: True while the core is still being prepared for analysis.
+        dataset_plots: Ordered list of dataset columns shown as line plots alongside
+                       the core image. Each entry is {'dataset_id': str, 'column_name': str}.
         id: Assigned by the Store on add().
         asset_ref: Archive-relative path to the sidecar PNG (e.g. 'assets/<id>_core.png').
                    Populated by the archive service on load; not set during normal runtime.
@@ -43,6 +45,7 @@ class CoreEntity:
     illuminant: str | None = None
     filter_stack: list[dict] = field(default_factory=list)
     is_draft: bool = False
+    dataset_plots: list[dict] = field(default_factory=list)
     id: str | None = None
     asset_ref: str | None = None
 
@@ -64,6 +67,7 @@ class CoreEntity:
             "illuminant": self.illuminant,
             "filter_stack": self.filter_stack,
             "is_draft": self.is_draft,
+            "dataset_plots": self.dataset_plots,
             "asset_ref": self.asset_ref,
         }
 
@@ -84,5 +88,6 @@ class CoreEntity:
             illuminant=data.get("illuminant"),
             filter_stack=list(data.get("filter_stack", [])),
             is_draft=bool(data.get("is_draft", False)),
+            dataset_plots=list(data.get("dataset_plots", [])),
             asset_ref=data.get("asset_ref"),
         )

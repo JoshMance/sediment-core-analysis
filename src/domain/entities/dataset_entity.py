@@ -22,6 +22,8 @@ class DatasetEntity:
         data: The tabular data as a pandas DataFrame.
         columns: Ordered list of column names (mirrors df.columns).
         column_types: Mapping of column name → user-facing type label ("Text", "Number", "Date").
+        depth_column: Column name designated as the depth axis. Values must be in mm.
+                      None means no depth column has been designated yet.
         file_path: Original source path (provenance only).
         id: Assigned by the Store on add().
         asset_ref: Archive-relative path to the bundled CSV (e.g. 'assets/<id>_data.csv').
@@ -31,6 +33,7 @@ class DatasetEntity:
     data: "pd.DataFrame | None" = field(default=None, repr=False)
     columns: list[str] = field(default_factory=list)
     column_types: dict[str, str] = field(default_factory=dict)
+    depth_column: str | None = None
     file_path: Path | None = None
     id: str | None = None
     asset_ref: str | None = None
@@ -46,6 +49,7 @@ class DatasetEntity:
             "name": self.name,
             "columns": self.columns,
             "column_types": self.column_types,
+            "depth_column": self.depth_column,
             "file_path": str(self.file_path) if self.file_path is not None else None,
             "asset_ref": self.asset_ref,
         }
@@ -60,6 +64,7 @@ class DatasetEntity:
             name=data["name"],
             columns=data.get("columns", []),
             column_types=data.get("column_types", {}),
+            depth_column=data.get("depth_column"),
             file_path=file_path,
             asset_ref=data.get("asset_ref"),
         )

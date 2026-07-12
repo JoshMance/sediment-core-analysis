@@ -16,6 +16,7 @@ from src.ui.views.panels.core_studio_panel.columns import (
     ImageColumn,
     LayerColumn,
     DataChannelColumn,
+    DatasetPlotColumn,
 )
 
 
@@ -97,6 +98,7 @@ class CoreStudioCanvas(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self._columns: list[tuple[QWidget, float]] = []  # (widget, width_ratio)
+        self._dataset_plot_columns: list[DatasetPlotColumn] = []  # dynamic columns
         self._mm_per_image_px: float = 0.0
         self._hover_y = -1
         self._hover_mm = -1.0
@@ -227,3 +229,41 @@ class CoreStudioCanvas(QWidget):
 
         self.depth_ruler.set_scale_provider(_scale_provider)
         self.depth_ruler.update()
+        # Propagate the same scale provider to any dataset plot columns
+        for col in self._dataset_plot_columns:
+            col.set_scale_provider(_scale_provider)
+
+    # ── Dynamic dataset plot columns ──────────────────────────
+
+    def add_dataset_plot_column(
+        self,
+        label: str,
+        depths: "np.ndarray",
+        values: "np.ndarray",
+    ) -> DatasetPlotColumn:
+        """Append a new dataset plot column and return it."""
+        def _scale_provider() -> float:
+            if self._mm_per_image_px <= 0:
+                return 0.0
+            display_scale = self.image_col.display_scale()
+            if display_scale <= 0:
+                return 0.0
+            return self._mm_per_image_px / display_scale
+
+        col = DatasetPlotColumn(label=label, scale_provider=_scale_provider)
+        col.set_data(depths, values)
+        # Insert before the trailing stretch
+        self._layout.insertWidget(self._layout.count() - 1, col)
+        self._columns.append((col, CHANNEL_WIDTH_RATIO))
+        self._dataset_plot_columns.append(col)
+        self._apply_max_widths()
+        return col
+
+    def clear_dataset_plot_columns(self) -> None:
+        """Remove all dynamic dataset plot columns."""
+        for col in self._dataset_plot_columns:
+            self._layout.removeWidget(col)
+            self._columns = [(w, r) for w, r in self._columns if w is not col]
+            col.setParent(None)  # type: ignore[arg-type]
+            col.deleteLater()
+        self._dataset_plot_columns.clear()
