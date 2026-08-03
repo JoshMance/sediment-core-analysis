@@ -1,11 +1,7 @@
 """MunsellChipGrid — resizable, draggable chip grid overlay on the image canvas.
 
-The grid shape is derived from a MunsellPage:
-  - columns  = the union of all chroma values across every value row, sorted
-  - rows     = the value rows, in the order they appear in the page
-  - a cell is only drawn where a chip actually exists on that row
-
-Each drawn cell has a small crosshair marking the future colour-sampling point.
+The grid is sized from the ``cells`` 2D array of the hue dict returned by
+``get_hue()``.  Each non-null entry is the notation string for that cell.
 
 Aspect ratio constraint (applied during resize):
   cells must be square or portrait, up to 2× taller than wide.
@@ -17,8 +13,6 @@ from __future__ import annotations
 from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPen
 from PySide6.QtWidgets import QWidget
-
-from science.lib.munsell import MunsellChip, MunsellPage
 
 _HANDLE_SIZE = 14
 _MIN_CELL_PX = 10
@@ -50,14 +44,11 @@ class MunsellChipGrid(QWidget):
 
         self._rows: int = 0
         self._cols: int = 0
-        # Set of (row_idx, col_idx) pairs where a chip actually exists.
+        # Set of (row_idx, col_idx) pairs where a cell exists.
         self._chip_cells: frozenset[tuple[int, int]] = frozenset()
-        # Map (row_idx, col_idx) → MunsellChip — populated by set_page().
-        self._cell_chips: dict[tuple[int, int], MunsellChip] = {}
-        # Axis label data — stored so paintEvent can annotate the grid.
+        # Map (row_idx, col_idx) → notation string — populated by set_hue().
+        self._cell_notations: dict[tuple[int, int], str] = {}
         self._hue: str = ""
-        self._values: list[float] = []
-        self._all_chromas: list[float] = []
 
         # Canonical cell size — the source of truth for sizing.
         # Widget size is always derived: cols*cell_w + (cols-1)*h_gap, etc.
@@ -90,9 +81,8 @@ class MunsellChipGrid(QWidget):
         return self._cols
 
     @property
-    def cell_chips(self) -> dict[tuple[int, int], MunsellChip]:
-        """Mapping of (row_idx, col_idx) → MunsellChip for the current page."""
-        return self._cell_chips
+    def cell_notations(self) -> dict[tuple[int, int], str]:
+        return self._cell_notations
 
     @property
     def cell_ratio(self) -> float:
@@ -124,29 +114,22 @@ class MunsellChipGrid(QWidget):
             r * stride_y + self._cell_h_px * 0.5,
         )
 
-    def set_page(self, page: MunsellPage) -> None:
-        """Reconfigure the grid for the given page and reset to default size."""
-        # Build sorted column list from the union of all chroma values.
-        all_chromas = sorted({c.chroma for row in page.values for c in row.chromas})
-        chroma_to_col = {c: i for i, c in enumerate(all_chromas)}
+    def set_hue(self, hue: dict) -> None:
+        """Reconfigure the grid for the given hue dict and reset to default size."""
+        cells: list[list[str | None]] = hue["cells"]
+        self._rows = len(cells)
+        self._cols = len(cells[0]) if cells else 0
+        self._hue = hue["hue"]
 
-        self._rows = len(page.values)
-        self._cols = len(all_chromas)
-        self._hue = page.hue
-        self._values = [row.value for row in page.values]
-        self._all_chromas = all_chromas
-
-        # Record which (row, col) cells actually have a chip, and map to chip.
-        cells: set[tuple[int, int]] = set()
-        cell_chips: dict[tuple[int, int], MunsellChip] = {}
-        for r, row in enumerate(page.values):
-            for chip in row.chromas:
-                col = chroma_to_col[chip.chroma]
-                cells.add((r, col))
-                cell_chips[(r, col)] = chip
-        self._chip_cells = frozenset(cells)
-        self._cell_chips = cell_chips
-
+        chip_cells: set[tuple[int, int]] = set()
+        cell_notations: dict[tuple[int, int], str] = {}
+        for r, row in enumerate(cells):
+            for c, notation in enumerate(row):
+                if notation is not None:
+                    chip_cells.add((r, c))
+                    cell_notations[(r, c)] = notation
+        self._chip_cells = frozenset(chip_cells)
+        self._cell_notations = cell_notations
         self._h_gap_px = 0
         self._v_gap_px = 0
         cw, ch = self._clamp_cell_size(_DEFAULT_CELL_PX, _DEFAULT_CELL_PX)
@@ -179,7 +162,7 @@ class MunsellChipGrid(QWidget):
             rect = QRectF(c * stride_x, r * stride_y, cw, ch)
             painter.drawRect(rect)
 
-        # ── Outer grid boundary (3px blue) ───────────────────────────────
+        # ── Outer grid boundary ───────────────────────────────────────────
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(QRectF(0, 0, gw, gh))
 
@@ -203,6 +186,7 @@ class MunsellChipGrid(QWidget):
         ):
             painter.drawLine(QPointF(x0, y0), QPointF(x0, y0 + dy))
             painter.drawLine(QPointF(x0, y0), QPointF(x0 + dx, y0))
+
 
     # ── Mouse interaction ─────────────────────────────────────────────────────
 

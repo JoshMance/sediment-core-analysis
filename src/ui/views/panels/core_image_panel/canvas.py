@@ -73,9 +73,10 @@ class ImageCanvas(QWidget):
 
         self._calibrator = MunsellCalibrator(parent=self)
         self._chip_grid = MunsellChipGrid(parent=self)
-        self._calibrator.pageSelected.connect(self._on_munsell_page_selected)
+        self._calibrator.hueSelected.connect(self._on_munsell_hue_selected)
         self._calibrator.confirmRequested.connect(self._on_confirm_calibration)
         self._calibrator.gapChanged.connect(self._on_gap_changed)
+        self._calibrator.cellToggled.connect(self._update_preview_colours)
         self._chip_grid.positionChanged.connect(self._update_preview_colours)
 
     # ── Public API ────────────────────────────────────────────
@@ -380,12 +381,12 @@ class ImageCanvas(QWidget):
         if self._calibrator.isVisible():
             self._calibrator.sync_to_canvas()
 
-    def _on_munsell_page_selected(self, page) -> None:
-        if page is None:
+    def _on_munsell_hue_selected(self, hue) -> None:
+        if hue is None:
             self._chip_grid.hide()
         else:
-            self._chip_grid.set_page(page)
-            # Place at centre of canvas on first show for this page.
+            self._chip_grid.set_hue(hue)
+            # Place at centre of canvas on first show for this hue.
             self._chip_grid.move(
                 max(0, (self.width() - self._chip_grid.width()) // 2),
                 max(0, (self.height() - self._chip_grid.height()) // 2),
@@ -400,19 +401,22 @@ class ImageCanvas(QWidget):
         """Sample 3×3 mean RGB at every crosshair. Returns (colour_map, results) or None."""
         if not self._pixmap or not self._chip_grid.isVisible():
             return None
-        if not self._chip_grid.cell_chips:
+        if not self._chip_grid.cell_notations:
             return None
         img = self._pixmap.toImage()
         colour_map: dict[tuple[int, int], tuple[int, int, int]] = {}
         results: list = []
-        for (r, c), chip in self._chip_grid.cell_chips.items():
+        disabled = self._calibrator.disabled_cells
+        for (r, c), notation in self._chip_grid.cell_notations.items():
+            if (r, c) in disabled:
+                continue
             center = self._chip_grid.cell_center(r, c)
             wx = self._chip_grid.x() + center.x()
             wy = self._chip_grid.y() + center.y()
             img_pos = self._widget_to_image(QPoint(int(wx), int(wy)))
             rgb = self._sample_3x3(img, img_pos)
             colour_map[(r, c)] = rgb
-            results.append((rgb, chip))
+            results.append((rgb, notation))
         return colour_map, results
 
     def _update_preview_colours(self) -> None:
@@ -442,8 +446,8 @@ class ImageCanvas(QWidget):
         colour_map, results = result
         self._calibrator.set_preview_colours(colour_map, self._current_cell_ratio())
         print("=== Calibration samples ===")
-        for rgb, chip in results:
-            print(f"  RGB {rgb}  →  {chip.notation}")
+        for rgb, notation in results:
+            print(f"  RGB {rgb}  →  {notation}")
         self.set_calibrator_visible(False)
         self._chip_grid.hide()
         self.munsellClosed.emit()
