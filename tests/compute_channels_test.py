@@ -15,10 +15,10 @@ def test_for_core_returns_rgb_and_lab_profiles_without_rotation() -> None:
         dtype=np.uint8,
     )
 
-    out = compute_channels.for_core(image)
+    out = compute_channels.for_core(image, "D65")
 
     expected_rgb = image.astype(np.float32).mean(axis=1)
-    expected_lab = rgb_to_cielab(expected_rgb)
+    expected_lab = rgb_to_cielab(expected_rgb, "D65")
 
     assert np.allclose(out.r, expected_rgb[:, 0])
     assert np.allclose(out.g, expected_rgb[:, 1])
@@ -37,7 +37,7 @@ def test_for_core_rotates_landscape_to_match_core_studio_orientation() -> None:
         dtype=np.uint8,
     )
 
-    out = compute_channels.for_core(image)
+    out = compute_channels.for_core(image, "D65")
 
     oriented = np.rot90(image)
     expected_rgb = oriented.astype(np.float32).mean(axis=1)
