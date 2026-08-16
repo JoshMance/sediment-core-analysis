@@ -23,7 +23,7 @@ class RibbonGroup(QFrame):
         super().__init__(parent)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 2, 6, 0)
+        layout.setContentsMargins(6, 8, 6, 0)
         layout.setSpacing(0)
 
         # -- row of buttons / widgets

@@ -7,10 +7,6 @@
 <path d="M17 45H111V103C111 105.209 109.209 107 107 107H21C18.791 107 17 105.209 17 103V45Z" stroke="#64748B" stroke-width="2"/>
 <path d="M17 38C17 35.791 18.791 34 21 34H51L59 45H17V38Z" stroke="#64748B" stroke-width="2"/>
 <!-- Arrow pointing up-right (open/load action) -->
-<circle cx="88" cy="75" r="20" fill="white"/>
-<circle cx="88" cy="75" r="15" fill="#0051FF" fill-opacity="0.7"/>
-<path d="M88 84V66" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M80 73L88 65L96 73" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 <defs>
 <linearGradient id="paint0_linear_open" x1="64" y1="45" x2="64" y2="107" gradientUnits="userSpaceOnUse">
   <stop stop-color="#FFF5CD"/>

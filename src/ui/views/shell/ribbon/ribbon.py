@@ -5,7 +5,7 @@ from pathlib import Path
 
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabWidget
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QSize
 
 from src.ui.views.shell.ribbon.ribbon_button import RibbonButton
 from src.ui.views.shell.ribbon.ribbon_group import RibbonGroup
@@ -17,9 +17,11 @@ _ICON_MAP: dict[str, str] = {
     "New": "new-session.svg",
     "Open": "open.svg",
     "Save": "save-session.svg",
-    "Load Image": "load-image.svg",
-    "Load Data": "load-data.svg",
+    "Import Image": "load-image.svg",
+    "Import Data": "load-data.svg",
     "Load Map": "load-map.svg",
+    "New Data": "new-dataset.svg",
+    "Core Studio": "core-studio.svg",
 }
 
 
@@ -72,17 +74,13 @@ class Ribbon(QWidget):
         # -- Home tab
         home = self._make_tab()
         self._add_group(home, "File", ["New", "Open", "Save"])
-        self._add_group(home, "Import", ["Load Image", "Load Data", "New Dataset", "Load Map"])
+        self._add_group(home, "Import", ["Import Image", "Import Data", "New Data"])
         self._tabs.addTab(home, "Home")
 
         # -- Analysis tab
         analysis = self._make_tab()
-        self._add_group(analysis, "Core", ["Core Studio", "Analyse"])
+        self._add_group(analysis, "Core", ["Core Studio"])
         self._tabs.addTab(analysis, "Analysis")
-
-        # -- Map tab
-        map_tab = self._make_tab()
-        self._tabs.addTab(map_tab, "Map")
 
         # -- Export tab
         export_tab = self._make_tab()

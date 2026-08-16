@@ -160,9 +160,7 @@ class RibbonPresenter(QObject):
             "Zoom Out": self._zoom_out,
             "Fit": self._fit,
             "Core Studio": self._core_studio,
-            "Analyse": self._analyse,
-            "Load Image": self._load_image,
-            "Load Data": self._load_data,
-            "New Dataset": self._new_dataset,
-            "Load Map": self._load_map,
+            "Import Image": self._load_image,
+            "Import Data": self._load_data,
+            "New Data": self._new_dataset,
         }

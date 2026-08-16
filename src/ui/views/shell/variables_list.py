@@ -50,7 +50,7 @@ class VariablesList(QWidget):
         self._tree.startDrag = self._start_drag
 
         # ── Layout ──────────────────────────────────────────
-        panel_header = QLabel("Variables")
+        panel_header = QLabel("Explorer")
         panel_header.setObjectName("panelHeader")
 
         layout = QVBoxLayout(self)

@@ -1,10 +1,10 @@
 <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M31 22H97C101.971 22 106 26.0294 106 31V97C106 101.971 101.971 106 97 106H31C26.0294 106 22 101.971 22 97V31C22 26.0294 26.0294 22 31 22Z" fill="url(#paint0_linear_188_334)" stroke="#64748B" stroke-width="2"/>
-<path d="M36 49.1333V89.6667L54.088 79.5333L74.76 89.6667L92.848 79.5333V39L74.76 49.1333L54.088 39L36 49.1333Z" fill="white" stroke="black" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M54.088 39V79.5333" stroke="black" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M74.76 49.1333V89.6667" stroke="black" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M36 49.1333V89.6667L54.088 79.5333L74.76 89.6667L92.848 79.5333V39L74.76 49.1333L54.088 39L36 49.1333Z" fill="white" stroke="#64748B" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M54.088 39V79.5333" stroke="#64748B" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M74.76 49.1333V89.6667" stroke="#64748B" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M31 22H97C101.971 22 106 26.0294 106 31V97C106 101.971 101.971 106 97 106H31C26.0294 106 22 101.971 22 97V31C22 26.0294 26.0294 22 31 22Z" stroke="#64748B" stroke-width="2"/>
-<circle cx="100" cy="92" r="28" fill="#EBEBEB"/>
+<circle cx="100" cy="92" r="28" fill="white"/>
 <circle cx="100" cy="92" r="21" fill="#0051FF" fill-opacity="0.7"/>
 <path d="M100.5 80V103" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M89 94.375L100.5 103L112 94.375" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>

@@ -7,9 +7,9 @@
 <line x1="50" y1="50" x2="50" y2="106" stroke="#64748B" stroke-width="2"/>
 <line x1="78" y1="50" x2="78" y2="106" stroke="#64748B" stroke-width="2"/>
 <circle cx="100" cy="94" r="28" fill="white"/>
-<circle cx="100" cy="94" r="21" fill="#0051FF" fill-opacity="0.7"/>
-<path d="M100.5 82V105" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M89 96.375L100.5 105L112 96.375" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="100" cy="94" r="21" fill="#72C48A"/>
+<path d="M100 83V105" stroke="white" stroke-width="3" stroke-linecap="round"/>
+<path d="M89 94H111" stroke="white" stroke-width="3" stroke-linecap="round"/>
 <defs>
 <linearGradient id="grad" x1="22" y1="22" x2="22" y2="106" gradientUnits="userSpaceOnUse">
   <stop stop-color="#84B2EF"/>
