@@ -20,6 +20,7 @@ from src.domain.store import Store
 from src.application.services.load_image import load_image
 from src.application.services.load_csv import load_csv
 from src.application.services.resolve_image import resolve as resolve_image
+from src.application.services import compute_channels, export_excel
 from src.application.services.session_archive import save as archive_save
 from src.application.services.session_archive import load as archive_load
 from src.application.services.session_archive import ArchiveError
@@ -88,6 +89,17 @@ class AppController:
         resolved = resolve_image(entity.base_data, entity.filter_stack)
         self._resolved_cache[entity_id] = resolved
         return resolved
+
+    def export_core_to_excel(self, core_id: str, path: str | Path) -> None:
+        """Export Core Studio's row-wise measurements to an Excel workbook."""
+        core = self._store.get(core_id)
+        if not isinstance(core, CoreEntity):
+            raise ValueError(f"No CoreEntity with id '{core_id}'.")
+        resolved = self.get_resolved_data(core_id)
+        if resolved is None:
+            raise ValueError(f"Core '{core.name}' has no image data.")
+        channels = compute_channels.for_core(resolved, core.illuminant)
+        export_excel.export_core(Path(path), core, channels)
 
     def set_filter_stack(self, entity_id: str, stack: list[dict]) -> None:
         """Replace the filter stack for a core.

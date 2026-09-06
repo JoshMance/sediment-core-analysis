@@ -130,6 +130,8 @@ class CoreStudioPanel(QWidget):
     imageDropped = Signal(str)  # entity_id
     # Emitted when the user clicks Export PDF in the toolbar.
     exportPdfRequested = Signal()
+    # Emitted when the user clicks Export Excel in the toolbar.
+    exportExcelRequested = Signal()
     # Emitted when the user clicks "Manage data plots".
     dataPlotChangeRequested = Signal()
 
@@ -239,6 +241,9 @@ class CoreStudioPanel(QWidget):
         export_action = QAction("Export PDF", tb)
         export_action.triggered.connect(self.exportPdfRequested)
         tb.addAction(export_action)
+        export_excel_action = QAction("Export Excel", tb)
+        export_excel_action.triggered.connect(self.exportExcelRequested)
+        tb.addAction(export_excel_action)
         plots_action = QAction("Manage data plots…", tb)
         plots_action.triggered.connect(self.dataPlotChangeRequested)
         tb.addAction(plots_action)

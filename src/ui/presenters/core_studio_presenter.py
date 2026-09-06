@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 from PySide6.QtCore import QObject
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from src.application import AppController
 from src.application.services import compute_channels
@@ -48,6 +48,7 @@ class CoreStudioPresenter(QObject):
         # ── View signals ──────────────────────────────────────
         self._view.imageDropped.connect(self._on_image_dropped)
         self._view.exportPdfRequested.connect(self._on_export_pdf)
+        self._view.exportExcelRequested.connect(self._on_export_excel)
         self._view.dataPlotChangeRequested.connect(self._on_data_plot_change_requested)
         self._store.entityUpdated.connect(self._on_entity_updated)
         self._load_core_image()
@@ -144,6 +145,27 @@ class CoreStudioPresenter(QObject):
         if not paths:
             return
         render_to_pdf(self._view.canvas, self._view.header, Path(paths[0]))
+
+    def _on_export_excel(self) -> None:
+        """Choose an Excel destination and delegate measurement export."""
+        if self._core_id is None:
+            return
+        dlg = QFileDialog(self._view)
+        dlg.setWindowTitle("Export Excel")
+        dlg.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        dlg.setFileMode(QFileDialog.FileMode.AnyFile)
+        dlg.setNameFilter("Excel workbooks (*.xlsx)")
+        dlg.setDefaultSuffix("xlsx")
+        if dlg.exec() != QFileDialog.DialogCode.Accepted:
+            return
+        paths = dlg.selectedFiles()
+        if not paths:
+            return
+        path = Path(paths[0]).with_suffix(".xlsx")
+        try:
+            self._controller.export_core_to_excel(self._core_id, path)
+        except (OSError, ValueError) as error:
+            QMessageBox.critical(self._view, "Export Excel Failed", str(error))
 
     def _on_data_plot_change_requested(self) -> None:
         """Open the dataset picker dialog and update plots on confirm."""

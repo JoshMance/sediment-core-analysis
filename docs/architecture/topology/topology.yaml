@@ -102,6 +102,7 @@ application:
         - set_dataset_depth_column
         - set_dataset_plots
         - split_core
+        - export_core_to_excel
 
     - name: StatusContext
       lifetime: long-lived
@@ -134,6 +135,8 @@ application:
       actions: [save, load]
     - name: workspace_service
       actions: [open_entity]
+    - name: export_excel
+      actions: [export_core]
 
 ui:
   presenters:
@@ -228,6 +231,7 @@ ui:
         [
           CoreStudioPanel.imageDropped,
           CoreStudioPanel.exportPdfRequested,
+          CoreStudioPanel.exportExcelRequested,
           CoreStudioPanel.dataPlotChangeRequested,
         ]
 
