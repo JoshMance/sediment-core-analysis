@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.ui.resources.theme.apply import is_dark
+from src.ui.resources.theme import is_dark
 
 
 class SettingsDialog(QDialog):

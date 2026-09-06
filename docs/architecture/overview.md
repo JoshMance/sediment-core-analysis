@@ -271,8 +271,9 @@ Nothing in `shell/` is created or destroyed while the app is running. Nothing in
 | `apply.py`    | `apply_theme(app, *, dark)` — loads the right QSS, substitutes tokens, calls `app.setStyleSheet()` |
 | `__init__.py` | Re-exports `apply_theme` so callers import from `src.ui.resources.theme`                           |
 
-All visual styling lives in `dark.qss` / `light.qss`, applied once at startup via
-`app.setStyleSheet()`. This means themes can be switched without touching any View code.
+All visual styling lives in `dark.qss` / `light.qss`, applied via
+`app.setStyleSheet()` at startup and when the user switches themes. This means themes
+can be switched without touching View layout code.
 
 To change a colour, edit `colors.py` only — the change propagates to both QSS files automatically.
 

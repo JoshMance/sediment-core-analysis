@@ -15,6 +15,13 @@ def is_dark() -> bool:
     """Return the theme that was last applied (not the OS palette)."""
     return _dark_active
 
+
+def theme_color(name: str) -> str:
+    """Return the active theme's value for a named visual token."""
+    tokens = DARK if _dark_active else LIGHT
+    return tokens[name]
+
+
 def apply_theme(app: QApplication, *, dark: bool | None = None) -> None:
     """Apply light or dark theme to the application.
 

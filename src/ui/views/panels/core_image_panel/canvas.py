@@ -11,6 +11,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QWidget
 
 from src.ui.views.panels.core_image_panel.colour_calibrators import MunsellCalibrator, MunsellChipGrid
+from src.ui.resources.theme import theme_color
 
 ZOOM_MIN = 0.1
 ZOOM_MAX = 10.0
@@ -42,6 +43,7 @@ class ImageCanvas(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setObjectName("imageCanvas")
 
         self._pixmap: QPixmap | None = None
 
@@ -210,13 +212,14 @@ class ImageCanvas(QWidget):
             painter.restore()
 
         # Crop border
-        painter.setPen(QPen(QColor(0, 120, 215), 2 / self._zoom))
+        selection_color = QColor(theme_color("image_selection"))
+        painter.setPen(QPen(selection_color, 2 / self._zoom))
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(self._crop_rect)
 
         # Resize handles
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(0, 120, 215))
+        painter.setBrush(selection_color)
         for handle_rect in self._get_crop_handles().values():
             painter.drawRect(handle_rect)
 

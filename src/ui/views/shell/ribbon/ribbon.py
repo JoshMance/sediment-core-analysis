@@ -7,7 +7,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabWidget
 from PySide6.QtCore import Qt, Signal, QSize
 
-from src.ui.resources.theme.apply import is_dark as _theme_is_dark
+from src.ui.resources.theme import is_dark as _theme_is_dark
 
 from src.ui.views.shell.ribbon.ribbon_button import RibbonButton
 from src.ui.views.shell.ribbon.ribbon_group import RibbonGroup
@@ -29,6 +29,8 @@ _ICON_MAP: dict[str, str] = {
     "Load Map": "load-map.svg",
     "New Data": "new-dataset.svg",
     "Core Studio": "core-studio.svg",
+    "Join": "join-cores.svg",
+    "Split": "split-core.svg",
     "Settings": "settings.svg",
 }
 
@@ -73,6 +75,11 @@ class Ribbon(QWidget):
                 self._tabs.setCurrentIndex(i)
                 return
 
+    def refresh_icons(self) -> None:
+        """Reload button icons for the active theme."""
+        for label, button in self._buttons.items():
+            self._set_button_icon(button, label)
+
     # -- internals ------------------------------------------------
 
     def _build_tabs(self) -> None:
@@ -84,6 +91,11 @@ class Ribbon(QWidget):
         self._add_group(home, "File", ["New", "Open", "Save"])
         self._add_group(home, "Import", ["Import Image", "Import Data", "New Data"])
         self._tabs.addTab(home, "Home")
+
+        # -- Core Tools tab
+        core_tools = self._make_tab()
+        self._add_group(core_tools, "Core Sections", ["Join", "Split"])
+        self._tabs.addTab(core_tools, "Edit")
 
         # -- Analysis tab
         analysis = self._make_tab()
@@ -109,16 +121,21 @@ class Ribbon(QWidget):
         group = RibbonGroup(title)
         for label in labels:
             btn = RibbonButton(label)
-            icon_filename = _ICON_MAP.get(label)
-            if icon_filename:
-                dark_path = _ICONS_DARK_DIR / icon_filename
-                light_path = _ICONS_DIR / icon_filename
-                icon_path = dark_path if (_is_dark_mode() and dark_path.exists()) else light_path
-                if icon_path.exists():
-                    btn.setIcon(QIcon(str(icon_path)))
+            self._set_button_icon(btn, label)
             btn.clicked.connect(lambda checked=False, name=label: self.buttonClicked.emit(name))
             group.add_button(btn)
             self._buttons[label] = btn
         # insert before the stretch
         lay = tab.layout()
         lay.insertWidget(lay.count() - 1, group)
+
+    @staticmethod
+    def _set_button_icon(button: RibbonButton, label: str) -> None:
+        icon_filename = _ICON_MAP.get(label)
+        if icon_filename is None:
+            return
+        dark_path = _ICONS_DARK_DIR / icon_filename
+        light_path = _ICONS_DIR / icon_filename
+        icon_path = dark_path if (_is_dark_mode() and dark_path.exists()) else light_path
+        if icon_path.exists():
+            button.setIcon(QIcon(str(icon_path)))

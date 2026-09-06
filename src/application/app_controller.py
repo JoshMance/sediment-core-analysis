@@ -6,6 +6,7 @@ The AppController is the only component that writes to the Store.
 """
 from __future__ import annotations
 
+import copy
 import logging
 import tempfile
 from collections.abc import Callable
@@ -220,20 +221,96 @@ class AppController:
             stem = parent.name.rsplit(".", 1)[0] if "." in parent.name else parent.name
             name = f"{stem}_{derivation_type}"
 
-        child_id = self.create_core_entity(
+        child_id = self._create_derived_core(
+            parent_core_id,
+            parent,
+            base_data,
+            name,
+            derivation_type,
+            derivation_params or {},
+            is_draft,
+        )
+        updated_children = list(parent.child_core_ids) + [child_id]
+        self._store.update_field(parent_core_id, "child_core_ids", updated_children)
+        return child_id
+
+    def _create_derived_core(
+        self,
+        parent_core_id: str,
+        parent: CoreEntity,
+        base_data: object,
+        name: str,
+        derivation_type: str,
+        derivation_params: dict,
+        is_draft: bool,
+    ) -> str:
+        """Create one child core with an independent metadata snapshot."""
+        child = CoreEntity(
             name=name,
             base_data=base_data,
             source_file_path=parent.source_file_path,
             parent_core_id=parent_core_id,
             derivation_type=derivation_type,
-            derivation_params=derivation_params or {},
+            derivation_params=derivation_params,
             mm_per_px=parent.mm_per_px,
-            filter_stack=list(parent.filter_stack),
+            illuminant=parent.illuminant,
+            filter_stack=copy.deepcopy(parent.filter_stack),
             is_draft=is_draft,
         )
-        updated_children = list(parent.child_core_ids) + [child_id]
-        self._store.update_field(parent_core_id, "child_core_ids", updated_children)
-        return child_id
+        return self._store.add(child)
+
+    def split_core(
+        self,
+        source_core_id: str,
+        axis: str,
+        split_position: int,
+        first_name: str,
+        second_name: str,
+    ) -> tuple[str, str] | None:
+        """Split a core image along the requested axis into two child cores.
+
+        The source core remains unchanged. Both children inherit the source's
+        calibration, illuminant, and filter stack, and record the raw-pixel
+        bounds that produced them.
+        """
+        import numpy as np
+
+        source = self._store.get(source_core_id)
+        if not isinstance(source, CoreEntity) or source.base_data is None:
+            logger.warning("split_core: invalid source '%s'", source_core_id)
+            return None
+
+        if axis not in {"horizontal", "vertical"}:
+            logger.warning("split_core: unsupported axis '%s'", axis)
+            return None
+        length = source.base_data.shape[0] if axis == "horizontal" else source.base_data.shape[1]
+        if not 0 < split_position < length:
+            logger.warning("split_core: position %s outside %s axis length %s", split_position, axis, length)
+            return None
+
+        if axis == "horizontal":
+            first_data = np.ascontiguousarray(source.base_data[:split_position].copy())
+            second_data = np.ascontiguousarray(source.base_data[split_position:].copy())
+            first_bounds = {"axis": axis, "start_y": 0, "end_y": split_position}
+            second_bounds = {"axis": axis, "start_y": split_position, "end_y": length}
+        else:
+            first_data = np.ascontiguousarray(source.base_data[:, :split_position].copy())
+            second_data = np.ascontiguousarray(source.base_data[:, split_position:].copy())
+            first_bounds = {"axis": axis, "start_x": 0, "end_x": split_position}
+            second_bounds = {"axis": axis, "start_x": split_position, "end_x": length}
+
+        first_id = self._create_derived_core(
+            source_core_id, source, first_data, first_name, "split", first_bounds, False
+        )
+        second_id = self._create_derived_core(
+            source_core_id, source, second_data, second_name, "split", second_bounds, False
+        )
+        self._store.update_field(
+            source_core_id,
+            "child_core_ids",
+            [*source.child_core_ids, first_id, second_id],
+        )
+        return first_id, second_id
 
     def create_cropped_child_core(
         self,

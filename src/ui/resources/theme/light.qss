@@ -18,6 +18,20 @@ QWidget {
     font-size: 13px;
 }
 
+QWidget#imageCanvas {
+    selection-background-color: @image_selection;
+}
+
+QWidget#splitCenterLine {
+    background-color: transparent;
+}
+
+QLineEdit,
+QComboBox,
+QSpinBox {
+    background-color: @bg_input;
+}
+
 /* -- Main window -------------------------------------------- */
 QMainWindow {
     background-color: @bg;

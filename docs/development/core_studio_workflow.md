@@ -33,5 +33,5 @@ This document defines the intended Core Studio behavior and ownership boundaries
 
 - VariablesList context menu on a CoreEntity provides "Open In Core Studio".
 - That action opens the existing core tab (or focuses it if already open).
-- Ribbon "Core Studio" focuses the most recent existing core.
+- Ribbon "Core Studio" focuses the active core when applicable, otherwise the most recent existing core.
 - If no core exists yet, Ribbon opens a blank Core Studio panel instance.

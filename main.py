@@ -76,7 +76,7 @@ def main() -> None:
     watch("WorkspaceView", workspace_view)
 
     # -- UI - presenters ------------------------------------------
-    ribbon_presenter = RibbonPresenter(ribbon, controller)
+    ribbon_presenter = RibbonPresenter(ribbon, store, controller, workspace_state)
     variables_presenter = VariablesPresenter(variables_list, preview_panel, store, controller)
     workspace_presenter = WorkspacePresenter(workspace_view, workspace_state, store, controller)
 

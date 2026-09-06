@@ -17,6 +17,7 @@ DARK: dict[str, str] = {
     "bg_hover_tint":   "#2a3a4a",  # accent-tinted hover (tree items)
     "bg_button":       "#3c3c3c",  # default button fill
     "bg_button_hover": "#4a4a4a",  # button hover fill
+    "bg_input":        "#1e1e1e",  # editable fields
     # Foregrounds
     "fg":              "#dcdcdc",  # primary text
     "fg_muted":        "#aaaaaa",  # secondary text: inactive tabs, header, captions
@@ -30,6 +31,8 @@ DARK: dict[str, str] = {
     "btn_hover":       "#3a3a3a",  # icon / tool button hover fill
     "scrollbar":       "#4a4a4a",  # scrollbar handle
     "scrollbar_hover": "#666666",  # scrollbar handle hover
+    "image_selection": "#3794ff",  # image crop and split overlays
+    "image_overview_mask": "#000000",  # dimmed off-screen image area
     # Accent
     "accent":          "#8A4C57",
     "accent_hover":    "#7a3f4a",
@@ -46,6 +49,7 @@ LIGHT: dict[str, str] = {
     "bg_hover_tint":   "#e3eef8",   # tree item hover
     "bg_button":       "#f0f0f0",   # button fill
     "bg_button_hover": "#dce8f5",   # button hover (light blue tint)
+    "bg_input":        "#ffffff",   # editable fields
     # Foregrounds
     "fg":              "#1a1a1a",
     "fg_muted":        "#555555",
@@ -59,6 +63,8 @@ LIGHT: dict[str, str] = {
     "btn_hover":       "#f0e0e3",   # icon / tool button hover
     "scrollbar":       "#c0c0c0",
     "scrollbar_hover": "#909090",
+    "image_selection": "#0078d7",  # image crop and split overlays
+    "image_overview_mask": "#ffffff",  # dimmed off-screen image area
     # Accent
     "accent":          "#8A4C57",   # brand colour
     "accent_hover":    "#7a3f4a",

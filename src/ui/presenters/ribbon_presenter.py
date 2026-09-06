@@ -5,11 +5,16 @@ import logging
 from pathlib import Path
 
 from PySide6.QtCore import QObject
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from src.ui.views.shell.ribbon.ribbon import Ribbon
 from src.ui.resources.icon_provider import SedivisIconProvider
+from src.ui.resources.theme import apply_theme
 from src.application import AppController, ArchiveError
+from src.application.workspace_state import WorkspaceState
+from src.domain.entities.core_entity import CoreEntity
+from src.domain.store import Store
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +24,18 @@ _FILE_FILTER = "Sedivis project (*.sedivis)"
 class RibbonPresenter(QObject):
     """Interprets raw button clicks from Ribbon as application actions."""
 
-    def __init__(self, view: Ribbon, controller: AppController) -> None:
+    def __init__(
+        self,
+        view: Ribbon,
+        store: Store,
+        controller: AppController,
+        workspace_state: WorkspaceState | None = None,
+    ) -> None:
         super().__init__()
         self._view = view
+        self._store = store
         self._controller = controller
+        self._workspace_state = workspace_state
 
         self._view.buttonClicked.connect(self._on_button_clicked)
         self._controller.ribbon_context.tabRequested.connect(self._view.set_active_tab)
@@ -147,14 +160,48 @@ class RibbonPresenter(QObject):
     def _load_map(self) -> None:
         logger.info("Load Map -- not implemented yet")
 
+    def _join_cores(self) -> None:
+        from src.ui.views.shell.core_tools_dialogs import JoinCoresDialog
+
+        JoinCoresDialog(self._view).exec()
+
+    def _split_core(self) -> None:
+        import numpy as np
+
+        from src.ui.views.shell.core_tools_dialogs import SplitCoreDialog
+
+        core_options = []
+        for core_id, core in self._store.list_entities("CoreEntity", include_ids=True):
+            if (
+                isinstance(core, CoreEntity)
+                and core.base_data is not None
+                and (core.base_data.shape[0] > 1 or core.base_data.shape[1] > 1)
+            ):
+                image = self._controller.get_resolved_data(core_id)
+                if image is None:
+                    image = core.base_data
+                data = np.ascontiguousarray(image)
+                height, width = data.shape[:2]
+                qimage = QImage(data.data, width, height, width * 3, QImage.Format.Format_RGB888)
+                core_options.append((core_id, core.name, width, height, core.mm_per_px, QPixmap.fromImage(qimage)))
+        active_core_id = self._workspace_state.active_entity_id if self._workspace_state else None
+        dialog = SplitCoreDialog(core_options, self._view, preferred_core_id=active_core_id)
+        dialog.splitRequested.connect(self._controller.split_core)
+        dialog.exec()
+
     def _settings(self) -> None:
-        from PySide6.QtWidgets import QApplication
-        from src.ui.resources.theme.apply import apply_theme
         from src.ui.views.shell.settings_dialog import SettingsDialog
 
         dlg = SettingsDialog(self._view)
-        dlg.themeChanged.connect(lambda dark: apply_theme(QApplication.instance(), dark=dark))
+        dlg.themeChanged.connect(self._apply_theme)
         dlg.exec()
+
+    def _apply_theme(self, dark: bool) -> None:
+        app = QApplication.instance()
+        if app is None:
+            return
+        apply_theme(app, dark=dark)
+        self._view.refresh_icons()
 
     @property
     def _handlers(self) -> dict[str, object]:
@@ -169,6 +216,8 @@ class RibbonPresenter(QObject):
             "Zoom Out": self._zoom_out,
             "Fit": self._fit,
             "Core Studio": self._core_studio,
+            "Join": self._join_cores,
+            "Split": self._split_core,
             "Import Image": self._load_image,
             "Import Data": self._load_data,
             "New Data": self._new_dataset,

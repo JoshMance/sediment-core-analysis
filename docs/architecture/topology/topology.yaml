@@ -101,6 +101,7 @@ application:
         - set_ribbon_tab
         - set_dataset_depth_column
         - set_dataset_plots
+        - split_core
 
     - name: StatusContext
       lifetime: long-lived
@@ -157,7 +158,9 @@ ui:
     - name: RibbonPresenter
       view: Ribbon
       subscribes_to: [RibbonContext.tabRequested]
+      reads: [Store, WorkspaceState.active_entity_id]
       calls: [AppController]
+      view_signals: [Ribbon.buttonClicked]
 
     - name: StatusBarPresenter
       view: StatusBar
@@ -229,6 +232,11 @@ ui:
         ]
 
   views:
+    - name: Ribbon
+      lifetime: long-lived
+      signals: [buttonClicked]
+      actions: [set_button_enabled, set_active_tab, refresh_icons]
+
     - name: DatasetPlotDialog
       lifetime: transient
       # Modal dialog opened by CoreStudioPresenter when user clicks "Manage data plots".
@@ -239,5 +247,16 @@ ui:
     - name: SettingsDialog
       lifetime: transient
       # Modal dialog opened by RibbonPresenter via the Settings button.
-      # Reads is_dark() at construction; calls apply_theme on accept.
+      # Reads is_dark() at construction; emits themeChanged on accept.
       # No Store access.
+
+    - name: JoinCoresDialog
+      lifetime: transient
+      # Modal canvas opened by RibbonPresenter via the Edit Join button.
+      # No Store access until the join workflow is implemented.
+
+    - name: SplitCoreDialog
+      lifetime: transient
+      # Opened by RibbonPresenter via the Edit Split button.
+      # Receives core descriptors and optional preferred source; emits splitRequested(source_id, axis, position, first_name, second_name).
+      signals: [splitRequested]
