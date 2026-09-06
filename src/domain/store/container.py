@@ -25,7 +25,7 @@ class EntityContainer:
 
     def __init__(self) -> None:
         self._entities: dict[str, object] = {}
-        self._type_index: dict[str, set[str]] = {}  # type_name -> set of ids
+        self._type_index: dict[str, list[str]] = {}  # type_name -> insertion-ordered ids
 
     # ── Create ──────────────────────────────────────────────────
 
@@ -55,8 +55,8 @@ class EntityContainer:
         self._entities[entity.id] = entity
 
         if type_name not in self._type_index:
-            self._type_index[type_name] = set()
-        self._type_index[type_name].add(entity.id)
+            self._type_index[type_name] = []
+        self._type_index[type_name].append(entity.id)
 
         return entity.id
 
@@ -99,7 +99,7 @@ class EntityContainer:
             List of entities, or list of (id, entity) tuples.
         """
         if entity_type is not None:
-            ids = self._type_index.get(entity_type, set())
+            ids = self._type_index.get(entity_type, [])
             entities = [(eid, self._entities[eid]) for eid in ids]
         else:
             entities = list(self._entities.items())
@@ -146,7 +146,8 @@ class EntityContainer:
 
         type_name = type(entity).__name__
         if type_name in self._type_index:
-            self._type_index[type_name].discard(entity_id)
+            if entity_id in self._type_index[type_name]:
+                self._type_index[type_name].remove(entity_id)
             if not self._type_index[type_name]:
                 del self._type_index[type_name]
 
@@ -157,7 +158,7 @@ class EntityContainer:
     def count(self, entity_type: str | None = None) -> int:
         """Total entity count, or count of a specific type."""
         if entity_type is not None:
-            return len(self._type_index.get(entity_type, set()))
+            return len(self._type_index.get(entity_type, []))
         return len(self._entities)
 
     def summary(self) -> dict[str, int]:

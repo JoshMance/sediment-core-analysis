@@ -325,11 +325,12 @@ class AppController:
         )
 
     def open_core_studio(self) -> None:
-        """Open Core Studio, focusing the most recent core or a blank panel.
-
-        If at least one CoreEntity exists, opens (or focuses) the most recently
-        added one.  Otherwise opens the blank Core Studio panel.
-        """
+        """Open Core Studio for the currently active core, or the most recently added one."""
+        if self._workspace_state is not None:
+            active_id = self._workspace_state.active_entity_id
+            if active_id is not None and isinstance(self._store.get(active_id), CoreEntity):
+                self.open_core_in_studio(active_id)
+                return
         cores = self._store.list_entities(entity_type="CoreEntity", include_ids=True)
         if cores:
             self.open_core_in_studio(cores[-1][0])

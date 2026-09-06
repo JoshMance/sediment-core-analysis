@@ -49,6 +49,7 @@ class WorkspaceState(QObject):
     def __init__(self, store: Store | None = None, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._entries: dict[str, WorkspaceEntry] = {}
+        self._active_panel_id: str | None = None
         if store is not None:
             store.entityRemoved.connect(self._on_entity_removed)
             store.storeReset.connect(self.clear)
@@ -64,6 +65,8 @@ class WorkspaceState(QObject):
     def close(self, panel_id: str) -> None:
         """Record that a panel has been closed."""
         self._entries.pop(panel_id, None)
+        if self._active_panel_id == panel_id:
+            self._active_panel_id = None
         self.panelRemoved.emit(panel_id)
 
     def is_open(self, panel_id: str) -> bool:
@@ -72,8 +75,21 @@ class WorkspaceState(QObject):
 
     def clear(self) -> None:
         """Close all panels. Emits panelRemoved for each open entry."""
+        self._active_panel_id = None
         for panel_id in list(self._entries):
             self.close(panel_id)
+
+    def set_active_panel(self, panel_id: str | None) -> None:
+        """Called by the UI when the focused tab changes."""
+        self._active_panel_id = panel_id if panel_id in self._entries else None
+
+    @property
+    def active_entity_id(self) -> str | None:
+        """target_entity_id of the currently focused panel, or None."""
+        if self._active_panel_id is None:
+            return None
+        entry = self._entries.get(self._active_panel_id)
+        return entry.target_entity_id if entry else None
 
     # ── Store signal handlers ─────────────────────────────────
 

@@ -147,6 +147,15 @@ class RibbonPresenter(QObject):
     def _load_map(self) -> None:
         logger.info("Load Map -- not implemented yet")
 
+    def _settings(self) -> None:
+        from PySide6.QtWidgets import QApplication
+        from src.ui.resources.theme.apply import apply_theme
+        from src.ui.views.shell.settings_dialog import SettingsDialog
+
+        dlg = SettingsDialog(self._view)
+        dlg.themeChanged.connect(lambda dark: apply_theme(QApplication.instance(), dark=dark))
+        dlg.exec()
+
     @property
     def _handlers(self) -> dict[str, object]:
         return {
@@ -163,4 +172,5 @@ class RibbonPresenter(QObject):
             "Import Image": self._load_image,
             "Import Data": self._load_data,
             "New Data": self._new_dataset,
+            "Settings": self._settings,
         }

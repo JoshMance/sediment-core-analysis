@@ -47,7 +47,6 @@ docs/
 └── principles.md  # Architectural principles and DRY checklist
 
 tests/
-src_legacy/        # Previous implementation (reference only)
 ```
 
 ---

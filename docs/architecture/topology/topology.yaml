@@ -123,7 +123,8 @@ application:
       lifetime: long-lived
       subscribes_to: [Store.entityRemoved, Store.storeReset]
       signals: [panelAdded, panelRemoved, panelFocusRequested]
-      actions: [open, close, clear]
+      actions: [open, close, clear, set_active_panel]
+      reads: [active_entity_id]
 
   services:
     - name: load_image
@@ -182,7 +183,7 @@ ui:
       calls: [WorkspaceState, AppController]
       manages:
         [CoreImagePanelPresenter, DatasetPanelPresenter, CoreStudioPresenter]
-      view_signals: [WorkspaceView.entityDropped, WorkspaceView.tabChanged]
+      view_signals: [WorkspaceView.entityDropped, WorkspaceView.tabChanged, WorkspaceView.tabClosed]
 
     - name: CoreImagePanelPresenter
       view: CoreImagePanel
@@ -234,3 +235,9 @@ ui:
       # Receives dataset descriptors and active_plots at construction; emits plotsSelected.
       # No Store access — all data passed in by presenter.
       signals: [plotsSelected]
+
+    - name: SettingsDialog
+      lifetime: transient
+      # Modal dialog opened by RibbonPresenter via the Settings button.
+      # Reads is_dark() at construction; calls apply_theme on accept.
+      # No Store access.

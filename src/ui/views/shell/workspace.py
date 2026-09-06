@@ -36,11 +36,11 @@ class _EmptyWorkspacePlaceholder(QWidget):
 
         primary = QLabel("Welcome to Sedivis")
         primary.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        primary.setStyleSheet("color: #333333; font-size: 16px; font-weight: 600;")
+        primary.setStyleSheet("font-size: 16px; font-weight: 600;")
 
         secondary = QLabel("Open an image to get started")
         secondary.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        secondary.setStyleSheet("color: #888888; font-size: 12px;")
+        secondary.setStyleSheet("font-size: 12px;")
 
         inner = QVBoxLayout()
         inner.setSpacing(0)

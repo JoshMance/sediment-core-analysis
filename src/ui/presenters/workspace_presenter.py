@@ -93,7 +93,8 @@ class WorkspacePresenter(QObject):
                 self._view.rename_tab(panel_id, getattr(entity, "name", entity_id))
 
     def _on_tab_changed(self, panel_id: str) -> None:
-        """Active workspace tab changed — sync the ribbon to match."""
+        """Active workspace tab changed — sync ribbon and active-panel state."""
+        self._workspace_state.set_active_panel(panel_id or None)
         if not panel_id:
             self._controller.set_ribbon_tab("Home")
             return

@@ -8,6 +8,12 @@ from src.ui.resources.theme.colors import DARK, LIGHT
 _HERE = Path(__file__).parent
 _ICONS_DIR = (_HERE.parent / "icons").as_posix()
 
+_dark_active: bool = False
+
+
+def is_dark() -> bool:
+    """Return the theme that was last applied (not the OS palette)."""
+    return _dark_active
 
 def apply_theme(app: QApplication, *, dark: bool | None = None) -> None:
     """Apply light or dark theme to the application.
@@ -18,6 +24,8 @@ def apply_theme(app: QApplication, *, dark: bool | None = None) -> None:
     if dark is None:
         dark = app.palette().color(QPalette.ColorRole.Window).lightness() < 128
 
+    global _dark_active
+    _dark_active = dark
     tokens = DARK if dark else LIGHT
     app.setStyle("Fusion")
     qss = (_HERE / ("dark.qss" if dark else "light.qss")).read_text(encoding="utf-8")

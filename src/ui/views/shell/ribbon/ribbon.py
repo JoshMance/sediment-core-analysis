@@ -7,10 +7,17 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTabWidget
 from PySide6.QtCore import Qt, Signal, QSize
 
+from src.ui.resources.theme.apply import is_dark as _theme_is_dark
+
 from src.ui.views.shell.ribbon.ribbon_button import RibbonButton
 from src.ui.views.shell.ribbon.ribbon_group import RibbonGroup
 
 _ICONS_DIR = Path(__file__).parents[3] / "resources" / "icons"
+_ICONS_DARK_DIR = _ICONS_DIR / "dark"
+
+
+def _is_dark_mode() -> bool:
+    return _theme_is_dark()
 
 # Maps button label → icon filename (add entries as icons are provided)
 _ICON_MAP: dict[str, str] = {
@@ -22,6 +29,7 @@ _ICON_MAP: dict[str, str] = {
     "Load Map": "load-map.svg",
     "New Data": "new-dataset.svg",
     "Core Studio": "core-studio.svg",
+    "Settings": "settings.svg",
 }
 
 
@@ -82,9 +90,10 @@ class Ribbon(QWidget):
         self._add_group(analysis, "Core", ["Core Studio"])
         self._tabs.addTab(analysis, "Analysis")
 
-        # -- Export tab
-        export_tab = self._make_tab()
-        self._tabs.addTab(export_tab, "Export")
+        # -- Help tab
+        help_tab = self._make_tab()
+        self._add_group(help_tab, "Preferences", ["Settings"])
+        self._tabs.addTab(help_tab, "Help")
 
     def _make_tab(self) -> QWidget:
         """Create an empty tab with a left-aligned horizontal layout."""
@@ -100,9 +109,13 @@ class Ribbon(QWidget):
         group = RibbonGroup(title)
         for label in labels:
             btn = RibbonButton(label)
-            icon_path = _ICONS_DIR / _ICON_MAP[label] if label in _ICON_MAP else None
-            if icon_path and icon_path.exists():
-                btn.setIcon(QIcon(str(icon_path)))
+            icon_filename = _ICON_MAP.get(label)
+            if icon_filename:
+                dark_path = _ICONS_DARK_DIR / icon_filename
+                light_path = _ICONS_DIR / icon_filename
+                icon_path = dark_path if (_is_dark_mode() and dark_path.exists()) else light_path
+                if icon_path.exists():
+                    btn.setIcon(QIcon(str(icon_path)))
             btn.clicked.connect(lambda checked=False, name=label: self.buttonClicked.emit(name))
             group.add_button(btn)
             self._buttons[label] = btn
