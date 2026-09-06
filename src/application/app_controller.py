@@ -9,12 +9,14 @@ from __future__ import annotations
 import copy
 import logging
 import tempfile
+import uuid
 from collections.abc import Callable
 from pathlib import Path
 
 import imageio.v3 as iio
 
 from src.domain.entities.core_entity import CoreEntity
+from src.domain.entities.core_layers import CoreDivision, CoreLayer
 from src.domain.entities.dataset_entity import DatasetEntity
 from src.domain.store import Store
 from src.application.services.load_image import load_image
@@ -323,6 +325,174 @@ class AppController:
             [*source.child_core_ids, first_id, second_id],
         )
         return first_id, second_id
+
+    def add_core_division(self, core_id: str, position_px: int) -> None:
+        """Insert an interior division and split the containing layer."""
+        core = self._store.get(core_id)
+        if not isinstance(core, CoreEntity):
+            return
+        length = self._core_axis_length(core)
+        if not 0 < position_px < length or any(d.position_px == position_px for d in core.divisions):
+            return
+        division = CoreDivision(id=uuid.uuid4().hex, position_px=position_px)
+        divisions = sorted([*core.divisions, division], key=lambda item: item.position_px)
+        layers = self._layers_with_inserted_division(core.layers, division, divisions, length)
+        self._store.update_field(core_id, "divisions", divisions)
+        self._store.update_field(core_id, "layers", layers)
+
+    def remove_core_division(self, core_id: str, division_id: str) -> None:
+        """Remove an interior division and merge its adjacent layer intervals."""
+        core = self._store.get(core_id)
+        if not isinstance(core, CoreEntity) or not any(d.id == division_id for d in core.divisions):
+            return
+        divisions = [division for division in core.divisions if division.id != division_id]
+        layers = self._layers_without_division(core.layers, division_id, divisions, self._core_axis_length(core))
+        self._store.update_field(core_id, "divisions", divisions)
+        self._store.update_field(core_id, "layers", layers)
+
+    def move_core_division(self, core_id: str, division_id: str, position_px: int) -> None:
+        """Move one interior division while keeping the ordered-boundary invariant."""
+        core = self._store.get(core_id)
+        if not isinstance(core, CoreEntity):
+            return
+        length = self._core_axis_length(core)
+        divisions = sorted(
+            [
+                CoreDivision(division.id, position_px) if division.id == division_id else division
+                for division in core.divisions
+            ],
+            key=lambda division: division.position_px,
+        )
+        positions = [division.position_px for division in divisions]
+        if (
+            not 0 < position_px < length
+            or len(positions) != len(set(positions))
+            or not any(division.id == division_id for division in divisions)
+        ):
+            return
+        self._store.update_field(core_id, "divisions", divisions)
+
+    def update_core_layer(self, core_id: str, layer_id: str, title: str, note: str) -> None:
+        """Replace the descriptive fields for one core layer interval."""
+        core = self._store.get(core_id)
+        if not isinstance(core, CoreEntity):
+            return
+        layers = [
+            CoreLayer(layer.id, layer.start_division_id, layer.end_division_id, title, note)
+            if layer.id == layer_id else layer
+            for layer in core.layers
+        ]
+        if any(layer.id == layer_id for layer in core.layers):
+            self._store.update_field(core_id, "layers", layers)
+
+    def insert_core_layer(self, core_id: str, layer_id: str, *, above: bool) -> None:
+        """Insert a blank layer above or below an existing layer at its midpoint."""
+        core = self._store.get(core_id)
+        if not isinstance(core, CoreEntity):
+            return
+        layer = next((item for item in core.layers if item.id == layer_id), None)
+        if layer is None:
+            return
+        length = self._core_axis_length(core)
+        start, end = self._layer_bounds(layer, core.divisions, length)
+        position = (start + end) // 2
+        if not start < position < end:
+            return
+        division = CoreDivision(uuid.uuid4().hex, position)
+        divisions = sorted([*core.divisions, division], key=lambda item: item.position_px)
+        blank = CoreLayer(uuid.uuid4().hex, None, None)
+        if above:
+            blank.start_division_id = layer.start_division_id
+            blank.end_division_id = division.id
+            replacement = CoreLayer(layer.id, division.id, layer.end_division_id, layer.title, layer.note)
+        else:
+            replacement = CoreLayer(layer.id, layer.start_division_id, division.id, layer.title, layer.note)
+            blank.start_division_id = division.id
+            blank.end_division_id = layer.end_division_id
+        layers = [item for item in core.layers if item.id != layer_id]
+        layers.extend([blank, replacement])
+        layers.sort(key=lambda item: self._layer_bounds(item, divisions, length)[0])
+        self._store.update_field(core_id, "divisions", divisions)
+        self._store.update_field(core_id, "layers", layers)
+
+    def delete_core_layer(self, core_id: str, layer_id: str) -> None:
+        """Delete a layer interval and merge its space into an adjacent layer."""
+        core = self._store.get(core_id)
+        if not isinstance(core, CoreEntity) or len(core.layers) < 2:
+            return
+        index = next((i for i, layer in enumerate(core.layers) if layer.id == layer_id), None)
+        if index is None:
+            return
+        layer = core.layers[index]
+        if index < len(core.layers) - 1:
+            neighbor = core.layers[index + 1]
+            division_id = layer.end_division_id
+            merged = CoreLayer(neighbor.id, layer.start_division_id, neighbor.end_division_id, neighbor.title, neighbor.note)
+            affected = {layer.id, neighbor.id}
+        else:
+            neighbor = core.layers[index - 1]
+            division_id = layer.start_division_id
+            merged = CoreLayer(neighbor.id, neighbor.start_division_id, layer.end_division_id, neighbor.title, neighbor.note)
+            affected = {neighbor.id, layer.id}
+        if division_id is None:
+            return
+        divisions = [division for division in core.divisions if division.id != division_id]
+        layers = [item for item in core.layers if item.id not in affected]
+        layers.append(merged)
+        layers.sort(key=lambda item: self._layer_bounds(item, divisions, self._core_axis_length(core))[0])
+        self._store.update_field(core_id, "divisions", divisions)
+        self._store.update_field(core_id, "layers", layers)
+
+    @staticmethod
+    def _core_axis_length(core: CoreEntity) -> int:
+        if core.base_data is None:
+            return 0
+        return max(core.base_data.shape[:2])
+
+    @staticmethod
+    def _layer_bounds(layer: CoreLayer, divisions: list[CoreDivision], length: int) -> tuple[int, int]:
+        positions = {division.id: division.position_px for division in divisions}
+        return positions.get(layer.start_division_id, 0), positions.get(layer.end_division_id, length)
+
+    def _layers_with_inserted_division(
+        self,
+        layers: list[CoreLayer],
+        division: CoreDivision,
+        divisions: list[CoreDivision],
+        length: int,
+    ) -> list[CoreLayer]:
+        if not layers:
+            return [
+                CoreLayer(uuid.uuid4().hex, None, division.id),
+                CoreLayer(uuid.uuid4().hex, division.id, None),
+            ]
+        result: list[CoreLayer] = []
+        for layer in layers:
+            start, end = self._layer_bounds(layer, divisions, length)
+            if start < division.position_px < end:
+                result.extend([
+                    CoreLayer(layer.id, layer.start_division_id, division.id, layer.title, layer.note),
+                    CoreLayer(uuid.uuid4().hex, division.id, layer.end_division_id),
+                ])
+            else:
+                result.append(layer)
+        return result
+
+    def _layers_without_division(
+        self,
+        layers: list[CoreLayer],
+        division_id: str,
+        divisions: list[CoreDivision],
+        length: int,
+    ) -> list[CoreLayer]:
+        before = next((layer for layer in layers if layer.end_division_id == division_id), None)
+        after = next((layer for layer in layers if layer.start_division_id == division_id), None)
+        if before is None or after is None:
+            return layers
+        merged = CoreLayer(before.id, before.start_division_id, after.end_division_id, before.title, before.note)
+        remaining = [layer for layer in layers if layer not in (before, after)]
+        remaining.append(merged)
+        return sorted(remaining, key=lambda layer: self._layer_bounds(layer, divisions, length)[0])
 
     def create_cropped_child_core(
         self,

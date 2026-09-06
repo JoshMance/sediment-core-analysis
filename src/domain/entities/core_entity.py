@@ -7,6 +7,8 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 
+from src.domain.entities.core_layers import CoreDivision, CoreLayer
+
 
 @dataclass
 class CoreEntity:
@@ -30,6 +32,8 @@ class CoreEntity:
         is_draft: True while the core is still being prepared for analysis.
         dataset_plots: Ordered list of dataset columns shown as line plots alongside
                        the core image. Each entry is {'dataset_id': str, 'column_name': str}.
+        divisions: Interior boundaries on the oriented Core Studio image axis.
+        layers: Named, annotated intervals bounded by divisions or image edges.
         id: Assigned by the Store on add().
         asset_ref: Archive-relative path to the sidecar PNG (e.g. 'assets/<id>_core.png').
                    Populated by the archive service on load; not set during normal runtime.
@@ -46,6 +50,8 @@ class CoreEntity:
     filter_stack: list[dict] = field(default_factory=list)
     is_draft: bool = False
     dataset_plots: list[dict] = field(default_factory=list)
+    divisions: list[CoreDivision] = field(default_factory=list)
+    layers: list[CoreLayer] = field(default_factory=list)
     id: str | None = None
     asset_ref: str | None = None
 
@@ -68,6 +74,8 @@ class CoreEntity:
             "filter_stack": self.filter_stack,
             "is_draft": self.is_draft,
             "dataset_plots": self.dataset_plots,
+            "divisions": [division.to_dict() for division in self.divisions],
+            "layers": [layer.to_dict() for layer in self.layers],
             "asset_ref": self.asset_ref,
         }
 
@@ -89,5 +97,7 @@ class CoreEntity:
             filter_stack=list(data.get("filter_stack", [])),
             is_draft=bool(data.get("is_draft", False)),
             dataset_plots=list(data.get("dataset_plots", [])),
+            divisions=[CoreDivision.from_dict(item) for item in data.get("divisions", [])],
+            layers=[CoreLayer.from_dict(item) for item in data.get("layers", [])],
             asset_ref=data.get("asset_ref"),
         )

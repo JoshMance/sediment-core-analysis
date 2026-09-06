@@ -16,6 +16,7 @@ from src.domain.entities.dataset_entity import DatasetEntity
 from src.domain.store import Store
 from src.ui.views.panels.core_studio_panel import CoreStudioPanel
 from src.ui.views.panels.core_studio_panel.dataset_plot_dialog import DatasetPlotDialog
+from src.ui.views.panels.core_studio_panel.layer_details_dialog import LayerDetailsDialog
 from src.ui.views.panels.core_studio_panel.pdf_export import render_to_pdf
 
 logger = logging.getLogger(__name__)
@@ -50,8 +51,16 @@ class CoreStudioPresenter(QObject):
         self._view.exportPdfRequested.connect(self._on_export_pdf)
         self._view.exportExcelRequested.connect(self._on_export_excel)
         self._view.dataPlotChangeRequested.connect(self._on_data_plot_change_requested)
+        self._view.divisionAddRequested.connect(self._on_division_add_requested)
+        self._view.divisionMoveRequested.connect(self._on_division_move_requested)
+        self._view.divisionRemoveRequested.connect(self._on_division_remove_requested)
+        self._view.layerEditRequested.connect(self._on_layer_edit_requested)
+        self._view.layerInsertAboveRequested.connect(self._on_layer_insert_above_requested)
+        self._view.layerInsertBelowRequested.connect(self._on_layer_insert_below_requested)
+        self._view.layerDeleteRequested.connect(self._on_layer_delete_requested)
         self._store.entityUpdated.connect(self._on_entity_updated)
         self._load_core_image()
+        self._refresh_layers()
         self._refresh_dataset_plots()
 
     def _load_core_image(self) -> None:
@@ -113,6 +122,7 @@ class CoreStudioPresenter(QObject):
                     )
                     self._view.set_pixmap(_array_to_pixmap(resolved))
                 # dataset_plots may have changed too
+                self._refresh_layers()
                 self._refresh_dataset_plots()
         elif entity_type == "DatasetEntity" and self._core_id is not None:
             # Check if this dataset is one we're displaying
@@ -166,6 +176,45 @@ class CoreStudioPresenter(QObject):
             self._controller.export_core_to_excel(self._core_id, path)
         except (OSError, ValueError) as error:
             QMessageBox.critical(self._view, "Export Excel Failed", str(error))
+
+    def _on_division_add_requested(self, position_px: int) -> None:
+        if self._core_id is not None:
+            self._controller.add_core_division(self._core_id, position_px)
+
+    def _on_division_remove_requested(self, division_id: str) -> None:
+        if self._core_id is not None:
+            self._controller.remove_core_division(self._core_id, division_id)
+
+    def _on_division_move_requested(self, division_id: str, position_px: int) -> None:
+        if self._core_id is not None:
+            self._controller.move_core_division(self._core_id, division_id, position_px)
+
+    def _on_layer_edit_requested(self, layer_id: str) -> None:
+        if self._core_id is None:
+            return
+        core = self._store.get(self._core_id)
+        if not isinstance(core, CoreEntity):
+            return
+        layer = next((item for item in core.layers if item.id == layer_id), None)
+        if layer is None:
+            return
+        dialog = LayerDetailsDialog(layer.id, layer.title, layer.note, self._view)
+        dialog.layerUpdated.connect(
+            lambda item_id, title, note: self._controller.update_core_layer(self._core_id, item_id, title, note)
+        )
+        dialog.exec()
+
+    def _on_layer_insert_above_requested(self, layer_id: str) -> None:
+        if self._core_id is not None:
+            self._controller.insert_core_layer(self._core_id, layer_id, above=True)
+
+    def _on_layer_insert_below_requested(self, layer_id: str) -> None:
+        if self._core_id is not None:
+            self._controller.insert_core_layer(self._core_id, layer_id, above=False)
+
+    def _on_layer_delete_requested(self, layer_id: str) -> None:
+        if self._core_id is not None:
+            self._controller.delete_core_layer(self._core_id, layer_id)
 
     def _on_data_plot_change_requested(self) -> None:
         """Open the dataset picker dialog and update plots on confirm."""
@@ -225,3 +274,28 @@ class CoreStudioPresenter(QObject):
             plot_specs.append((label, depths, values))
 
         self._view.set_dataset_plot_columns(plot_specs)
+
+    def _refresh_layers(self) -> None:
+        """Derive display intervals from the core's division references."""
+        if self._core_id is None:
+            self._view.set_layers([], [], 0)
+            return
+        core = self._store.get(self._core_id)
+        if not isinstance(core, CoreEntity) or core.base_data is None:
+            self._view.set_layers([], [], 0)
+            return
+        positions = {division.id: division.position_px for division in core.divisions}
+        length = max(core.base_data.shape[:2])
+        descriptors = [
+            {
+                "id": layer.id,
+                "title": layer.title,
+                "start_px": positions.get(layer.start_division_id, 0),
+                "end_px": positions.get(layer.end_division_id, length),
+                "start_division_id": layer.start_division_id,
+                "end_division_id": layer.end_division_id,
+            }
+            for layer in core.layers
+        ]
+        divisions = [{"id": division.id, "position_px": division.position_px} for division in core.divisions]
+        self._view.set_layers(descriptors, divisions, length)

@@ -69,39 +69,32 @@ def render_to_pdf(
     if not painter.begin(printer):
         raise RuntimeError(f"Could not open PDF painter for '{path}'")
 
-    # ── Page 1: header pixmap + first canvas slice ────────────────────────
-    #
-    # Header: draw the grabbed pixmap in raw device-pixel space so the rect
-    # coordinates are unambiguously in printer dots.
-    painter.setTransform(QTransform())
-    painter.drawPixmap(0, 0, page_w, header_h_device, header_pixmap)
+    overlays = canvas.transient_overlays() if hasattr(canvas, "transient_overlays") else ()
+    visible_overlays = [overlay for overlay in overlays if overlay.isVisible()]
+    for overlay in visible_overlays:
+        overlay.hide()
+    try:
+        # ── Page 1: header pixmap + first canvas slice ────────────────────
+        painter.setTransform(QTransform())
+        painter.drawPixmap(0, 0, page_w, header_h_device, header_pixmap)
 
-    # Canvas slice: we want canvas pixel (x, 0) → device (x*s, header_h_device).
-    # With Qt post-multiply, scale(s).translate(0, h/s) gives:
-    #   device_y = (canvas_y + h/s) * s = canvas_y*s + h  ✓
-    # h/s = header_h_device / scale ≈ header.height()
-    t = QTransform()
-    t.scale(scale, scale)
-    t.translate(0.0, header_h_device / scale)
-    painter.setTransform(t)
-    canvas.render(painter, QPoint(0, 0))
-
-    y_canvas = slice_h_first
-
-    # ── Remaining pages: canvas slices only ──────────────────────────────
-    while y_canvas < canvas_h:
-        printer.newPage()
-
-        # We want canvas pixel (x, y_canvas) → device (x*s, 0).
-        # scale(s).translate(0, -y_canvas) gives:
-        #   device_y = (canvas_y - y_canvas) * s  → 0 when canvas_y == y_canvas  ✓
         t = QTransform()
         t.scale(scale, scale)
-        t.translate(0.0, -float(y_canvas))
+        t.translate(0.0, header_h_device / scale)
         painter.setTransform(t)
         canvas.render(painter, QPoint(0, 0))
 
-        y_canvas += slice_h_rest
-
-    painter.end()
+        y_canvas = slice_h_first
+        while y_canvas < canvas_h:
+            printer.newPage()
+            t = QTransform()
+            t.scale(scale, scale)
+            t.translate(0.0, -float(y_canvas))
+            painter.setTransform(t)
+            canvas.render(painter, QPoint(0, 0))
+            y_canvas += slice_h_rest
+    finally:
+        for overlay in visible_overlays:
+            overlay.show()
+        painter.end()
 

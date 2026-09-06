@@ -134,6 +134,13 @@ class CoreStudioPanel(QWidget):
     exportExcelRequested = Signal()
     # Emitted when the user clicks "Manage data plots".
     dataPlotChangeRequested = Signal()
+    divisionAddRequested = Signal(int)
+    divisionMoveRequested = Signal(str, int)
+    divisionRemoveRequested = Signal(str)
+    layerEditRequested = Signal(str)
+    layerInsertAboveRequested = Signal(str)
+    layerInsertBelowRequested = Signal(str)
+    layerDeleteRequested = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -146,6 +153,13 @@ class CoreStudioPanel(QWidget):
         self.air_gap.setObjectName("coreStudioAirGap")
         self.air_gap.setFixedHeight(10)
         self.canvas = CoreStudioCanvas()
+        self.canvas.layer_col.divisionAddRequested.connect(self.divisionAddRequested)
+        self.canvas.layer_col.divisionMoveRequested.connect(self.divisionMoveRequested)
+        self.canvas.layer_col.divisionRemoveRequested.connect(self.divisionRemoveRequested)
+        self.canvas.layer_col.layerEditRequested.connect(self.layerEditRequested)
+        self.canvas.layer_col.layerInsertAboveRequested.connect(self.layerInsertAboveRequested)
+        self.canvas.layer_col.layerInsertBelowRequested.connect(self.layerInsertBelowRequested)
+        self.canvas.layer_col.layerDeleteRequested.connect(self.layerDeleteRequested)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -197,6 +211,14 @@ class CoreStudioPanel(QWidget):
         """Clear all channel columns."""
         self.canvas.clear_channel_profiles()
 
+    def set_layers(self, layers: list[dict], divisions: list[dict], axis_length: int) -> None:
+        """Update the Layers column from presenter-provided descriptors."""
+        self.canvas.set_layers(layers, divisions, axis_length)
+
+    def add_selected_division(self) -> None:
+        """Request a division in the selected Layers-column interval."""
+        self.canvas.add_selected_division()
+
     def set_dataset_plot_columns(
         self,
         plots: list[tuple[str, "np.ndarray", "np.ndarray"]],
@@ -244,6 +266,9 @@ class CoreStudioPanel(QWidget):
         export_excel_action = QAction("Export Excel", tb)
         export_excel_action.triggered.connect(self.exportExcelRequested)
         tb.addAction(export_excel_action)
+        add_division_action = QAction("Add Division", tb)
+        add_division_action.triggered.connect(self.add_selected_division)
+        tb.addAction(add_division_action)
         plots_action = QAction("Manage data plots…", tb)
         plots_action.triggered.connect(self.dataPlotChangeRequested)
         tb.addAction(plots_action)

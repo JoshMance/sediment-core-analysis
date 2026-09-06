@@ -24,9 +24,9 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from PySide6.QtCore import Qt, Signal, QPointF
+from PySide6.QtCore import Qt, Signal, QPoint, QPointF, QRect
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QImage, QPainter, QPen, QPixmap, QTransform
-from PySide6.QtWidgets import QFrame, QLabel, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QLabel, QMenu, QSizePolicy, QVBoxLayout, QWidget
 
 # ── Layout constants ──────────────────────────────────────────────────────────
 
@@ -388,11 +388,213 @@ class ImageColumn(_BaseColumn):
         return pixmap.copy(left, top, right - left + 1, bottom - top + 1)
 
 
-class LayerColumn(_BaseColumn):
-    """Layer segmentation column (rendering TBD)."""
+class _LayerContent(QWidget):
+    """Spatial layer editor aligned to the oriented core-image depth axis."""
+
+    divisionAddRequested = Signal(int)
+    divisionMoveRequested = Signal(str, int)
+    divisionRemoveRequested = Signal(str)
+    layerEditRequested = Signal(str)
+    layerInsertAboveRequested = Signal(str)
+    layerInsertBelowRequested = Signal(str)
+    layerDeleteRequested = Signal(str)
+    layerSelected = Signal(object)
+    divisionSelected = Signal(object)
+    divisionPreviewMoved = Signal(int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self._layers: list[dict] = []
+        self._divisions: list[dict] = []
+        self._axis_length = 0
+        self._selected_layer_id: str | None = None
+        self._selected_division_id: str | None = None
+        self._dragging_division_id: str | None = None
+        self._drag_position_px: int | None = None
+        self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setToolTip("Click a layer to select it. Double-click to edit. Drag a division to move it. Delete removes the selected division.")
+
+    def set_data(self, layers: list[dict], divisions: list[dict], axis_length: int) -> None:
+        self._layers = layers
+        self._divisions = divisions
+        self._axis_length = axis_length
+        if self._selected_layer_id not in {layer["id"] for layer in layers}:
+            self._selected_layer_id = None
+        if self._selected_division_id not in {division["id"] for division in divisions}:
+            if self._selected_division_id is not None:
+                self.divisionSelected.emit(None)
+            self._selected_division_id = None
+        self.update()
+
+    def add_selected_division(self) -> None:
+        """Split the selected layer at its midpoint."""
+        layer = next((item for item in self._layers if item["id"] == self._selected_layer_id), None)
+        if layer is None:
+            if self._axis_length > 1 and not self._layers:
+                self.divisionAddRequested.emit(self._axis_length // 2)
+            return
+        self.divisionAddRequested.emit((layer["start_px"] + layer["end_px"]) // 2)
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        super().paintEvent(event)
+        if self._axis_length <= 0:
+            return
+        painter = QPainter(self)
+        rect = self.contentsRect()
+        for layer in self._layers:
+            start, end = self._bounds_for_layer(layer)
+            top = self._y_for_position(start)
+            bottom = self._y_for_position(end)
+            if layer["id"] == self._selected_layer_id:
+                color = self.palette().highlight().color()
+                color.setAlpha(70)
+                painter.fillRect(rect.left(), top, rect.width(), max(1, bottom - top), color)
+            title = layer["title"] or "Untitled layer"
+            painter.setPen(self.palette().color(self.foregroundRole()))
+            painter.drawText(
+                QRect(rect.left() + 5, top + 3, max(0, rect.width() - 10), max(0, bottom - top - 6)),
+                Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap,
+                title,
+            )
+        for division in self._divisions:
+            position = (
+                self._drag_position_px
+                if division["id"] == self._dragging_division_id and self._drag_position_px is not None
+                else division["position_px"]
+            )
+            y = self._y_for_position(position)
+            color = self.palette().highlight().color()
+            painter.setPen(QPen(color, 3 if division["id"] == self._selected_division_id else 1))
+            painter.drawLine(rect.left(), y, rect.right(), y)
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802
+        position = self._position_for_y(event.position().y())
+        division = self._division_at_y(event.position().y())
+        if division is not None:
+            self._selected_division_id = division["id"]
+            self._dragging_division_id = division["id"]
+            self._drag_position_px = division["position_px"]
+            self._selected_layer_id = None
+            self.layerSelected.emit(None)
+            self.divisionSelected.emit(division)
+        else:
+            layer = self._layer_at_position(position)
+            self._selected_layer_id = layer["id"] if layer else None
+            self._selected_division_id = None
+            self.layerSelected.emit(layer)
+        self.setFocus()
+        self.update()
+
+    def mouseMoveEvent(self, event) -> None:  # noqa: N802
+        if self._dragging_division_id is not None and event.buttons() & Qt.MouseButton.LeftButton:
+            self._drag_position_px = self._position_for_y(event.position().y())
+            self.divisionPreviewMoved.emit(self._drag_position_px)
+            self.update()
+
+    def mouseReleaseEvent(self, event) -> None:  # noqa: N802
+        if self._dragging_division_id is not None and self._drag_position_px is not None:
+            self.divisionMoveRequested.emit(self._dragging_division_id, self._drag_position_px)
+        self._dragging_division_id = None
+        self._drag_position_px = None
+
+    def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802
+        layer = self._layer_at_position(self._position_for_y(event.position().y()))
+        if layer is not None:
+            self.layerEditRequested.emit(layer["id"])
+
+    def contextMenuEvent(self, event) -> None:  # noqa: N802
+        layer = self._layer_at_position(self._position_for_y(event.pos().y()))
+        if layer is None:
+            return
+        self._selected_layer_id = layer["id"]
+        self._selected_division_id = None
+        self.layerSelected.emit(layer)
+        self.update()
+        menu = QMenu(self)
+        above = menu.addAction("Insert Above")
+        below = menu.addAction("Insert Below")
+        menu.addSeparator()
+        delete = menu.addAction("Delete")
+        action = menu.exec(event.globalPos())
+        if action == above:
+            self.layerInsertAboveRequested.emit(layer["id"])
+        elif action == below:
+            self.layerInsertBelowRequested.emit(layer["id"])
+        elif action == delete:
+            self.layerDeleteRequested.emit(layer["id"])
+
+    def keyPressEvent(self, event) -> None:  # noqa: N802
+        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace) and self._selected_division_id:
+            self.divisionRemoveRequested.emit(self._selected_division_id)
+            return
+        super().keyPressEvent(event)
+
+    def _y_for_position(self, position: int) -> int:
+        return round(self.contentsRect().top() + self.contentsRect().height() * position / self._axis_length)
+
+    def _position_for_y(self, y: float) -> int:
+        rect = self.contentsRect()
+        return max(1, min(round((y - rect.top()) * self._axis_length / max(1, rect.height())), self._axis_length - 1))
+
+    def _division_at_y(self, y: float) -> dict | None:
+        return next((division for division in self._divisions if abs(self._y_for_position(division["position_px"]) - y) <= 5), None)
+
+    def _layer_at_position(self, position: int) -> dict | None:
+        return next(
+            (layer for layer in self._layers if self._bounds_for_layer(layer)[0] <= position <= self._bounds_for_layer(layer)[1]),
+            None,
+        )
+
+    def _bounds_for_layer(self, layer: dict) -> tuple[int, int]:
+        """Return displayed bounds, including the local in-progress division move."""
+        start = layer["start_px"]
+        end = layer["end_px"]
+        if self._drag_position_px is not None:
+            if layer.get("start_division_id") == self._dragging_division_id:
+                start = self._drag_position_px
+            if layer.get("end_division_id") == self._dragging_division_id:
+                end = self._drag_position_px
+        return start, end
+
+
+class LayerColumn(_BaseColumn):
+    """Spatial division and layer editor aligned to the core image."""
+
+    divisionAddRequested = Signal(int)
+    divisionMoveRequested = Signal(str, int)
+    divisionRemoveRequested = Signal(str)
+    layerEditRequested = Signal(str)
+    layerInsertAboveRequested = Signal(str)
+    layerInsertBelowRequested = Signal(str)
+    layerDeleteRequested = Signal(str)
+    layerSelected = Signal(object)
+    divisionSelected = Signal(object)
+    divisionPreviewMoved = Signal(int)
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._editor = _LayerContent(self._content)
+        self._editor.divisionAddRequested.connect(self.divisionAddRequested)
+        self._editor.divisionMoveRequested.connect(self.divisionMoveRequested)
+        self._editor.divisionRemoveRequested.connect(self.divisionRemoveRequested)
+        self._editor.layerEditRequested.connect(self.layerEditRequested)
+        self._editor.layerInsertAboveRequested.connect(self.layerInsertAboveRequested)
+        self._editor.layerInsertBelowRequested.connect(self.layerInsertBelowRequested)
+        self._editor.layerDeleteRequested.connect(self.layerDeleteRequested)
+        self._editor.layerSelected.connect(self.layerSelected)
+        self._editor.divisionSelected.connect(self.divisionSelected)
+        self._editor.divisionPreviewMoved.connect(self.divisionPreviewMoved)
+        layout = QVBoxLayout(self._content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self._editor)
+
+    def set_layers(self, layers: list[dict], divisions: list[dict], axis_length: int) -> None:
+        self._editor.set_data(layers, divisions, axis_length)
+
+    def add_selected_division(self) -> None:
+        """Request a division at the selected spatial layer's midpoint."""
+        self._editor.add_selected_division()
 
 
 class DataChannelColumn(_BaseColumn):

@@ -76,6 +76,61 @@ class _HoverOverlay(QWidget):
         )
 
 
+class _LayerSelectionOverlay(QWidget):
+    """Top-layer guides showing the selected layer across all Studio columns."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._bounds: tuple[int, int] | None = None
+        self._scale_provider = lambda: 0.0
+
+    def set_layer(self, layer: dict | None, scale_provider) -> None:
+        self._bounds = None if layer is None else (layer["start_px"], layer["end_px"])
+        self._scale_provider = scale_provider
+        self.update()
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        if self._bounds is None:
+            return
+        scale = self._scale_provider()
+        if scale <= 0:
+            return
+        painter = QPainter(self)
+        color = self.palette().highlight().color()
+        color.setAlpha(210)
+        painter.setPen(QPen(color, 2))
+        for position in self._bounds:
+            painter.drawLine(0, round(position * scale), self.width(), round(position * scale))
+
+
+class _DivisionSelectionOverlay(QWidget):
+    """Top-layer guide for the selected division across all Studio columns."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._position_px: int | None = None
+        self._scale_provider = lambda: 0.0
+
+    def set_position(self, position_px: int | None, scale_provider) -> None:
+        self._position_px = position_px
+        self._scale_provider = scale_provider
+        self.update()
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        if self._position_px is None:
+            return
+        scale = self._scale_provider()
+        if scale <= 0:
+            return
+        painter = QPainter(self)
+        color = self.palette().highlight().color()
+        painter.setPen(QPen(color, 3))
+        y = round(self._position_px * scale)
+        painter.drawLine(0, y, self.width(), y)
+
+
 class CoreStudioCanvas(QWidget):
     """Horizontal strip of column widgets.
 
@@ -111,11 +166,20 @@ class CoreStudioCanvas(QWidget):
         self._overlay = _HoverOverlay(self)
         self._overlay.setGeometry(self.rect())
         self._overlay.raise_()
+        self._layer_selection_overlay = _LayerSelectionOverlay(self)
+        self._layer_selection_overlay.setGeometry(self.rect())
+        self._layer_selection_overlay.raise_()
+        self._division_selection_overlay = _DivisionSelectionOverlay(self)
+        self._division_selection_overlay.setGeometry(self.rect())
+        self._division_selection_overlay.raise_()
 
         # ── build columns in order ────────────────────────────
         self.depth_ruler = DepthRulerColumn(scale_provider=None)
         self.image_col = ImageColumn()
         self.layer_col = LayerColumn()
+        self.layer_col.layerSelected.connect(self._on_layer_selected)
+        self.layer_col.divisionSelected.connect(self._on_division_selected)
+        self.layer_col.divisionPreviewMoved.connect(self._on_division_preview_moved)
 
         self.r_col = DataChannelColumn("R")
         self.g_col = DataChannelColumn("G")
@@ -153,6 +217,10 @@ class CoreStudioCanvas(QWidget):
         self._sync_height()
         self._overlay.setGeometry(self.rect())
         self._overlay.raise_()
+        self._layer_selection_overlay.setGeometry(self.rect())
+        self._layer_selection_overlay.raise_()
+        self._division_selection_overlay.setGeometry(self.rect())
+        self._division_selection_overlay.raise_()
         self.depth_ruler.update()
 
     def _on_hover_update(self, y: int, mm: float) -> None:
@@ -232,6 +300,34 @@ class CoreStudioCanvas(QWidget):
         # Propagate the same scale provider to any dataset plot columns
         for col in self._dataset_plot_columns:
             col.set_scale_provider(_scale_provider)
+
+    def set_layers(self, layers: list[dict], divisions: list[dict], axis_length: int) -> None:
+        """Push presenter-owned layer display descriptors into the Layers column."""
+        self.layer_col.set_layers(layers, divisions, axis_length)
+
+    def transient_overlays(self) -> tuple[QWidget, ...]:
+        """Return non-document interaction overlays that exports must exclude."""
+        return (
+            self._overlay,
+            self._layer_selection_overlay,
+            self._division_selection_overlay,
+        )
+
+    def _on_layer_selected(self, layer: dict | None) -> None:
+        self._layer_selection_overlay.set_layer(layer, self.image_col.display_scale)
+        if layer is not None:
+            self._division_selection_overlay.set_position(None, self.image_col.display_scale)
+
+    def _on_division_selected(self, division: dict | None) -> None:
+        position = None if division is None else division["position_px"]
+        self._division_selection_overlay.set_position(position, self.image_col.display_scale)
+
+    def _on_division_preview_moved(self, position_px: int) -> None:
+        self._division_selection_overlay.set_position(position_px, self.image_col.display_scale)
+
+    def add_selected_division(self) -> None:
+        """Request a division in the selected layer interval."""
+        self.layer_col.add_selected_division()
 
     # ── Dynamic dataset plot columns ──────────────────────────
 

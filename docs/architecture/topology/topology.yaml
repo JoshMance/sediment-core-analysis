@@ -189,7 +189,12 @@ ui:
       calls: [WorkspaceState, AppController]
       manages:
         [CoreImagePanelPresenter, DatasetPanelPresenter, CoreStudioPresenter]
-      view_signals: [WorkspaceView.entityDropped, WorkspaceView.tabChanged, WorkspaceView.tabClosed]
+      view_signals:
+        [
+          WorkspaceView.entityDropped,
+          WorkspaceView.tabChanged,
+          WorkspaceView.tabClosed,
+        ]
 
     - name: CoreImagePanelPresenter
       view: CoreImagePanel
