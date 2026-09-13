@@ -350,7 +350,7 @@ class ImageColumn(_BaseColumn):
             return None
         if pixmap.height() >= pixmap.width():
             return pixmap
-        transform = QTransform().rotate(90)
+        transform = QTransform().rotate(-90)
         rotated = pixmap.transformed(transform, Qt.TransformationMode.FastTransformation)
         return self._trim_transparent_edges(rotated)
 

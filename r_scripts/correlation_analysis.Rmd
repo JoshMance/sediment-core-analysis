@@ -1,0 +1,218 @@
+---
+title: "Correlation Analysis - Initial Exploration (Josh Mance, 13/9/2026)"
+output: html_notebook
+---
+
+```{r}
+library(dtw)
+library(prospectr)
+
+library(dplyr)
+library(tidyr)
+library(readxl)
+library(ggplot2)
+library(plotly)
+```
+
+
+
+```{r}
+# Loading the data, concatenating the top (A) and bottom (B) parts of the cores
+
+load_data = function(folder, file) {
+  file_path = file.path(folder, file)
+  df = read_excel(
+    path = file_path,
+    sheet = 1
+  )
+  df = subset(df, select = -c(image_row_px, layer_title))
+  return(df)
+}
+
+core_3A = load_data("Data", "MI-24-03_A.xlsx")
+core_3B = load_data("Data", "MI-24-03_B.xlsx")
+
+core_4A = load_data("Data", "MI-24-04_A.xlsx")
+core_4B = load_data("Data", "MI-24-04_B.xlsx")
+
+
+core_3 = bind_rows(
+  core_3A,
+  core_3B |> mutate(depth_mm = depth_mm + max(core_3A$depth_mm))
+)
+
+core_4 = bind_rows(
+  core_4A,
+  core_4B |> mutate(depth_mm = depth_mm + max(core_4A$depth_mm))
+)
+
+```
+
+
+
+```{r}
+#Smoothing the cielab tracks
+
+smooth_cols = function(df, window) {
+  for (axis in c("L_star", "a_star", "b_star")) {
+    df[[paste0(axis, "_smooth_", window)]] =
+      as.numeric(stats::filter(df[[axis]], rep(1/window, window), sides = 2))
+  }
+  df
+}
+
+for (window in c(5, 11, 21, 41)) {
+  core_3A = smooth_cols(core_3A, window)
+  core_3B = smooth_cols(core_3B, window)
+  core_4A = smooth_cols(core_4A, window)
+  core_4B = smooth_cols(core_4B, window)
+}
+```
+
+
+```{r}
+# Plotting a single dim from both cores
+
+series_1 = core_3B
+series_2 = core_4B
+axis = "L_star_smooth_41"
+
+
+plot_df = bind_rows(
+  series_1 |> mutate(series = "Series 1"),
+  series_2 |> mutate(series = "Series 2")
+) |>
+  filter(!is.na(.data[[axis]]), !is.na(depth_mm))
+
+ggplot(plot_df, aes(x = .data[[axis]], y = depth_mm)) +
+  geom_path(colour = "blue") +
+  scale_y_reverse() +
+  facet_wrap(~ series, nrow = 1) +
+  labs(
+    x = axis,
+    y = "Depth (mm)"
+  ) +
+  theme_classic() +
+  theme(
+    aspect.ratio = 5
+  )
+
+```
+
+
+```{r}
+# Running dynamic time warping (dtw) algo
+
+alignment <- dtw(
+  core_3$L_star,
+  core_4$L_star,
+  keep.internals = TRUE
+)
+plot(alignment, type = "threeway")
+
+```
+
+
+```{r}
+
+plot_ccf = function(lag_mm, correlation) {
+  df = data.frame(
+    lag_mm = lag_mm,
+    correlation = correlation
+  )
+
+  ggplot(df, aes(x = lag_mm, y = correlation)) +
+    geom_line(colour = "blue", linewidth = 0.8) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    geom_vline(xintercept = 0, linetype = "dashed") +
+    labs(
+      x = "Depth lag (mm)",
+      y = "Pearson correlation (r)"
+    ) +
+    theme_classic()
+}
+```
+
+
+```{r}
+# Performing a Pearson cross-correlation
+
+
+series_1 <- core_3B
+series_2 <- core_4B
+
+axis <- "L_star_smooth_41"
+
+depth_step <- 0.5
+max_lag_mm <- 1000
+
+
+
+# Common overlapping depth range
+depth_min <- max(
+  min(series_1$depth_mm, na.rm = TRUE),
+  min(series_2$depth_mm, na.rm = TRUE)
+)
+
+depth_max <- min(
+  max(series_1$depth_mm, na.rm = TRUE),
+  max(series_2$depth_mm, na.rm = TRUE)
+)
+
+# Common depth grid
+depth <- seq(
+  depth_min,
+  depth_max,
+  by = depth_step
+)
+
+# Interpolate onto common depth grid
+x1 <- approx(
+  x = series_1$depth_mm,
+  y = series_1[[axis]],
+  xout = depth,
+  ties = mean
+)$y
+
+x2 <- approx(
+  x = series_2$depth_mm,
+  y = series_2[[axis]],
+  xout = depth,
+  ties = mean
+)$y
+
+# Remove positions where either profile is NA
+valid <- !is.na(x1) & !is.na(x2)
+
+x1 <- x1[valid]
+x2 <- x2[valid]
+
+# Cross-correlation
+result <- ccf(
+  x1,
+  x2,
+  lag.max = max_lag_mm / depth_step,
+  plot = FALSE
+)
+
+# Convert lag to actual depth offset in mm
+lag_mm <- as.vector(result$lag) * depth_step
+correlation <- as.vector(result$acf)
+
+# Plot
+plot_ccf(
+  lag_mm,
+  correlation
+)
+
+# Best correlation and corresponding depth offset
+i <- which.max(correlation)
+
+best_correlation <- correlation[i]
+best_offset_mm <- lag_mm[i]
+
+best_correlation
+best_offset_mm
+```
+
+

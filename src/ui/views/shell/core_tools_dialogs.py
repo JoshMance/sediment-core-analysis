@@ -304,7 +304,7 @@ class SplitCoreDialog(_CoreToolsDialog):
             self._first_name.setText(f"{name} {first.lower()}")
         if reset_names or not self._second_name_edited:
             self._second_name.setText(f"{name} {second.lower()}")
-        preview_pixmap = pixmap if self._axis() == "horizontal" else pixmap.transformed(QTransform().rotate(90))
+        preview_pixmap = pixmap if self._axis() == "horizontal" else pixmap.transformed(QTransform().rotate(-90))
         self._preview.set_source(preview_pixmap)
         self._update_position_label()
         QTimer.singleShot(0, self._reveal_split)
