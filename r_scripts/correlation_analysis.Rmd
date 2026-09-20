@@ -1,19 +1,20 @@
 ---
-title: "Correlation Analysis - Initial Exploration (Josh Mance, 13/9/2026)"
+title: "Core Correlation Analysis (Joshua Mance, 13/9/2026)"
 output: html_notebook
 ---
 
 ```{r}
 library(dtw)
+library(magick)
+library(grid)
+library(pracma)
 library(prospectr)
-
 library(dplyr)
 library(tidyr)
 library(readxl)
 library(ggplot2)
 library(plotly)
 ```
-
 
 
 ```{r}
@@ -25,7 +26,7 @@ load_data = function(folder, file) {
     path = file_path,
     sheet = 1
   )
-  df = subset(df, select = -c(image_row_px, layer_title))
+  df = subset(df, select = -c(layer_title))
   return(df)
 }
 
@@ -49,24 +50,47 @@ core_4 = bind_rows(
 ```
 
 
+```{r}
+library(magick)
+
+list.files("Images")
+
+image_3A = image_read(file.path("Images", "MI-24-03-A.png")) |> image_rotate(-90)
+image_3B = image_read(file.path("Images", "MI-24-03-B.png")) |> image_rotate(-90)
+
+image_4A = image_read(file.path("Images", "MI-24-04-A.png")) |> image_rotate(-90)
+image_4B = image_read(file.path("Images", "MH-24-04-B.png")) |> image_rotate(-90)
+
+```
+
+
+
 
 ```{r}
-#Smoothing the cielab tracks
+smooth = function(x, window) {
+  as.numeric(
+    stats::filter(x, rep(1/window, window), sides = 2)
+  )
+}
+detrend = function(x, window) {
+  x - smooth(x, window)
+}
 
-smooth_cols = function(df, window) {
-  for (axis in c("L_star", "a_star", "b_star")) {
-    df[[paste0(axis, "_smooth_", window)]] =
-      as.numeric(stats::filter(df[[axis]], rep(1/window, window), sides = 2))
+# Applying across all cores and window sizes
+for (window in c(5, 11, 21)) {
+  for (core_name in c("core_3A", "core_3B", "core_4A", "core_4B")) {
+    
+    df = get(core_name)
+    for (axis in c("L_star", "a_star", "b_star")) {
+      df[[paste0(axis, "_smooth_", window)]] =
+        smooth(df[[axis]], window)
+      df[[paste0(axis, "_detrend_", window)]] =
+        detrend(df[[axis]], window)
+    }
+    assign(core_name, df)
   }
-  df
 }
 
-for (window in c(5, 11, 21, 41)) {
-  core_3A = smooth_cols(core_3A, window)
-  core_3B = smooth_cols(core_3B, window)
-  core_4A = smooth_cols(core_4A, window)
-  core_4B = smooth_cols(core_4B, window)
-}
 ```
 
 
@@ -75,7 +99,7 @@ for (window in c(5, 11, 21, 41)) {
 
 series_1 = core_3B
 series_2 = core_4B
-axis = "L_star_smooth_41"
+axis = "L_star"
 
 
 plot_df = bind_rows(
@@ -100,50 +124,15 @@ ggplot(plot_df, aes(x = .data[[axis]], y = depth_mm)) +
 ```
 
 
-```{r}
-# Running dynamic time warping (dtw) algo
-
-alignment <- dtw(
-  core_3$L_star,
-  core_4$L_star,
-  keep.internals = TRUE
-)
-plot(alignment, type = "threeway")
-
-```
-
-
-```{r}
-
-plot_ccf = function(lag_mm, correlation) {
-  df = data.frame(
-    lag_mm = lag_mm,
-    correlation = correlation
-  )
-
-  ggplot(df, aes(x = lag_mm, y = correlation)) +
-    geom_line(colour = "blue", linewidth = 0.8) +
-    geom_hline(yintercept = 0, linetype = "dashed") +
-    geom_vline(xintercept = 0, linetype = "dashed") +
-    labs(
-      x = "Depth lag (mm)",
-      y = "Pearson correlation (r)"
-    ) +
-    theme_classic()
-}
-```
-
 
 ```{r}
 # Performing a Pearson cross-correlation
-
-
 series_1 <- core_3B
 series_2 <- core_4B
 
-axis <- "L_star_smooth_41"
+axis <- "L_star_smooth_21"
 
-depth_step <- 0.5
+depth_step <- 0.1
 max_lag_mm <- 1000
 
 
@@ -198,21 +187,364 @@ result <- ccf(
 # Convert lag to actual depth offset in mm
 lag_mm <- as.vector(result$lag) * depth_step
 correlation <- as.vector(result$acf)
+```
 
-# Plot
-plot_ccf(
-  lag_mm,
-  correlation
+
+```{r}
+i_pos <- which.max(correlation[lag_mm > 0])
+i_pos <- which(lag_mm > 0)[i_pos]
+
+i_neg <- which.max(correlation[lag_mm < 0])
+i_neg <- which(lag_mm < 0)[i_neg]
+
+i <- c(i_neg, i_pos)
+
+results <- data.frame(
+  correlation = correlation[i],
+  offset_mm = lag_mm[i]
 )
 
-# Best correlation and corresponding depth offset
-i <- which.max(correlation)
+results
 
-best_correlation <- correlation[i]
-best_offset_mm <- lag_mm[i]
-
-best_correlation
-best_offset_mm
 ```
+
+
+
+```{r}
+
+plot_ccf = function(lag_mm, correlation, results) {
+
+  df = data.frame(
+    lag_mm = lag_mm,
+    correlation = correlation
+  )
+
+  ggplot(df, aes(x = lag_mm, y = correlation)) +
+
+    # Zero correlation line
+    geom_hline(
+      yintercept = 0,
+      colour = "black",
+      linewidth = 0.5
+    ) +
+
+    # Cross-correlation
+    geom_segment(
+      aes(
+        x = lag_mm,
+        xend = lag_mm,
+        y = 0,
+        yend = correlation
+      ),
+      colour = "grey60",
+      linewidth = 0.3
+    ) +
+
+    # Highlighted peaks
+    geom_segment(
+      data = results,
+      aes(
+        x = offset_mm,
+        xend = offset_mm,
+        y = 0,
+        yend = correlation
+      ),
+      colour = "blue",
+      linewidth = 0.8,
+      inherit.aes = FALSE
+    ) +
+
+    # Peak labels
+    geom_text(
+      data = results,
+      aes(
+        x = offset_mm,
+        y = correlation,
+        label = paste0(
+          round(offset_mm, 1), " mm ",
+          "(r = ", round(correlation, 2), ")"
+        )
+      ),
+      vjust = -0.7,
+      size = 3,
+      inherit.aes = FALSE
+    ) +
+
+    labs(
+      title = "Cross-correlation of L* for the lower sections of MI-24-03 and MI-24-04",
+      x = "Lag (mm)",
+      y = "Pearson correlation (r)",
+      caption = "Highlighted lines indicate the two strongest correlation peaks."
+    ) +
+
+    theme_classic(base_size = 11) +
+
+    theme(
+      plot.title = element_text(
+        face = "bold",
+        size = 11
+      ),
+      plot.caption = element_text(
+        size = 9,
+        hjust = 0
+      )
+    )
+}
+
+plot_ccf(lag_mm, correlation, results)
+```
+
+
+
+
+
+
+```{r, fig.width=3, fig.height=8}
+plot_cores = function(core_3B, core_4B, results) {
+
+  # Negative-lag correlation peak
+  offset_mm = results$offset_mm[results$offset_mm < 0]
+
+  make_plot_data = function(df, core_name, x_pos, offset_mm = 0) {
+    df |>
+      mutate(
+        core = core_name,
+        x = x_pos,
+        plot_depth_cm = (depth_mm + offset_mm) / 10,
+        colour = rgb(
+          R_mean,
+          G_mean,
+          B_mean,
+          maxColorValue = 255
+        )
+      )
+  }
+
+  plot_data = bind_rows(
+    make_plot_data(core_3B, "MI-24-03B", 1.000),
+    make_plot_data(core_4B, "MI-24-04B", 1.018, offset_mm)
+  )
+
+  ggplot(plot_data) +
+    geom_tile(
+      aes(
+        x = x,
+        y = plot_depth_cm,
+        fill = colour
+      ),
+      width = 0.015,
+      height = 0.2
+    ) +
+    scale_fill_identity() +
+    scale_y_reverse() +
+    scale_x_continuous(
+      breaks = c(1.000, 1.018),
+      labels = c("MI-24-03B", "MI-24-04B"),
+      expand = expansion(mult = c(0.02, 0.02))
+    ) +
+    labs(
+      title = "Alignment of the lower sections of MI-24-03 and MI-24-04",
+      x = NULL,
+      y = "Depth (cm)",
+      caption = paste0(
+        "MI-24-04 offset by ",
+        round(offset_mm / 10, 1),
+        " cm based on the cross-correlation of L*."
+      )
+    ) +
+    theme_classic(base_size = 11) +
+    theme(
+      plot.title = element_text(face = "bold", size = 11),
+      plot.caption = element_text(size = 9, hjust = 0)
+    )
+}
+
+plot_cores(core_3B, core_4B, results)
+```
+
+
+
+
+
+
+
+
+```{r, fig.width=3, fig.height=8}
+plot_core_images = function(
+  image_3B,
+  image_4B,
+  core_3B,
+  core_4B,
+  results
+) {
+
+  # ==========================================================
+  # OFFSET
+  # ==========================================================
+
+  offset_mm = results$offset_mm[results$offset_mm < 0]
+
+
+  # ==========================================================
+  # CROP IMAGE TO THE ROWS ACTUALLY REPRESENTED BY THE DATA
+  # ==========================================================
+
+  crop_to_data = function(image, df) {
+
+    info = image_info(image)
+
+    image_width = info$width
+    image_height = info$height
+
+    row_min = floor(min(df$image_row_px, na.rm = TRUE))
+    row_max = ceiling(max(df$image_row_px, na.rm = TRUE))
+
+    # Keep crop inside image
+    row_min = max(0, row_min)
+    row_max = min(image_height, row_max)
+
+    crop_height = row_max - row_min
+
+    image_crop(
+      image,
+      geometry = paste0(
+        image_width,
+        "x",
+        crop_height,
+        "+0+",
+        row_min
+      )
+    )
+  }
+
+
+  image_3B_crop = crop_to_data(
+    image_3B,
+    core_3B
+  )
+
+  image_4B_crop = crop_to_data(
+    image_4B,
+    core_4B
+  )
+
+
+  # ==========================================================
+  # CONVERT TO RASTERS
+  # ==========================================================
+
+  raster_3 = as.raster(image_3B_crop)
+  raster_4 = as.raster(image_4B_crop)
+
+
+  # ==========================================================
+  # DEPTH RANGES
+  # ==========================================================
+
+  depth_3_min = min(
+    core_3B$depth_mm,
+    na.rm = TRUE
+  )
+
+  depth_3_max = max(
+    core_3B$depth_mm,
+    na.rm = TRUE
+  )
+
+
+  depth_4_min = min(
+    core_4B$depth_mm,
+    na.rm = TRUE
+  ) + offset_mm
+
+  depth_4_max = max(
+    core_4B$depth_mm,
+    na.rm = TRUE
+  ) + offset_mm
+
+
+  # ==========================================================
+  # PLOT
+  # ==========================================================
+
+  ggplot() +
+
+    annotation_raster(
+      raster_3,
+      xmin = 0,
+      xmax = 1,
+      ymin = depth_3_min,
+      ymax = depth_3_max,
+      interpolate = TRUE
+    ) +
+
+    annotation_raster(
+      raster_4,
+      xmin = 1.1,
+      xmax = 2.1,
+      ymin = depth_4_min,
+      ymax = depth_4_max,
+      interpolate = TRUE
+    ) +
+
+    scale_y_reverse(
+      limits = c(
+        max(depth_3_max, depth_4_max),
+        min(depth_3_min, depth_4_min)
+      ),
+      expand = expansion(mult = 0.01)
+    ) +
+
+    scale_x_continuous(
+      breaks = c(0.5, 1.6),
+      labels = c(
+        "MI-24-03B",
+        "MI-24-04B"
+      ),
+      limits = c(-0.05, 2.15),
+      expand = c(0, 0)
+    ) +
+
+    labs(
+      title =
+        "Alignment of the lower sections of MI-24-03 and MI-24-04",
+
+      x = NULL,
+
+      y = "Depth (mm)",
+
+      caption = paste0(
+        "MI-24-04 offset by ",
+        round(offset_mm, 1),
+        " mm based on the cross-correlation of L*."
+      )
+    ) +
+
+    theme_classic(base_size = 11) +
+
+    theme(
+      plot.title = element_text(
+        face = "bold",
+        size = 11
+      ),
+
+      plot.caption = element_text(
+        size = 9,
+        hjust = 0
+      )
+    )
+}
+
+
+plot_core_images(
+  image_3B,
+  image_4B,
+  core_3B,
+  core_4B,
+  results
+)
+```
+
+
 
 
