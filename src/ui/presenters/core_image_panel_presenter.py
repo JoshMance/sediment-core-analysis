@@ -5,6 +5,7 @@ import logging
 import numpy as np
 from PySide6.QtCore import QObject
 from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from src.application import AppController
 from src.domain.store import Store
@@ -41,6 +42,7 @@ class CoreImagePanelPresenter(QObject):
         view.distanceCalibrated.connect(self._on_distance_calibrated)
         view.illuminantChanged.connect(self._on_illuminant_changed)
         view.filterStackChanged.connect(self._on_filter_stack_changed)
+        view.exportImageRequested.connect(self._on_export_image)
         store.entityUpdated.connect(self._on_entity_updated)
 
         entity = self._store.get(self._entity_id)
@@ -80,6 +82,28 @@ class CoreImagePanelPresenter(QObject):
 
     def _on_filter_stack_changed(self, stack: list[dict]) -> None:
         self._controller.set_filter_stack(self._entity_id, stack)
+
+    def _on_export_image(self) -> None:
+        entity = self._store.get(self._entity_id)
+        if entity is None:
+            return
+        dialog = QFileDialog(self._view)
+        dialog.setWindowTitle("Export Image")
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        dialog.setFileMode(QFileDialog.FileMode.AnyFile)
+        dialog.setNameFilter("PNG or JPEG images (*.png *.jpg *.jpeg)")
+        dialog.setDefaultSuffix("png")
+        dialog.selectFile(f"{entity.name.rsplit('.', 1)[0]}.png")
+        if dialog.exec() != QFileDialog.DialogCode.Accepted:
+            return
+        paths = dialog.selectedFiles()
+        if not paths:
+            return
+        path = paths[0].strip()
+        try:
+            self._controller.export_core_to_image(self._entity_id, path)
+        except (OSError, ValueError) as error:
+            QMessageBox.critical(self._view, "Export Failed", str(error))
 
     def _on_entity_updated(self, entity_id: str, entity_type: str) -> None:
         if entity_id != self._entity_id:

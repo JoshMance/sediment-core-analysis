@@ -43,6 +43,21 @@ def test_import_image_creates_core_entity(tmp_path: Path) -> None:
     assert entity.base_data.shape == expected.shape
 
 
+def test_export_core_to_image_writes_resolved_png(tmp_path: Path) -> None:
+    store = Store()
+    controller = AppController(store)
+    source = np.array(
+        [[[10, 20, 30], [40, 50, 60]]],
+        dtype=np.uint8,
+    )
+    core_id = controller.create_core_entity(name="exportable", base_data=source)
+    path = tmp_path / "exported.png"
+
+    controller.export_core_to_image(core_id, path)
+
+    assert np.array_equal(iio.imread(path), source)
+
+
 def test_create_child_core_preserves_lineage(tmp_path: Path) -> None:
     store = Store()
     controller = AppController(store)

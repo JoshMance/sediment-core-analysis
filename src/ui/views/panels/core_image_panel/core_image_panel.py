@@ -28,6 +28,8 @@ class CoreImagePanel(QWidget):
     illuminantChanged = Signal(object)
     # Emitted when the filter stack changes; carries the new list[dict].
     filterStackChanged = Signal(list)
+    # Emitted when the user requests an export of the resolved image.
+    exportImageRequested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -144,6 +146,14 @@ class CoreImagePanel(QWidget):
         self._calibrate_btn.setFixedHeight(28)
         self._calibrate_btn.clicked.connect(self._on_calibrate_toggled)
         tb.addWidget(self._calibrate_btn)
+
+        tb.addSeparator()
+
+        export_btn = QPushButton("Export Image")
+        export_btn.setToolTip("Save the resolved image as PNG or JPEG")
+        export_btn.setFixedHeight(28)
+        export_btn.clicked.connect(self.exportImageRequested)
+        tb.addWidget(export_btn)
 
         tb.addSeparator()
 

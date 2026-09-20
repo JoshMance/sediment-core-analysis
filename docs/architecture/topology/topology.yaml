@@ -103,6 +103,7 @@ application:
         - set_dataset_plots
         - split_core
         - export_core_to_excel
+        - export_core_to_image
 
     - name: StatusContext
       lifetime: long-lived
@@ -136,6 +137,8 @@ application:
     - name: workspace_service
       actions: [open_entity]
     - name: export_excel
+      actions: [export_core]
+    - name: export_image
       actions: [export_core]
 
 ui:
@@ -208,6 +211,7 @@ ui:
           ImageCanvas.cropChanged,
           ImageCanvas.pixelHovered,
           ImageCanvas.pixelLeft,
+          CoreImagePanel.exportImageRequested,
         ]
 
     - name: DatasetPanelPresenter
