@@ -1,24 +1,45 @@
 ---
-title: "Core Correlation Analysis (Joshua Mance, 20/9/2026)"
-output: html_notebook
+title: "Core Correlation Analysis (Joshua Mance, 28/9/2026)"
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 ```{r}
-library(dtw)
-library(magick)
-library(grid)
-library(pracma)
-library(prospectr)
-library(dplyr)
-library(tidyr)
-library(readxl)
-library(ggplot2)
-library(plotly)
+if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
+
+pacman::p_load(
+  patchwork,
+  dtw,
+  magick, 
+  grid, 
+  pracma, 
+  prospectr, 
+  dplyr, 
+  tidyr, 
+  readxl, 
+  ggplot2, 
+  plotly,
+  ggtext
+)
+
+citation("dtw")
 ```
 
+```{r}
+# Loading images
+list.files("Images")
+
+image_3A = image_read(file.path("Images", "MI-24-03-A.png")) |> image_rotate(-90)
+image_3B = image_read(file.path("Images", "MI-24-03-B.png")) |> image_rotate(-90)
+
+image_4A = image_read(file.path("Images", "MI-24-04-A.png")) |> image_rotate(-90)
+image_4B = image_read(file.path("Images", "MH-24-04-B.png")) |> image_rotate(-90)
+
+```
 
 ```{r}
-# Loading the data, concatenating the top (A) and bottom (B) parts of the cores
+# Loading the data
 
 load_data = function(folder, file) {
   file_path = file.path(folder, file)
@@ -37,6 +58,9 @@ core_4A = load_data("Data", "MI-24-04_A.xlsx")
 core_4B = load_data("Data", "MI-24-04_B.xlsx")
 
 
+
+## Concatenating the top (A) and bottom (B) parts of the cores
+
 core_3 = bind_rows(
   core_3A,
   core_3B |> mutate(depth_mm = depth_mm + max(core_3A$depth_mm))
@@ -49,24 +73,8 @@ core_4 = bind_rows(
 
 ```
 
-
 ```{r}
-library(magick)
-
-list.files("Images")
-
-image_3A = image_read(file.path("Images", "MI-24-03-A.png")) |> image_rotate(-90)
-image_3B = image_read(file.path("Images", "MI-24-03-B.png")) |> image_rotate(-90)
-
-image_4A = image_read(file.path("Images", "MI-24-04-A.png")) |> image_rotate(-90)
-image_4B = image_read(file.path("Images", "MH-24-04-B.png")) |> image_rotate(-90)
-
-```
-
-
-
-
-```{r}
+# Helper functions for smoothing and detrending
 smooth = function(x, window) {
   as.numeric(
     stats::filter(x, rep(1/window, window), sides = 2)
@@ -76,9 +84,9 @@ detrend = function(x, window) {
   x - smooth(x, window)
 }
 
-# Applying across all cores and window sizes
+# Applying across all cores and window sizes (creating new cols)
 for (window in c(5, 11, 21)) {
-  for (core_name in c("core_3A", "core_3B", "core_4A", "core_4B")) {
+  for (core_name in c("core_3", "core_4", "core_3A", "core_3B", "core_4A", "core_4B")) {
     
     df = get(core_name)
     for (axis in c("L_star", "a_star", "b_star")) {
@@ -93,145 +101,140 @@ for (window in c(5, 11, 21)) {
 
 ```
 
+```{r}
+# Plotting a single dimension from multiple cores
+plot_series = function(..., axis) {
+
+  series_list = list(...)
+  series_names = as.character(substitute(list(...)))[-1]
+
+  plot_df = bind_rows(
+    lapply(
+      seq_along(series_list),
+      function(i) {
+        series_list[[i]] |>
+          mutate(series = series_names[i])
+      }
+    )
+  ) |>
+    filter(!is.na(.data[[axis]]), !is.na(depth_mm))
+
+  ggplot(plot_df, aes(x = .data[[axis]], y = depth_mm)) +
+    geom_path(colour = "blue") +
+    scale_y_reverse() +
+    facet_wrap(~ series, nrow = 1) +
+    labs(
+      x = axis
+    ) +
+    theme_classic() +
+    theme(
+      aspect.ratio = 5
+    )
+}
+
+
+plot_series(
+  core_3B,
+  core_4B,
+  axis = "L_star_smooth_11"
+)
+
+```
+
+
 
 ```{r}
-# Plotting a single dim from both cores
 
-series_1 = core_3B
-series_2 = core_4B
-axis = "L_star"
+cross_correlate = function(
+  series_1,
+  series_2,
+  axis,
+  depth_step = 0.5,
+  max_lag_mm = 1000
+) {
 
-
-plot_df = bind_rows(
-  series_1 |> mutate(series = "Series 1"),
-  series_2 |> mutate(series = "Series 2")
-) |>
-  filter(!is.na(.data[[axis]]), !is.na(depth_mm))
-
-ggplot(plot_df, aes(x = .data[[axis]], y = depth_mm)) +
-  geom_path(colour = "blue") +
-  scale_y_reverse() +
-  facet_wrap(~ series, nrow = 1) +
-  labs(
-    x = axis,
-    y = "Depth (mm)"
-  ) +
-  theme_classic() +
-  theme(
-    aspect.ratio = 5
+  # Common depth grid
+  depth = seq(
+    min(series_1$depth_mm),
+    max(series_1$depth_mm),
+    by = depth_step
   )
 
-```
+  # Interpolate onto common depth grid
+  x1 = approx(
+    x = series_1$depth_mm,
+    y = series_1[[axis]],
+    xout = depth,
+    ties = mean
+  )$y
 
+  x2 = approx(
+    x = series_2$depth_mm,
+    y = series_2[[axis]],
+    xout = depth,
+    ties = mean
+  )$y
 
+  # Remove positions where either profile is NA
+  valid = !is.na(x1) & !is.na(x2)
 
-```{r}
-# Performing a Pearson cross-correlation
-series_1 <- core_3B
-series_2 <- core_4B
+  x1 = x1[valid]
+  x2 = x2[valid]
 
-axis <- "L_star_smooth_21"
-
-depth_step <- 0.1
-max_lag_mm <- 1000
-
-
-
-# Common overlapping depth range
-depth_min <- max(
-  min(series_1$depth_mm, na.rm = TRUE),
-  min(series_2$depth_mm, na.rm = TRUE)
-)
-
-depth_max <- min(
-  max(series_1$depth_mm, na.rm = TRUE),
-  max(series_2$depth_mm, na.rm = TRUE)
-)
-
-# Common depth grid
-depth <- seq(
-  depth_min,
-  depth_max,
-  by = depth_step
-)
-
-# Interpolate onto common depth grid
-x1 <- approx(
-  x = series_1$depth_mm,
-  y = series_1[[axis]],
-  xout = depth,
-  ties = mean
-)$y
-
-x2 <- approx(
-  x = series_2$depth_mm,
-  y = series_2[[axis]],
-  xout = depth,
-  ties = mean
-)$y
-
-# Remove positions where either profile is NA
-valid <- !is.na(x1) & !is.na(x2)
-
-x1 <- x1[valid]
-x2 <- x2[valid]
-
-# Cross-correlation
-result <- ccf(
-  x1,
-  x2,
-  lag.max = max_lag_mm / depth_step,
-  plot = FALSE
-)
-
-# Convert lag to actual depth offset in mm
-lag_mm <- as.vector(result$lag) * depth_step
-correlation <- as.vector(result$acf)
-```
-
-
-```{r}
-i_pos <- which.max(correlation[lag_mm > 0])
-i_pos <- which(lag_mm > 0)[i_pos]
-
-i_neg <- which.max(correlation[lag_mm < 0])
-i_neg <- which(lag_mm < 0)[i_neg]
-
-i <- c(i_neg, i_pos)
-
-results <- data.frame(
-  correlation = correlation[i],
-  offset_mm = lag_mm[i]
-)
-
-results
-
-```
-
-
-
-```{r}
-
-plot_ccf = function(lag_mm, correlation, results) {
-
-  df = data.frame(
-    lag_mm = lag_mm,
-    correlation = correlation
+  # Cross-correlation
+  result = ccf(
+    x1,
+    x2,
+    lag.max = max_lag_mm / depth_step,
+    plot = FALSE
   )
 
-  ggplot(df, aes(x = lag_mm, y = correlation)) +
+  # Convert lag to depth
+  data.frame(
+    lag_mm = as.vector(result$lag) * depth_step,
+    correlation = as.vector(result$acf)
+  )
+}
 
-    # Zero correlation line
+
+
+ccf_result = cross_correlate(
+  core_3B,
+  core_4B,
+  axis = "L_star_smooth_11"
+)
+```
+
+
+```{r}
+get_peak = function(ccf_result) {
+
+  i = which.max(ccf_result$correlation)
+
+  data.frame(
+    correlation = ccf_result$correlation[i],
+    offset_mm = ccf_result$lag_mm[i]
+  )
+}
+
+peak = get_peak(ccf_result)
+```
+
+
+
+```{r}
+plot_ccf = function(ccf_result, peak) {
+
+  ggplot(ccf_result, aes(x = lag_mm, y = correlation)) +
+
     geom_hline(
       yintercept = 0,
       colour = "black",
       linewidth = 0.5
     ) +
 
-    # Cross-correlation
     geom_segment(
       aes(
-        x = lag_mm,
         xend = lag_mm,
         y = 0,
         yend = correlation
@@ -240,9 +243,8 @@ plot_ccf = function(lag_mm, correlation, results) {
       linewidth = 0.3
     ) +
 
-    # Highlighted peaks
     geom_segment(
-      data = results,
+      data = peak,
       aes(
         x = offset_mm,
         xend = offset_mm,
@@ -254,9 +256,8 @@ plot_ccf = function(lag_mm, correlation, results) {
       inherit.aes = FALSE
     ) +
 
-    # Peak labels
     geom_text(
-      data = results,
+      data = peak,
       aes(
         x = offset_mm,
         y = correlation,
@@ -271,95 +272,14 @@ plot_ccf = function(lag_mm, correlation, results) {
     ) +
 
     labs(
-      title = "Cross-correlation of L* for the lower sections of MI-24-03 and MI-24-04",
       x = "Lag (mm)",
-      y = "Pearson correlation (r)",
-      caption = "Highlighted lines indicate the two strongest correlation peaks."
+      y = "Pearson correlation (r)"
     ) +
 
-    theme_classic(base_size = 11) +
-
-    theme(
-      plot.title = element_text(
-        face = "bold",
-        size = 11
-      ),
-      plot.caption = element_text(
-        size = 9,
-        hjust = 0
-      )
-    )
+    theme_classic(base_size = 11)
 }
 
-plot_ccf(lag_mm, correlation, results)
-```
-
-
-
-
-
-
-```{r, fig.width=3, fig.height=8}
-plot_cores = function(core_3B, core_4B, results) {
-
-  # Negative-lag correlation peak
-  offset_mm = results$offset_mm[results$offset_mm < 0]
-
-  make_plot_data = function(df, core_name, x_pos, offset_mm = 0) {
-    df |>
-      mutate(
-        core = core_name,
-        x = x_pos,
-        plot_depth_cm = (depth_mm + offset_mm) / 10,
-        colour = rgb(
-          R_mean,
-          G_mean,
-          B_mean,
-          maxColorValue = 255
-        )
-      )
-  }
-
-  plot_data = bind_rows(
-    make_plot_data(core_3B, "MI-24-03B", 1.000),
-    make_plot_data(core_4B, "MI-24-04B", 1.018, offset_mm)
-  )
-
-  ggplot(plot_data) +
-    geom_tile(
-      aes(
-        x = x,
-        y = plot_depth_cm,
-        fill = colour
-      ),
-      width = 0.015,
-      height = 0.2
-    ) +
-    scale_fill_identity() +
-    scale_y_reverse() +
-    scale_x_continuous(
-      breaks = c(1.000, 1.018),
-      labels = c("MI-24-03B", "MI-24-04B"),
-      expand = expansion(mult = c(0.02, 0.02))
-    ) +
-    labs(
-      title = "Alignment of the lower sections of MI-24-03 and MI-24-04",
-      x = NULL,
-      y = "Depth (cm)",
-      caption = paste0(
-        "MI-24-04 offset by ",
-        round(offset_mm / 10, 1),
-        " cm based on the cross-correlation of L*."
-      )
-    ) +
-    theme_classic(base_size = 11) +
-    theme(
-      plot.title = element_text(face = "bold", size = 11),
-      plot.caption = element_text(size = 9, hjust = 0)
-    )
-}
-
-plot_cores(core_3B, core_4B, results)
+#plot_ccf(ccf_result, peak)
 ```
 
 
@@ -368,38 +288,288 @@ plot_cores(core_3B, core_4B, results)
 
 
 
+```{r}
 
-```{r, fig.width=3, fig.height=8}
 plot_core_images = function(
-  image_3B,
-  image_4B,
-  core_3B,
-  core_4B,
-  results
+  image_1,
+  image_2,
+  series_1,
+  series_2,
+  offset_mm
 ) {
 
-  # ==========================================================
-  # OFFSET
-  # ==========================================================
-
-  offset_mm = results$offset_mm[results$offset_mm < 0]
-
-
-  # ==========================================================
-  # CROP IMAGE TO THE ROWS ACTUALLY REPRESENTED BY THE DATA
-  # ==========================================================
-
-  crop_to_data = function(image, df) {
+  # Cropping an image to the rows represented by its data
+  crop_to_data = function(image, series) {
 
     info = image_info(image)
 
     image_width = info$width
     image_height = info$height
 
-    row_min = floor(min(df$image_row_px, na.rm = TRUE))
-    row_max = ceiling(max(df$image_row_px, na.rm = TRUE))
+    row_min = floor(min(series$image_row_px, na.rm = TRUE))
+    row_max = ceiling(max(series$image_row_px, na.rm = TRUE))
 
-    # Keep crop inside image
+    row_min = max(0, row_min)
+    row_max = min(image_height, row_max)
+
+    crop_height = row_max - row_min
+
+    image_crop(
+      image,
+      geometry = paste0(
+        image_width,
+        "x",
+        crop_height,
+        "+0+",
+        row_min
+      )
+    )
+  }
+
+  image_1_crop = crop_to_data(image_1, series_1)
+  image_2_crop = crop_to_data(image_2, series_2)
+
+  raster_1 = as.raster(image_1_crop)
+  raster_2 = as.raster(image_2_crop)
+
+  depth_1_min = min(series_1$depth_mm, na.rm = TRUE)
+  depth_1_max = max(series_1$depth_mm, na.rm = TRUE)
+
+  depth_2_min = min(series_2$depth_mm, na.rm = TRUE) + offset_mm
+  depth_2_max = max(series_2$depth_mm, na.rm = TRUE) + offset_mm
+
+  ggplot() +
+
+    annotation_raster(
+      raster_1,
+      xmin = 0,
+      xmax = 1,
+      ymin = depth_1_min,
+      ymax = depth_1_max,
+      interpolate = TRUE
+    ) +
+
+    annotation_raster(
+      raster_2,
+      xmin = 1.1,
+      xmax = 2.1,
+      ymin = depth_2_min,
+      ymax = depth_2_max,
+      interpolate = TRUE
+    ) +
+
+    scale_y_reverse(
+      limits = c(
+        max(depth_1_max, depth_2_max),
+        min(depth_1_min, depth_2_min)
+      ),
+      expand = expansion(mult = 0.01)
+    ) +
+
+    scale_x_continuous(
+      breaks = c(0.5, 1.6),
+      labels = c("Series 1", "Series 2"),
+      limits = c(-0.05, 2.15),
+      expand = c(0, 0)
+    ) +
+
+    labs(
+      x = NULL,
+      y = "Depth (mm)",
+      caption = paste0(
+        "Series 2 offset by ",
+        round(offset_mm, 1),
+        " mm."
+      )
+    ) +
+
+    theme_classic(base_size = 10) +
+
+    theme(
+      aspect.ratio = 4,
+      plot.caption = element_text(
+        size = 8,
+        hjust = 0
+      )
+    )
+}
+
+
+
+# plot_core_images(
+#   image_3B,
+#   image_4B,
+#   core_3B,
+#   core_4B,
+#   offset_mm = peak$offset_mm
+# )
+```
+
+
+
+```{r}
+run_correlation = function(
+  series_1,
+  series_2,
+  image_1,
+  image_2,
+  axis,
+  depth_step = 0.5,
+  max_lag_mm = 1000,
+  show_plots = TRUE
+) {
+
+  # Cross-correlation
+  ccf_result = cross_correlate(
+    series_1,
+    series_2,
+    axis = axis,
+    depth_step = depth_step,
+    max_lag_mm = max_lag_mm
+  )
+
+  # Best correlation
+  peak = get_peak(ccf_result)
+
+  # Translate second series
+  series_2_translated = series_2 |>
+    mutate(
+      depth_mm = depth_mm + peak$offset_mm
+    )
+
+  # Plots
+  ccf_plot = plot_ccf(
+    ccf_result,
+    peak
+  )
+
+  image_plot = plot_core_images(
+    image_1,
+    image_2,
+    series_1,
+    series_2,
+    offset_mm = peak$offset_mm
+  )
+
+  # Print plots
+  if (show_plots) {
+    print(ccf_plot)
+    print(image_plot)
+  }
+
+  # Return everything
+  invisible(list(
+    ccf_result = ccf_result,
+    peak = peak,
+    series_2_translated = series_2_translated,
+    ccf_plot = ccf_plot,
+    image_plot = image_plot
+  ))
+}
+
+
+```
+
+```{r}
+
+result_A = run_correlation(
+  core_3A,
+  core_4A,
+  image_3A,
+  image_4A,
+  axis = "L_star"
+)
+
+
+
+result_B = run_correlation(
+  core_3B,
+  core_4B,
+  image_3B,
+  image_4B,
+  axis = "L_star"
+)
+
+
+
+```
+
+
+
+```{r}
+
+
+# Offsets from correlation
+offset_A_mm = result_A$peak$offset_mm
+offset_B_mm = result_B$peak$offset_mm
+
+
+# Depth ranges after internal alignment
+depth_1A = range(core_3A$depth_mm, na.rm = TRUE)
+depth_2A = range(core_4A$depth_mm, na.rm = TRUE) + offset_A_mm
+
+depth_1B = range(core_3B$depth_mm, na.rm = TRUE)
+depth_2B = range(core_4B$depth_mm, na.rm = TRUE) + offset_B_mm
+
+
+# Drop the A pair onto the B pair
+shift_1 = depth_1B[1] - depth_1A[2]
+shift_2 = depth_2B[1] - depth_2A[2]
+
+A_shift = min(shift_1, shift_2)
+
+
+# Apply the same rigid translation to both A cores
+depth_1A = depth_1A + A_shift
+depth_2A = depth_2A + A_shift
+
+
+# Overall plot limits
+depth_min = min(
+  depth_1A[1],
+  depth_2A[1],
+  depth_1B[1],
+  depth_2B[1]
+)
+
+depth_max = max(
+  depth_1A[2],
+  depth_2A[2],
+  depth_1B[2],
+  depth_2B[2]
+)
+
+
+
+plot_core_images_4 = function(
+  image_1A,
+  image_2A,
+  image_1B,
+  image_2B,
+  series_1A,
+  series_2A,
+  series_1B,
+  series_2B,
+  depth_1A,
+  depth_2A,
+  depth_1B,
+  depth_2B,
+  depth_min,
+  depth_max,
+  axis
+) {
+
+  # Cropping an image to the rows represented by its data
+  crop_to_data = function(image, series) {
+
+    info = image_info(image)
+
+    image_width = info$width
+    image_height = info$height
+
+    row_min = floor(min(series$image_row_px, na.rm = TRUE))
+    row_max = ceiling(max(series$image_row_px, na.rm = TRUE))
+
     row_min = max(0, row_min)
     row_max = min(image_height, row_max)
 
@@ -418,133 +588,416 @@ plot_core_images = function(
   }
 
 
-  image_3B_crop = crop_to_data(
-    image_3B,
-    core_3B
+  # Convert the original series depths onto their plotted depths
+  transform_depth = function(series, depth_range) {
+
+    original_range = range(
+      series$depth_mm,
+      na.rm = TRUE
+    )
+
+    depth_range[1] +
+      (series$depth_mm - original_range[1]) /
+      diff(original_range) *
+      diff(depth_range)
+  }
+
+
+  # Crop images
+  raster_1A = as.raster(
+    crop_to_data(image_1A, series_1A)
   )
 
-  image_4B_crop = crop_to_data(
-    image_4B,
-    core_4B
+  raster_2A = as.raster(
+    crop_to_data(image_2A, series_2A)
+  )
+
+  raster_1B = as.raster(
+    crop_to_data(image_1B, series_1B)
+  )
+
+  raster_2B = as.raster(
+    crop_to_data(image_2B, series_2B)
   )
 
 
-  # ==========================================================
-  # CONVERT TO RASTERS
-  # ==========================================================
-
-  raster_3 = as.raster(image_3B_crop)
-  raster_4 = as.raster(image_4B_crop)
-
-
-  # ==========================================================
-  # DEPTH RANGES
-  # ==========================================================
-
-  depth_3_min = min(
-    core_3B$depth_mm,
-    na.rm = TRUE
+  # Profile data
+  profile_1A = data.frame(
+    value = series_1A[[axis]],
+    depth_mm = transform_depth(series_1A, depth_1A),
+    section = "A"
   )
 
-  depth_3_max = max(
-    core_3B$depth_mm,
-    na.rm = TRUE
+  profile_1B = data.frame(
+    value = series_1B[[axis]],
+    depth_mm = transform_depth(series_1B, depth_1B),
+    section = "B"
+  )
+
+  profile_2A = data.frame(
+    value = series_2A[[axis]],
+    depth_mm = transform_depth(series_2A, depth_2A),
+    section = "A"
+  )
+
+  profile_2B = data.frame(
+    value = series_2B[[axis]],
+    depth_mm = transform_depth(series_2B, depth_2B),
+    section = "B"
   )
 
 
-  depth_4_min = min(
-    core_4B$depth_mm,
-    na.rm = TRUE
-  ) + offset_mm
-
-  depth_4_max = max(
-    core_4B$depth_mm,
-    na.rm = TRUE
-  ) + offset_mm
-
-
-  # ==========================================================
-  # PLOT
-  # ==========================================================
-
-  ggplot() +
+  # Core image plot
+  image_plot = ggplot() +
 
     annotation_raster(
-      raster_3,
+      raster_1A,
       xmin = 0,
       xmax = 1,
-      ymin = depth_3_min,
-      ymax = depth_3_max,
+      ymin = depth_1A[1],
+      ymax = depth_1A[2],
       interpolate = TRUE
     ) +
 
     annotation_raster(
-      raster_4,
+      raster_2A,
       xmin = 1.1,
       xmax = 2.1,
-      ymin = depth_4_min,
-      ymax = depth_4_max,
+      ymin = depth_2A[1],
+      ymax = depth_2A[2],
+      interpolate = TRUE
+    ) +
+
+    annotation_raster(
+      raster_1B,
+      xmin = 0,
+      xmax = 1,
+      ymin = depth_1B[1],
+      ymax = depth_1B[2],
+      interpolate = TRUE
+    ) +
+
+    annotation_raster(
+      raster_2B,
+      xmin = 1.1,
+      xmax = 2.1,
+      ymin = depth_2B[1],
+      ymax = depth_2B[2],
       interpolate = TRUE
     ) +
 
     scale_y_reverse(
-      limits = c(
-        max(depth_3_max, depth_4_max),
-        min(depth_3_min, depth_4_min)
-      ),
-      expand = expansion(mult = 0.01)
+      limits = c(depth_max, depth_min),
+      expand = c(0, 0)
     ) +
 
     scale_x_continuous(
       breaks = c(0.5, 1.6),
-      labels = c(
-        "MI-24-03B",
-        "MI-24-04B"
-      ),
+      labels = c("Series 1", "Series 2"),
       limits = c(-0.05, 2.15),
       expand = c(0, 0)
     ) +
 
     labs(
-      title =
-        "Alignment of the lower sections of MI-24-03 and MI-24-04",
-
       x = NULL,
+      y = "Depth (mm)"
+    ) +
 
-      y = "Depth (mm)",
+    theme_classic(base_size = 10)
 
-      caption = paste0(
-        "MI-24-04 offset by ",
-        round(offset_mm, 1),
-        " mm based on the cross-correlation of L*."
+
+  # Series 1 profile
+  profile_plot_1 = bind_rows(
+    profile_1A,
+    profile_1B
+  ) |>
+    filter(
+      !is.na(value),
+      !is.na(depth_mm)
+    ) |>
+    ggplot(
+      aes(
+        x = value,
+        y = depth_mm,
+        colour = section,
+        group = section
       )
     ) +
 
-    theme_classic(base_size = 11) +
+    geom_path(
+      linewidth = 0.5
+    ) +
+
+    scale_y_reverse(
+      limits = c(depth_max, depth_min),
+      expand = c(0, 0)
+    ) +
+
+    labs(
+      x = axis,
+      y = NULL,
+      colour = NULL
+    ) +
+
+    theme_classic(base_size = 10) +
 
     theme(
-      plot.title = element_text(
-        face = "bold",
-        size = 11
-      ),
+      axis.text.y = element_blank(),
+      axis.ticks.y = element_blank(),
+      legend.position = "none"
+    )
 
-      plot.caption = element_text(
-        size = 9,
-        hjust = 0
+
+  # Series 2 profile
+  profile_plot_2 = bind_rows(
+    profile_2A,
+    profile_2B
+  ) |>
+    filter(
+      !is.na(value),
+      !is.na(depth_mm)
+    ) |>
+    ggplot(
+      aes(
+        x = value,
+        y = depth_mm,
+        colour = section,
+        group = section
       )
+    ) +
+
+    geom_path(
+      linewidth = 0.5
+    ) +
+
+    scale_y_reverse(
+      limits = c(depth_max, depth_min),
+      expand = c(0, 0)
+    ) +
+
+    labs(
+      x = axis,
+      y = NULL,
+      colour = NULL
+    ) +
+
+    theme_classic(base_size = 10) +
+
+    theme(
+      axis.text.y = element_blank(),
+      axis.ticks.y = element_blank(),
+      legend.position = "none"
+    )
+
+
+  # Combine image and profile plots
+  image_plot +
+    profile_plot_1 +
+    profile_plot_2 +
+    patchwork::plot_layout(
+      widths = c(2, 1, 1)
     )
 }
 
 
-plot_core_images(
+
+plot_core_images_4(
+  image_3A,
+  image_4A,
   image_3B,
   image_4B,
+  core_3A,
+  core_4A,
   core_3B,
   core_4B,
-  results
+  depth_1A,
+  depth_2A,
+  depth_1B,
+  depth_2B,
+  depth_min,
+  depth_max,
+  axis = "L_star_smooth_11"
 )
 ```
 
 
 
 
+
+
+
+
+
+
+
+
+```{r}
+library(dtw)
+
+# ============================================================
+# CONSTRAINED DTW
+#
+# MI-24-03B = fixed reference
+# MI-24-04B = core being stretched/compressed
+# ============================================================
+
+align_cores_dtw = function(
+  x1,
+  x2,
+  depth,
+  valid,
+  results,
+  depth_step = 0.5,
+  max_warp_mm = 50
+) {
+
+  # Use the strongest cross-correlation peak as the
+  # initial global translation
+  best = results[which.max(results$correlation), ]
+
+  offset_mm = best$offset_mm
+  offset_steps = round(offset_mm / depth_step)
+
+  d = depth[valid]
+
+  # Apply global translation first
+  if (offset_steps > 0) {
+
+    reference = x1[(1 + offset_steps):length(x1)]
+    target = x2[1:(length(x2) - offset_steps)]
+
+    reference_depth = d[(1 + offset_steps):length(d)]
+    target_depth = d[1:(length(d) - offset_steps)]
+
+  } else if (offset_steps < 0) {
+
+    reference = x1[1:(length(x1) + offset_steps)]
+    target = x2[(1 - offset_steps):length(x2)]
+
+    reference_depth = d[1:(length(d) + offset_steps)]
+    target_depth = d[(1 - offset_steps):length(d)]
+
+  } else {
+
+    reference = x1
+    target = x2
+
+    reference_depth = d
+    target_depth = d
+  }
+
+  # Maximum permitted local deformation
+  window_steps = round(max_warp_mm / depth_step)
+
+  # Constrained DTW
+  alignment = dtw(
+    reference,
+    target,
+
+    step.pattern = symmetricP1,
+
+    window.type = "sakoechiba",
+    window.size = window_steps,
+
+    keep = TRUE
+  )
+
+  # Extract the warping path
+  path = data.frame(
+    reference_depth_mm = reference_depth[alignment$index1],
+    original_target_depth_mm = target_depth[alignment$index2]
+  )
+
+  # Where each point in core 4 is mapped in core 3
+  path$warped_target_depth_mm =
+    path$reference_depth_mm
+
+  # Local displacement required
+  path$warp_mm =
+    path$warped_target_depth_mm -
+    path$original_target_depth_mm
+
+  return(list(
+    alignment = alignment,
+    path = path,
+    global_offset_mm = offset_mm
+  ))
+}
+
+```
+```{r}
+dtw_result = align_cores_dtw(
+  x1,
+  x2,
+  depth,
+  valid,
+  results,
+  depth_step = depth_step,
+  max_warp_mm = 50
+)
+```
+
+
+```{r}
+
+plot_dtw_mapping = function(dtw_result) {
+
+  path = dtw_result$path
+
+  ggplot(
+    path,
+    aes(
+      x = original_target_depth_mm,
+      y = warped_target_depth_mm
+    )
+  ) +
+    geom_abline(
+      slope = 1,
+      intercept = 0,
+      linetype = "dashed"
+    ) +
+    geom_line(
+      linewidth = 0.8
+    ) +
+    labs(
+      title = "DTW depth transformation of MI-24-04B",
+      x = "Original MI-24-04B depth (mm)",
+      y = "Corresponding MI-24-03B depth (mm)"
+    ) +
+    theme_classic(base_size = 11)
+}
+
+plot_dtw_mapping(dtw_result)
+
+```
+```{r}
+pearson_after_dtw = function(
+  x1,
+  x2,
+  dtw_result
+) {
+
+  alignment = dtw_result$alignment
+
+  # Values paired by the DTW warping path
+  reference_values = x1[alignment$index1]
+  warped_values = x2[alignment$index2]
+
+  # Pearson correlation after DTW alignment
+  r = cor(
+    reference_values,
+    warped_values,
+    method = "pearson",
+    use = "complete.obs"
+  )
+
+  return(r)
+}
+
+
+pearson_after_dtw(
+  x1,
+  x2,
+  dtw_result
+)
+```
