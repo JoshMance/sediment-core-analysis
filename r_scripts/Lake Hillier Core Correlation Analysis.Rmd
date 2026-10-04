@@ -1,0 +1,832 @@
+---
+title: "Lake Hillier Core Correlation Analysis"
+author: "Joshua Mance"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+**AI Use Disclosure**
+
+Generative AI tools were used to assist with code development and debugging. All AI-assisted code was reviewed, edited and verified by the author, who takes full responsibility for the resulting analyses and their interpretation.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
+pacman::p_load(
+  patchwork,
+  dtw,
+  magick, 
+  grid, 
+  pracma, 
+  prospectr, 
+  dplyr, 
+  tidyr, 
+  readxl, 
+  ggplot2, 
+  plotly,
+  ggtext
+)
+```
+
+# 1. Introduction 
+
+This report looks at whether CIELAB colour profiles from images of three sediment cores sampled from Lake Hillier can be used to estimate their relative depth offsets. We first compare the L* profiles using Pearson cross-correlation, shifting each pair of cores to find where they correlate most closely. The strongest peaks give plausible alignments,, but the corresponding correlation coefficients are relatively weak. The repeated light and dark banding also produces a periodic pattern in the cross-correlation, with several competing peaks. Horizons that appear to match between cores also vary in thickness, possibly due to differences in sediment accumulation or compression during sampling. A single translation therefore cannot account for all of the variation between the profiles.
+
+We then test dynamic time warping (DTW), which allows the alignment to change with depth by locally stretching or compressing the L* profiles. The amount of warping is constrained to avoid large distortions. The resulting alignments match prominent horizons in the core images and are consistent across all three pairwise comparisons.
+
+# 2. Data and Methods
+
+We use images and colour profile data for cores MI-24-02, MI-24-03 and MI-24-04. Sedivis was used to crop the core images, calibrate their depth scales and extract the colour data used in this analysis. MI-24-03 and MI-24-04 are split into upper (A) and lower (B) sections, while MI-24-02 is represented by a single image.
+```{r analysis-settings}
+
+depth_step = 0.5
+max_lag_mm = 1000
+
+
+max_translation_mm = 500
+max_warp_mm = 100
+coarse_translation_step_mm = 10
+fine_translation_step_mm = 0.5
+
+```
+
+```{r load-images, include=FALSE}
+
+# Loading the images
+
+load_image = function(filename) {
+  image_read(file.path("Images", filename)) |>
+    image_rotate(-90)
+}
+
+image_2  = load_image("MI-24-02.png")
+
+image_3A = load_image("MI-24-03-A.png")
+image_3B = load_image("MI-24-03-B.png")
+
+image_4A = load_image("MI-24-04-A.png")
+image_4B = load_image("MH-24-04-B.png")
+
+```
+
+```{r load-data, include=FALSE}
+
+# Loading the data
+
+load_data = function(folder, file) {
+  file_path = file.path(folder, file)
+
+  df = read_excel(
+    path = file_path,
+    sheet = 1
+  )
+
+  df = subset(df, select = -c(layer_title, image_row_px))
+
+  return(df)
+}
+
+core_2 = load_data("Data", "MI-24-02.xlsx")
+
+core_3A = load_data("Data", "MI-24-03_A.xlsx")
+core_3B = load_data("Data", "MI-24-03_B.xlsx")
+
+core_4A = load_data("Data", "MI-24-04_A.xlsx")
+core_4B = load_data("Data", "MI-24-04_B.xlsx")
+```
+
+
+We note that the depth intervals differ between cores:
+```{r depth-intervals, echo=FALSE}
+list(
+  "MI-24-02" = range(diff(core_2$depth_mm)),
+  "MI-24-03" = range(diff(core_3A$depth_mm)),
+  "MI-24-04" = range(diff(core_4A$depth_mm))
+)
+```
+
+
+We therefore resample all colour profiles to a common 0.5 mm interval before analysis.
+```{r resample-depth, include=FALSE}
+
+# Resampling all profiles to 0.5 mm depth intervals
+
+resample = function(series, depth_step = 0.5) {
+
+  depth = seq(
+    ceiling(min(series$depth_mm) / depth_step) * depth_step,
+    floor(max(series$depth_mm) / depth_step) * depth_step,
+    by = depth_step
+  )
+
+  series |>
+    reframe(
+      depth_mm = depth,
+      across(
+        -depth_mm,
+        ~ approx(
+          series$depth_mm,
+          .x,
+          xout = depth,
+          ties = mean
+        )$y
+      )
+    )
+}
+
+core_2  = resample(core_2)
+
+core_3A = resample(core_3A)
+core_3B = resample(core_3B)
+
+core_4A = resample(core_4A)
+core_4B = resample(core_4B)
+```
+
+
+We calculate Pearson cross-correlations using the ccf() function from R’s stats package, over depth offsets of +/- 1000 mm.
+```{r, cross-correlate}
+cross_correlate = function(
+  series_1,
+  series_2,
+  axis,
+  depth_step = 0.5,
+  max_lag_mm = 1000
+) {
+
+  result = ccf(
+    series_1[[axis]],
+    series_2[[axis]],
+    lag.max = max_lag_mm / depth_step,
+    plot = FALSE
+  )
+
+  data.frame(
+    lag_mm = as.vector(result$lag) * depth_step,
+    correlation = as.vector(result$acf)
+  )
+}
+```
+
+
+We then select the global max over this range.
+```{r, get-peak}
+get_peak = function(ccf_result) {
+  i = which.max(ccf_result$correlation)
+  data.frame(
+    correlation = ccf_result$correlation[i],
+    offset_mm = ccf_result$lag_mm[i]
+  )
+}
+```
+
+```{r correlation-plots, include=FALSE}
+
+plot_ccf = function(ccf_result, peak) {
+
+  ggplot(ccf_result, aes(lag_mm, correlation)) +
+    geom_hline(yintercept = 0, linewidth = 0.5) +
+
+    geom_segment(
+      aes(xend = lag_mm, y = 0, yend = correlation),
+      colour = "grey60",
+      linewidth = 0.3
+    ) +
+
+    geom_segment(
+      data = peak,
+      aes(
+        x = offset_mm,
+        xend = offset_mm,
+        y = 0,
+        yend = correlation
+      ),
+      colour = "blue",
+      linewidth = 0.8,
+      inherit.aes = FALSE
+    ) +
+
+    geom_text(
+      data = peak,
+      aes(
+        x = offset_mm,
+        y = correlation,
+        label = paste0(
+          round(offset_mm, 1), " mm ",
+          "(r = ", round(correlation, 2), ")"
+        )
+      ),
+      vjust = -0.7,
+      size = 3,
+      inherit.aes = FALSE
+    ) +
+
+    labs(
+      x = "Depth lag (mm)",
+      y = "Pearson correlation (r)"
+    ) +
+
+    theme_classic(base_size = 11)
+}
+
+plot_core_images = function(
+  image_1,
+  image_2,
+  series_1,
+  series_2,
+  offset_mm,
+  name_1,
+  name_2
+) {
+
+  raster_1 = as.raster(image_1)
+  raster_2 = as.raster(image_2)
+
+  depth_1 = range(series_1$depth_mm)
+  depth_2 = range(series_2$depth_mm) + offset_mm
+
+  depth_min = min(depth_1, depth_2)
+  depth_max = max(depth_1, depth_2)
+
+  ggplot() +
+
+    annotation_raster(
+      raster_1,
+      xmin = 0,
+      xmax = 1,
+      ymin = depth_1[1],
+      ymax = depth_1[2],
+      interpolate = TRUE
+    ) +
+
+    annotation_raster(
+      raster_2,
+      xmin = 1.2,
+      xmax = 2.2,
+      ymin = depth_2[1],
+      ymax = depth_2[2],
+      interpolate = TRUE
+    ) +
+
+    scale_x_continuous(
+      breaks = c(0.5, 1.7),
+      labels = c(name_1, name_2),
+      limits = c(0, 2.2),
+      expand = c(0, 0)
+    ) +
+
+    scale_y_reverse(
+      limits = c(depth_max, depth_min),
+      expand = expansion(mult = 0.01)
+    ) +
+
+    coord_fixed(ratio = 0.0025) +
+
+    labs(
+      x = NULL,
+      y = "Depth (mm)"
+    ) +
+
+    theme_classic() +
+
+    theme(
+      axis.line.x = element_blank(),
+      axis.ticks.x = element_blank()
+    )
+}
+
+```
+
+```{r run-correlation, include=FALSE}
+
+run_correlation = function(
+  series_1,
+  series_2,
+  image_1,
+  image_2,
+  axis
+) {
+
+  name_1 = deparse(substitute(series_1))
+  name_2 = deparse(substitute(series_2))
+
+  ccf_result = cross_correlate(series_1, series_2, axis)
+  peak = get_peak(ccf_result)
+
+  print(plot_ccf(ccf_result, peak))
+
+  print(
+    plot_core_images(
+      image_1,
+      image_2,
+      series_1,
+      series_2,
+      peak$offset_mm,
+      name_1,
+      name_2
+    )
+  )
+
+  invisible(list(
+    ccf_result = ccf_result,
+    peak = peak
+  ))
+}
+
+```
+
+
+We focus on four comparisons where there is a reasonable basis to expect correspondence. MI-24-02 is compared with both sections of MI-24-04, as these cores were sampled closest together. We also compare the upper and lower sections of MI-24-03 with the corresponding sections of MI-24-04.
+```{r correlation, echo=FALSE}
+
+result_2_4A = run_correlation(
+  core_2,
+  core_4A,
+  image_2,
+  image_4A,
+  "L_star"
+)
+
+result_2_4B = run_correlation(
+  core_2,
+  core_4B,
+  image_2,
+  image_4B,
+  "L_star"
+)
+
+result_3A_4A = run_correlation(
+  core_3A,
+  core_4A,
+  image_3A,
+  image_4A,
+  "L_star"
+)
+
+result_3B_4B = run_correlation(
+  core_3B,
+  core_4B,
+  image_3B,
+  image_4B,
+  "L_star"
+)
+```
+
+
+
+We next use dynamic time warping (DTW) to account for differences between the cores that cannot be represented by a single depth offset. The profiles are first translated by up to ±500 mm, then locally warped by up to ±100 mm. This allows corresponding horizons to be aligned while limiting large distortions. We apply DTW to the same four core comparisons used above.
+```{r dtw-alignment, include=FALSE}
+
+align_dtw = function(series_1, series_2, axis) {
+
+  window = round(max_warp_mm / depth_step)
+
+  evaluate = function(offset, keep = FALSE) {
+
+    depth_2 = series_2$depth_mm + offset
+
+    depth_min = max(
+      min(series_1$depth_mm),
+      min(depth_2)
+    )
+
+    depth_max = min(
+      max(series_1$depth_mm),
+      max(depth_2)
+    )
+
+    if (depth_max <= depth_min) return(NULL)
+
+    depth = seq(
+      depth_min,
+      depth_max,
+      by = depth_step
+    )
+
+    x = approx(
+      series_1$depth_mm,
+      series_1[[axis]],
+      xout = depth
+    )$y
+
+    y = approx(
+      depth_2,
+      series_2[[axis]],
+      xout = depth
+    )$y
+
+    alignment = tryCatch(
+      dtw(
+        x,
+        y,
+        step.pattern = symmetricP1,
+        window.type = "sakoechiba",
+        window.size = window,
+        keep = keep
+      ),
+      error = function(e) NULL
+    )
+
+    if (is.null(alignment)) return(NULL)
+
+    list(
+      offset = offset,
+      distance = alignment$normalizedDistance,
+      alignment = alignment,
+      depth = depth,
+      x = x,
+      y = y
+    )
+  }
+
+
+  search = function(offsets) {
+
+    results = lapply(offsets, evaluate)
+    results = Filter(Negate(is.null), results)
+
+    data.frame(
+      offset_mm = sapply(results, \(x) x$offset),
+      distance = sapply(results, \(x) x$distance)
+    )
+  }
+
+
+  # Coarse translation search
+
+  coarse = search(
+    seq(
+      -max_translation_mm,
+      max_translation_mm,
+      by = coarse_translation_step_mm
+    )
+  )
+
+  coarse_best = coarse$offset_mm[
+    which.min(coarse$distance)
+  ]
+
+
+  # Fine translation search
+
+  fine = search(
+    seq(
+      max(
+        -max_translation_mm,
+        coarse_best - coarse_translation_step_mm
+      ),
+      min(
+        max_translation_mm,
+        coarse_best + coarse_translation_step_mm
+      ),
+      by = fine_translation_step_mm
+    )
+  )
+
+  best_offset = fine$offset_mm[
+    which.min(fine$distance)
+  ]
+
+  best = evaluate(
+    best_offset,
+    keep = TRUE
+  )
+
+
+  # DTW correspondence path
+
+  path = data.frame(
+    depth_1 = best$depth[best$alignment$index1],
+    depth_2 = best$depth[best$alignment$index2] - best_offset,
+    value_1 = best$x[best$alignment$index1],
+    value_2 = best$y[best$alignment$index2]
+  )
+
+
+  list(
+    offset_mm = best_offset,
+    distance = best$distance,
+    path = path,
+    coarse = coarse,
+    fine = fine
+  )
+}
+
+```
+
+```{r dtw-plots, include=FALSE}
+
+plot_dtw_search = function(
+  result,
+  name_1,
+  name_2
+) {
+
+  ggplot() +
+
+    geom_line(
+      data = result$coarse,
+      aes(offset_mm, distance)
+    ) +
+
+    geom_point(
+      data = result$fine,
+      aes(offset_mm, distance)
+    ) +
+
+    geom_vline(
+      xintercept = result$offset_mm,
+      linetype = "dashed"
+    ) +
+
+    labs(
+      x = paste0(
+        name_2,
+        " translation relative to ",
+        name_1,
+        " (mm)"
+      ),
+      y = "Normalised DTW distance"
+    ) +
+
+    theme_classic(base_size = 11)
+}
+
+
+plot_dtw_warp = function(
+  result,
+  name_1,
+  name_2
+) {
+
+  ggplot(
+    result$path,
+    aes(depth_2, depth_1)
+  ) +
+
+    geom_abline(
+      slope = 1,
+      intercept = result$offset_mm,
+      linetype = "dashed"
+    ) +
+
+    geom_line(
+      linewidth = 0.8
+    ) +
+
+    labs(
+      x = paste0(name_2, " depth (mm)"),
+      y = paste0(
+        "Corresponding ",
+        name_1,
+        " depth (mm)"
+      )
+    ) +
+
+    theme_classic(base_size = 11)
+}
+
+
+plot_dtw_translation = function(
+  image_1,
+  image_2,
+  series_1,
+  series_2,
+  result,
+  name_1,
+  name_2
+) {
+
+  depth_1 = range(
+    series_1$depth_mm,
+    na.rm = TRUE
+  )
+
+  depth_2 = range(
+    series_2$depth_mm,
+    na.rm = TRUE
+  ) + result$offset_mm
+
+  ggplot() +
+
+    annotation_raster(
+      as.raster(image_1),
+      xmin = 0,
+      xmax = 1,
+      ymin = depth_1[1],
+      ymax = depth_1[2],
+      interpolate = TRUE
+    ) +
+
+    annotation_raster(
+      as.raster(image_2),
+      xmin = 1.1,
+      xmax = 2.1,
+      ymin = depth_2[1],
+      ymax = depth_2[2],
+      interpolate = TRUE
+    ) +
+
+    scale_x_continuous(
+      breaks = c(0.5, 1.6),
+      labels = c(name_1, name_2),
+      limits = c(0, 2.1),
+      expand = c(0, 0)
+    ) +
+
+    scale_y_reverse(
+      limits = c(
+        max(depth_1, depth_2),
+        min(depth_1, depth_2)
+      ),
+      expand = expansion(mult = 0.01)
+    ) +
+
+    labs(
+      x = NULL,
+      y = "Depth (mm)",
+      caption = paste0(
+        name_2,
+        " translated by ",
+        round(result$offset_mm, 1),
+        " mm"
+      )
+    ) +
+
+    theme_classic(base_size = 11) +
+
+    theme(
+      aspect.ratio = 4,
+      axis.line.x = element_blank(),
+      axis.ticks.x = element_blank()
+    )
+}
+
+
+plot_dtw_scatter = function(
+  result,
+  name_1,
+  name_2
+) {
+
+  r = cor(
+    result$path$value_1,
+    result$path$value_2
+  )
+
+  ggplot(
+    result$path,
+    aes(value_1, value_2)
+  ) +
+
+    geom_point(
+      size = 1,
+      alpha = 0.4
+    ) +
+
+    labs(
+      x = paste0(name_1, " L*"),
+      y = paste0(name_2, " L*"),
+      subtitle = paste0(
+        "Pearson r = ",
+        round(r, 3)
+      )
+    ) +
+
+    theme_classic(base_size = 11)
+}
+
+
+show_dtw = function(
+  result,
+  image_1,
+  image_2,
+  series_1,
+  series_2,
+  name_1,
+  name_2
+) {
+
+  print(
+    plot_dtw_search(
+      result,
+      name_1,
+      name_2
+    )
+  )
+
+  print(
+    plot_dtw_warp(
+      result,
+      name_1,
+      name_2
+    )
+  )
+
+  print(
+    plot_dtw_translation(
+      image_1,
+      image_2,
+      series_1,
+      series_2,
+      result,
+      name_1,
+      name_2
+    )
+  )
+
+  print(
+    plot_dtw_scatter(
+      result,
+      name_1,
+      name_2
+    )
+  )
+}
+
+
+```
+
+
+```{r dtw-run, echo=FALSE}
+
+run_dtw = function(
+  series_1,
+  series_2,
+  image_1,
+  image_2,
+  axis = "L_star",
+  name_1 = deparse(substitute(series_1)),
+  name_2 = deparse(substitute(series_2))
+) {
+
+  result = align_dtw(
+    series_1,
+    series_2,
+    axis
+  )
+
+  show_dtw(
+    result,
+    image_1,
+    image_2,
+    series_1,
+    series_2,
+    name_1,
+    name_2
+  )
+
+  invisible(result)
+}
+
+
+dtw_core_2_vs_core_4A = run_dtw(
+  core_2,
+  core_4A,
+  image_2,
+  image_4A
+)
+
+dtw_core_2_vs_core_4B = run_dtw(
+  core_2,
+  core_4B,
+  image_2,
+  image_4B
+)
+
+dtw_core_3A_vs_core_4A = run_dtw(
+  core_3A,
+  core_4A,
+  image_3A,
+  image_4A
+)
+
+dtw_core_3B_vs_core_4B = run_dtw(
+  core_3B,
+  core_4B,
+  image_3B,
+  image_4B
+)
+
+```
+
+
+
+
+
+
+
+## Notes 
+
+Pearson produces peaks even between sections we don’t expect to correspond, probably due to repeated banding / chance alignment
+Strongest peak not necessarily correct; use geological context and visible horizons to identify a plausible match, then Pearson to refine the offset. Need to be careful about confirmation bias when choosing the peak.
+
+
+
+
+
+
