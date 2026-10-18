@@ -134,8 +134,12 @@ application:
     - name: load_csv
     - name: session_archive
       actions: [save, load]
+    - name: panel_registry
+      description: Centralized mapping of entities to panels, panels to factories, and UI configuration.
+      exports: [ENTITY_TYPE_TO_PANEL_TYPE, PANEL_TYPE_CONFIG]
     - name: workspace_service
       actions: [open_entity]
+      depends_on: [panel_registry]
     - name: export_excel
       actions: [export_core]
     - name: export_image

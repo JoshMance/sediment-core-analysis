@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QWidget
 
 from src.application import AppController
 from src.application.workspace_state import WorkspaceEntry, WorkspaceState
+from src.application.services.panel_registry import PANEL_TYPE_CONFIG
 from src.domain.store import Store
 from src.ui.views.shell.workspace import WorkspaceView
 
@@ -60,6 +61,8 @@ class WorkspacePresenter(QObject):
                 entity = self._store.get(core_id)
                 core_name = getattr(entity, "name", core_id)
                 title = f"{core_name} Studio"
+        elif entry.panel_type == "FenceDiagramPanel":
+            title = "Fence Diagram"
         else:
             if entry.target_entity_id is None:
                 raise ValueError(
@@ -99,7 +102,8 @@ class WorkspacePresenter(QObject):
             self._controller.set_ribbon_tab("Home")
             return
         panel_type = self._panel_types.get(panel_id, "")
-        tab_name = _RIBBON_TAB_MAP.get(panel_type, "Home")
+        config = PANEL_TYPE_CONFIG.get(panel_type)
+        tab_name = config.ribbon_tab if config else "Home"
         self._controller.set_ribbon_tab(tab_name)
 
     def _on_tab_closed(self, panel_id: str) -> None:
@@ -109,75 +113,20 @@ class WorkspacePresenter(QObject):
         self._workspace_state.close(panel_id)
 
     def _on_entity_dropped(self, entity_id: str) -> None:
-        """User dropped an entity onto the workspace — open it like a double-click."""
+        """User dropped an entity onto the workspace.
+        
+        By default, opens the entity in the workspace (image editor).
+        Lanes in active fence diagram panel will intercept drops directly.
+        """
+        # Default behavior: open in image editor
         self._controller.open_in_workspace(entity_id)
 
     # ── Panel factory ─────────────────────────────────────────
 
     def _create_panel(self, entry: WorkspaceEntry) -> tuple[QWidget, QObject]:
-        factory = _PANEL_FACTORIES.get(entry.panel_type)
-        if factory is None:
+        config = PANEL_TYPE_CONFIG.get(entry.panel_type)
+        if config is None:
             raise ValueError(
-                f"No factory registered for panel type '{entry.panel_type}'."
+                f"No panel config registered for panel type '{entry.panel_type}'."
             )
-        return factory(entry, self._store, self._controller)
-
-
-# ── Factory functions (one per panel type) ────────────────────
-
-def _make_core_image_panel(
-    entry: WorkspaceEntry,
-    store: Store,
-    controller: AppController,
-) -> tuple[QWidget, QObject]:
-    from src.ui.views.panels.core_image_panel import CoreImagePanel
-    from src.ui.presenters.core_image_panel_presenter import CoreImagePanelPresenter
-
-    if entry.target_entity_id is None:
-        raise ValueError("CoreImagePanel requires target_entity_id")
-
-    view = CoreImagePanel()
-    presenter = CoreImagePanelPresenter(view, store, controller, entry.target_entity_id)
-    return view, presenter
-
-
-def _make_dataset_panel(
-    entry: WorkspaceEntry,
-    store: Store,
-    controller: AppController,
-) -> tuple[QWidget, QObject]:
-    from src.ui.views.panels.dataset_panel.dataset_panel import DatasetPanel
-    from src.ui.presenters.dataset_panel_presenter import DatasetPanelPresenter
-
-    if entry.target_entity_id is None:
-        raise ValueError("DatasetPanel requires target_entity_id")
-
-    view = DatasetPanel()
-    presenter = DatasetPanelPresenter(view, store, controller, entry.target_entity_id)
-    return view, presenter
-
-
-def _make_core_studio_panel(
-    entry: WorkspaceEntry,
-    store: Store,
-    controller: AppController,
-) -> tuple[QWidget, QObject]:
-    from src.ui.views.panels.core_studio_panel import CoreStudioPanel
-    from src.ui.presenters.core_studio_presenter import CoreStudioPresenter
-
-    view = CoreStudioPanel()
-    presenter = CoreStudioPresenter(view, store, controller, entry.target_entity_id)
-    return view, presenter
-
-
-_PANEL_FACTORIES: dict[str, object] = {
-    "CoreImagePanel": _make_core_image_panel,
-    "DatasetPanel": _make_dataset_panel,
-    "CoreStudioPanel": _make_core_studio_panel,
-}
-
-# Maps panel type → ribbon tab name. Panels not listed default to "Home".
-_RIBBON_TAB_MAP: dict[str, str] = {
-    "CoreImagePanel": "Analysis",
-    "CoreStudioPanel": "Analysis",
-}
+        return config.factory(entry, self._store, self._controller)

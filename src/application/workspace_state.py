@@ -91,6 +91,11 @@ class WorkspaceState(QObject):
         entry = self._entries.get(self._active_panel_id)
         return entry.target_entity_id if entry else None
 
+    @property
+    def active_panel_id(self) -> str | None:
+        """panel_id of the currently focused panel, or None."""
+        return self._active_panel_id
+
     # ── Store signal handlers ─────────────────────────────────
 
     def _on_entity_removed(self, entity_id: str, _entity_type: str) -> None:

@@ -123,6 +123,9 @@ class RibbonPresenter(QObject):
     def _core_studio(self) -> None:
         self._controller.open_core_studio()
 
+    def _fence_diagram(self) -> None:
+        self._controller.open_fence_diagram()
+
     def _analyse(self) -> None:
         logger.info("Analyse -- not implemented yet")
 
@@ -216,6 +219,7 @@ class RibbonPresenter(QObject):
             "Zoom Out": self._zoom_out,
             "Fit": self._fit,
             "Core Studio": self._core_studio,
+            "Fence Diagram": self._fence_diagram,
             "Join": self._join_cores,
             "Split": self._split_core,
             "Import Image": self._load_image,

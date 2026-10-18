@@ -29,6 +29,7 @@ _ICON_MAP: dict[str, str] = {
     "Load Map": "load-map.svg",
     "New Data": "new-dataset.svg",
     "Core Studio": "core-studio.svg",
+    "Fence Diagram": "fence-diagram.svg",
     "Join": "join-cores.svg",
     "Split": "split-core.svg",
     "Settings": "settings.svg",
@@ -99,7 +100,7 @@ class Ribbon(QWidget):
 
         # -- Analysis tab
         analysis = self._make_tab()
-        self._add_group(analysis, "Core", ["Core Studio"])
+        self._add_group(analysis, "Core", ["Core Studio", "Fence Diagram"])
         self._tabs.addTab(analysis, "Analysis")
 
         # -- Help tab

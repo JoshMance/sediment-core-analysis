@@ -35,6 +35,10 @@ class CoreImagePanelPresenter(QObject):
         self._entity_id = entity_id
         self._resolved: np.ndarray | None = None
 
+        # Populate illuminants from the application layer
+        illuminants = controller.get_available_illuminants()
+        view.populate_illuminants(illuminants)
+
         self._load_image()
         view.cropConfirmed.connect(self._on_crop_confirmed)
         view.canvas.pixelHovered.connect(self._on_pixel_hovered)

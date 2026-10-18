@@ -5,9 +5,9 @@ Use this checklist when adding features that change structure, panel wiring, or 
 ## 1) Add A New Panel
 
 - [ ] Define panel purpose and owning entity type.
-- [ ] Add or confirm entity -> panel mapping in `src/application/services/workspace_service.py`.
-- [ ] Add or confirm panel -> factory mapping in `src/ui/presenters/workspace_presenter.py`.
-- [ ] Add or confirm ribbon tab mapping in `src/ui/presenters/workspace_presenter.py`.
+- [ ] Add entry to `ENTITY_TYPE_TO_PANEL_TYPE` in `src/application/services/panel_registry.py`.
+- [ ] Add entry to `PANEL_TYPE_CONFIG` with factory function, ID prefix, and ribbon tab.
+- [ ] Define factory function `_make_*_panel()` in `src/application/services/panel_registry.py`.
 - [ ] Create/update presenter and view wiring.
 - [ ] Confirm open/focus/close behaviour in workspace tabs.
 - [ ] Update `docs/architecture/topology/topology.yaml`.

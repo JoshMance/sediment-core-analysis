@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QToolBar, QPushButton, QLabel, QSpinBox, QComboBox,
 )
 
-from science.lib import available_illuminants
 from src.ui.views.panels.core_image_panel.canvas import ImageCanvas
 from src.ui.views.panels.core_image_panel.filter_panel import FilterPanel
 
@@ -72,6 +71,21 @@ class CoreImagePanel(QWidget):
     def set_filter_stack(self, stack: list[dict]) -> None:
         """Sync the filter panel to *stack* without emitting filterStackChanged."""
         self._filter_panel.set_stack(stack)
+
+    def populate_illuminants(self, illuminants: dict[str, str]) -> None:
+        """Populate the illuminant combo with options. Called by presenter.
+        
+        Args:
+            illuminants: Dict mapping illuminant key to display name.
+        """
+        if self._illuminant_combo is None:
+            return
+        self._illuminant_combo.blockSignals(True)
+        self._illuminant_combo.clear()
+        self._illuminant_combo.addItem("—", userData=None)
+        for key, name in illuminants.items():
+            self._illuminant_combo.addItem(name, userData=key)
+        self._illuminant_combo.blockSignals(False)
 
     # ── Toolbar ───────────────────────────────────────────────
 
@@ -161,8 +175,6 @@ class CoreImagePanel(QWidget):
         self._illuminant_combo = QComboBox()
         self._illuminant_combo.setToolTip("Select the capture illuminant for this core")
         self._illuminant_combo.addItem("—", userData=None)
-        for key, name in available_illuminants().items():
-            self._illuminant_combo.addItem(name, userData=key)
         self._illuminant_combo.currentIndexChanged.connect(self._on_illuminant_changed)
         tb.addWidget(self._illuminant_combo)
 

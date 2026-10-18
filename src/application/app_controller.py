@@ -70,6 +70,15 @@ class AppController:
         store.entityRemoved.connect(self._on_store_entity_removed)
         store.storeReset.connect(self._resolved_cache.clear)
 
+    def get_available_illuminants(self) -> dict[str, str]:
+        """Return available illuminant options from the science module.
+        
+        Returns:
+            Dict mapping illuminant key to display name.
+        """
+        from science.lib import available_illuminants
+        return available_illuminants()
+
     def _on_store_entity_updated(self, entity_id: str, entity_type: str) -> None:
         self._resolved_cache.pop(entity_id, None)
 
@@ -605,6 +614,18 @@ class AppController:
             self.open_core_in_studio(cores[-1][0])
         else:
             self.open_blank_core_studio()
+
+    def open_fence_diagram(self) -> None:
+        """Open the Fence Diagram panel for core alignment."""
+        if self._workspace_state is None:
+            return
+        self._workspace_state.open(
+            WorkspaceEntry(
+                panel_id="fence_diagram::main",
+                panel_type="FenceDiagramPanel",
+                target_entity_id=None,
+            )
+        )
 
     def delete_entity(self, entity_id: str) -> object:
         """Remove an entity from the Store.
