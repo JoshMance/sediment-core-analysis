@@ -146,8 +146,8 @@ class FenceDiagramPresenter(QObject):
             offset_text = self._format_offset(relative_mm)
             self._view.update_lane_offset_label(lid, offset_text)
         
-        # Sync ruler anchor to follow the reference core during drag
-        self._view._sync_ruler_anchor()
+        # Sync ruler anchor and tracks to follow the reference core during drag
+        self._view._sync_ruler_and_tracks()
     
     
     def _on_lane_drag_finished(self, lane_id: str) -> None:
@@ -217,6 +217,21 @@ class FenceDiagramPresenter(QObject):
                         reference_mm_per_px=reference_mm_per_px
                     )
                     lane_widget.set_core_image(pixmap)
+                    
+                    # After core image is set, force layout recalculation and wait for it to settle
+                    def sync_after_layout():
+                        # Force immediate layout recalculation
+                        lane_widget.layout().invalidate()
+                        lane_widget.layout().activate()
+                        lane_widget.updateGeometry()
+                        
+                        actual_lane_height = lane_widget.height()
+                        self._view._update_lane_height(lane_id, actual_lane_height)
+                        self._view._sync_track_heights_to_lanes()
+                    
+                    # Defer with longer delay to ensure layout fully settles
+                    from PySide6.QtCore import QTimer
+                    QTimer.singleShot(100, sync_after_layout)
     
     @staticmethod
     def _ndarray_to_pixmap(
