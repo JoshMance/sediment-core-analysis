@@ -1,0 +1,472 @@
+---
+title: "Lake Hillier Core Correlation Analysis"
+author: "Joshua Mance"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+**AI Use Disclosure**
+
+Generative AI tools were used to assist with code development and debugging. All AI-assisted code was reviewed, edited and verified by the author, who takes full responsibility for the resulting analyses and their interpretation.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
+
+pacman::p_load(
+  patchwork,
+  dtw,
+  magick, 
+  grid, 
+  pracma, 
+  prospectr, 
+  dplyr, 
+  tidyr, 
+  readxl, 
+  ggplot2, 
+  plotly,
+  ggtext
+)
+```
+
+# 1. Introduction 
+
+The CIELAB colour profiles of images of three sediment cores sampled from Lake Hillier were used to estimate their relative depths. Pearson cross-correlation of the cores' L* dimensions identified a set of plausible offsets, with the strongest peaks producing visually plausible alignments despite relatively weak correlation coefficients. The repeated light and dark banding also produced a periodic pattern in the cross-correlation, giving rise to several competing peaks. Horizons that appear to correspond between cores also vary in thickness, possibly due to differences in sediment accumulation rates or differential compression during sampling.
+
+# 2. Data and Methods
+
+We use images and colour profile data for cores MI-24-02, MI-24-03 and MI-24-04. The cores MI-24-03 and MI-24-04 each consist of two physical sections, upper (A) and lower (B), with a separate image for each, while MI-24-02 is represented by a single image. Sedivis was used to crop the images, calibrate their depth scales and extract colour data by averaging the RGB pixel values across each row, then converting the resulting values to CIELAB colour space using a D65 reference white.
+
+
+```{r load-images, include=FALSE}
+
+# Loading the images
+load_image = function(filename) {
+  image_read(file.path("Images", filename)) |>
+    image_rotate(-90)
+}
+
+image_2  = load_image("MI-24-02.png")
+
+image_3A = load_image("MI-24-03-A.png")
+image_3B = load_image("MI-24-03-B.png")
+
+image_4A = load_image("MI-24-04-A.png")
+image_4B = load_image("MH-24-04-B.png")
+
+```
+
+```{r load-data, include=FALSE}
+
+# Loading the data
+load_data = function(folder, file) {
+  file_path = file.path(folder, file)
+
+  df = read_excel(
+    path = file_path,
+    sheet = 1
+  )
+
+  df = subset(df, select = -c(layer_title, image_row_px))
+  return(df)
+}
+
+core_2 = load_data("Data", "MI-24-02.xlsx")
+
+core_3A = load_data("Data", "MI-24-03_A.xlsx")
+core_3B = load_data("Data", "MI-24-03_B.xlsx")
+
+core_4A = load_data("Data", "MI-24-04_A.xlsx")
+core_4B = load_data("Data", "MI-24-04_B.xlsx")
+```
+
+
+
+```{r}
+for (name in c("core_3A", "core_3B", "core_4A", "core_4B")) {
+
+  df = get(name)
+  df = df[order(df$depth_mm), ]
+
+  print(
+    ggplot(df, aes(x = L_star, y = depth_mm)) +
+      geom_path(color = "steelblue", linewidth = 0.4) +
+      scale_y_reverse() +
+      labs(
+        title = paste("L* Profile for", name),
+        x = "L*",
+        y = "Depth (mm)"
+      ) +
+      theme_minimal()
+  )
+
+}
+```
+
+We first investigate the autocorrelation of L* values for each core.
+The ACF figures show 
+
+```{r }
+for (name in c("core_3A", "core_3B", "core_4A", "core_4B")) {
+
+  par(mfrow = c(1, 2))
+
+  acf(
+    get(name)$L_star,
+    lag.max = 1000,
+    main = paste("ACF for L* of", name),
+    na.action = na.omit
+  )
+
+   pacf(
+    get(name)$L_star,
+    lag.max = 1000,
+    main = paste("PACF for L* of", name),
+    na.action = na.omit
+  )
+}
+
+par(mfrow = c(1, 1))
+```
+
+
+
+
+
+```{r analysis-settings}
+depth_step = 0.5
+max_lag_mm = 1000
+
+
+max_translation_mm = 500
+max_warp_mm = 100
+coarse_translation_step_mm = 10
+fine_translation_step_mm = 0.5
+```
+
+
+We note that the depth intervals differ between cores:
+```{r depth-intervals, echo=FALSE}
+list(
+  "MI-24-02" = range(diff(core_2$depth_mm)),
+  "MI-24-03" = range(diff(core_3A$depth_mm)),
+  "MI-24-04" = range(diff(core_4A$depth_mm))
+)
+```
+
+We therefore resample all colour profiles to a common 0.5 mm interval before analysis.
+```{r resample-depth, include=FALSE}
+
+# Resampling all profiles to 0.5 mm depth intervals
+resample = function(series, depth_step = 0.5) {
+
+  depth = seq(
+    ceiling(min(series$depth_mm) / depth_step) * depth_step,
+    floor(max(series$depth_mm) / depth_step) * depth_step,
+    by = depth_step
+  )
+
+  series |>
+    reframe(
+      depth_mm = depth,
+      across(
+        -depth_mm,
+        ~ approx(
+          series$depth_mm,
+          .x,
+          xout = depth,
+          ties = mean
+        )$y
+      )
+    )
+}
+
+core_2  = resample(core_2)
+
+core_3A = resample(core_3A)
+core_3B = resample(core_3B)
+
+core_4A = resample(core_4A)
+core_4B = resample(core_4B)
+```
+
+
+
+```{r pearson-cross-correlation, echo=FALSE, fig.width=8, fig.height=6, fig.align='center'}
+
+pairs = list(
+  c("core_3A", "core_4A"),
+  c("core_3A", "core_4B"),
+  c("core_3B", "core_4A"),
+  c("core_3B", "core_4B")
+)
+
+for (pair in pairs) {
+
+  core_1 = get(pair[1])
+  core_2 = get(pair[2])
+
+  image_1 = get(sub("core_", "image_", pair[1]))
+  image_2 = get(sub("core_", "image_", pair[2]))
+
+  name_1 = sub("core_", "MI-24-0", pair[1])
+  name_2 = sub("core_", "MI-24-0", pair[2])
+
+  # Pearson cross-correlation
+
+  result = ccf(
+    core_1$L_star,
+    core_2$L_star,
+    lag.max = round(max_lag_mm / depth_step),
+    plot = FALSE
+  )
+
+  best = which.max(result$acf)
+
+  offset_mm = as.vector(result$lag)[best] * depth_step
+  correlation = as.vector(result$acf)[best]
+
+  cat(
+    pair[1], "vs", pair[2],
+    "| Pearson r =", round(correlation, 4),
+    "| Lag =", round(offset_mm, 1), "mm\n"
+  )
+
+  # Cross-correlation plot
+
+  ccf_df = data.frame(
+    lag_mm = as.vector(result$lag) * depth_step,
+    correlation = as.vector(result$acf)
+  )
+
+  print(
+    ggplot(ccf_df, aes(x = lag_mm, y = correlation)) +
+      geom_hline(yintercept = 0, colour = "grey70") +
+      geom_segment(
+        aes(xend = lag_mm, y = 0, yend = correlation),
+        colour = "grey55",
+        linewidth = 0.25
+      ) +
+      geom_vline(
+        xintercept = offset_mm,
+        colour = "steelblue",
+        linewidth = 0.8
+      ) +
+      labs(
+        title = paste(name_1, "vs", name_2),
+        subtitle = sprintf(
+          "Maximum Pearson r = %.3f  |  Lag = %.1f mm",
+          correlation, offset_mm
+        ),
+        x = "Depth lag (mm)",
+        y = "Pearson correlation (r)"
+      ) +
+      theme_classic(base_size = 11) +
+      theme(
+        plot.title = element_text(face = "bold", size = 12),
+        plot.subtitle = element_text(size = 10),
+        plot.margin = margin(10, 15, 10, 10)
+      )
+  )
+
+  # Aligned core images
+
+  depth_1 = range(core_1$depth_mm)
+  depth_2 = range(core_2$depth_mm) + offset_mm
+
+  depth_min = min(depth_1, depth_2)
+  depth_max = max(depth_1, depth_2)
+
+  dimensions_1 = magick::image_info(image_1)
+  dimensions_2 = magick::image_info(image_2)
+
+  width_1 = diff(depth_1) *
+    dimensions_1$width / dimensions_1$height
+
+  width_2 = diff(depth_2) *
+    dimensions_2$width / dimensions_2$height
+
+  gap = max(width_1, width_2) * 0.3
+
+  x1_min = 0
+  x1_max = width_1
+
+  x2_min = width_1 + gap
+  x2_max = x2_min + width_2
+
+  # Core image plot
+
+  print(
+    ggplot() +
+      annotation_raster(
+        as.raster(image_1),
+        xmin = x1_min,
+        xmax = x1_max,
+        ymin = depth_1[1],
+        ymax = depth_1[2],
+        interpolate = TRUE
+      ) +
+      annotation_raster(
+        as.raster(image_2),
+        xmin = x2_min,
+        xmax = x2_max,
+        ymin = depth_2[1],
+        ymax = depth_2[2],
+        interpolate = TRUE
+      ) +
+      scale_x_continuous(
+        breaks = NULL,
+        limits = c(x1_min, x2_max),
+        expand = expansion(mult = 0.05)
+      ) +
+      scale_y_reverse(
+        limits = c(depth_min, depth_max),
+        expand = expansion(mult = 0.02)
+      ) +
+      coord_fixed(ratio = 1) +
+      labs(
+        title = paste("Core alignment:", name_1, "and", name_2),
+        subtitle = sprintf(
+          "Offset = %.1f mm  |  Pearson r = %.3f",
+          offset_mm, correlation
+        ),
+        x = NULL,
+        y = "Depth (mm)"
+      ) +
+      annotate(
+        "text",
+        x = c(
+          (x1_min + x1_max) / 2,
+          (x2_min + x2_max) / 2
+        ),
+        y = depth_max + 0.04 * (depth_max - depth_min),
+        label = c(name_1, name_2),
+        size = 3
+      ) +
+      theme_classic(base_size = 11) +
+      theme(
+        plot.title = element_text(face = "bold", size = 12),
+        plot.subtitle = element_text(size = 10),
+        axis.line.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        plot.margin = margin(10, 10, 25, 10)
+      )
+  )
+}
+```
+
+
+## Notes 
+
+Pearson produces peaks even between sections we don’t expect to correspond, probably due to repeated banding / chance alignment
+Strongest peak not necessarily correct; use geological context and visible horizons to identify a plausible match, then Pearson to refine the offset. Need to be careful about confirmation bias when choosing the peak.
+
+
+## Running with R^3 offset space
+
+```{r}
+# Search settings (mm)
+offset_min = -500
+offset_max = 500
+offset_step = 5
+
+# Candidate offsets
+offset_values = seq(offset_min, offset_max, by = offset_step)
+
+# Full 3D search space
+offsets = expand.grid(
+  offset_3B = offset_values,
+  offset_4A = offset_values,
+  offset_4B = offset_values
+)
+
+# Core depth ranges
+range_3A = range(core_3A$depth_mm)
+range_3B = range(core_3B$depth_mm)
+range_4A = range(core_4A$depth_mm)
+range_4B = range(core_4B$depth_mm)
+
+# Enforce A–B ordering without overlap
+offsets = subset(
+  offsets,
+  range_3B[1] + offset_3B >= range_3A[2] &
+  range_4B[1] + offset_4B >= range_4A[2] + offset_4A
+)
+
+cat(
+  "Feasible configurations:",
+  format(nrow(offsets), big.mark = ","),
+  "\n"
+)
+```
+
+
+```{r}
+calculate_correlations = function(offsets) {
+
+  evaluate = function(offset_3B, offset_4A, offset_4B) {
+
+    core_3 = rbind(
+      data.frame(
+        depth = core_3A$depth_mm,
+        L_star = core_3A$L_star
+      ),
+      data.frame(
+        depth = core_3B$depth_mm + offset_3B,
+        L_star = core_3B$L_star
+      )
+    )
+
+    core_4 = rbind(
+      data.frame(
+        depth = core_4A$depth_mm + offset_4A,
+        L_star = core_4A$L_star
+      ),
+      data.frame(
+        depth = core_4B$depth_mm + offset_4B,
+        L_star = core_4B$L_star
+      )
+    )
+
+    aligned = merge(
+      core_3,
+      core_4,
+      by = "depth",
+      suffixes = c("_3", "_4")
+    )
+
+    aligned = aligned[complete.cases(aligned), ]
+
+    if (nrow(aligned) < 3) {
+      return(NA_real_)
+    }
+
+    cor(
+      aligned$L_star_3,
+      aligned$L_star_4,
+      method = "pearson"
+    )
+  }
+
+  offsets$pearson_r = mapply(
+    evaluate,
+    offsets$offset_3B,
+    offsets$offset_4A,
+    offsets$offset_4B
+  )
+
+  offsets
+}
+
+results = calculate_correlations(offsets)
+
+best = results[which.max(results$pearson_r), ]
+
+print(best)
+
+```
+
+
